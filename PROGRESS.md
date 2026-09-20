@@ -10,11 +10,14 @@ approved 2026-09-20 and frozen — drift from it is recorded here, never edited 
 | 1 · Repo + approved plan | **done** | `ca2552f`, the plan alone |
 | 2 · Packaging project + skeleton | **done** | Packs clean; layout verified inside the `.nupkg` |
 | 3 · `template.json` | **done** | Install-from-nupkg → generate → names verified |
-| 4 · Packaging tests | next | Generalise from `Bennewitz.Ninja.DiffView/tests/.../PackagingTests.cs` |
-| 5 · Both CI and release workflows | — | |
-| 6 · `package-release` skill, in `bb-skills` | — | Proposed as `*.proposed` before it installs |
+| 4 · Packaging tests | **done** | `PackagingTests` + `scripts/assert-packages.cs`; both mutation-tested |
+| 5 · Both CI and release workflows | **done** | Preflight, `RELEASING` gating, `NUGET_USER` guard, nothing globbed |
+| 6 · `package-release` skill, in `bb-skills` | next | Proposed as `*.proposed` before it installs |
 | 7 · `verify-release` | — | |
 | 8 · First release | — | |
+
+Generating a repo from the template currently yields: **build clean with `-warnaserror`, 11 tests
+passing, pack succeeding, and `assert-packages` green** — on the first run, with no edits.
 
 ## Drift from the approved plan
 
@@ -32,6 +35,18 @@ package instead of claiming a new id, which a singular name fights.
 
 Done while nothing was published and no remote existed, which is the only cheap moment for it. The
 repo name still follows the package stem, so that decision is unchanged.
+
+**Steps 4 and 5 were done together.** The plan orders the packaging tests before the workflows, but
+the tests assert against those workflows, so step 4 alone could only have been written blind. No
+scope changed; only the order.
+
+**The release workflow is driven by `packages.push` rather than repeating the ids.** The plan's
+step 4 verification expects each id named literally in the workflow. A template cannot know how many
+ids a repository will have — and more importantly, a workflow that repeats the list has two homes
+for it, and the second silently rots when a package is added. That is the failure this whole
+mechanism exists to prevent, reintroduced by the guard meant to stop it. So the workflow reads the
+file, the test asserts it reads the file and globs nothing, and `assert-packages` closes the loop
+against the packed output.
 
 **Package path has no `templates/` segment.** The plan's step 2 verification names
 `content/templates/bbpkg/.template.config/template.json`. The explicit
@@ -59,12 +74,31 @@ not surface.
 - **One `sourceName` cannot produce both names.** Verified end to end:
   `dotnet new bbpkg -n Widget` yields `AssemblyName` `Widget` and `PackageId`
   `Bennewitz.Ninja.Widget`, the latter from a `join` generator over `name`.
+- **NuGet excludes dotfiles from a package by default** (NU5119), so a template ships generated
+  repos with no `.gitignore` and no `.gitattributes`. `NoDefaultExcludes` fixes it. ⚠ This is a
+  *warning*: the family's `TreatWarningsAsErrors` is the only reason it surfaced here rather than in
+  somebody's generated repo.
+- **`PackagePath` must be the bare root `content\`.** Both more explicit forms are wrong, and both
+  were tried: `content\%(RecursiveDir)%(Filename)%(Extension)` is correct for every file *with* an
+  extension and packs `LICENSE` to `content/bbpkg/LICENSE/bbpkg/LICENSE`, because NuGet reads a
+  final segment with no extension as a folder. `content\%(RecursiveDir)` is a folder too, so NuGet
+  appends the recursive path a second time.
+- **Both guards fail when they should.** Removing the id from `packages.push` fails
+  `Every_packable_project_is_classified` *and* makes `assert-packages` exit `1` — checked without a
+  pipe, since `$?` after one reports the last command's status rather than the script's.
+- **Duplicate template installs break generation.** Installing the same identity from a folder and
+  from a `.nupkg` leaves two registrations and `dotnet new` fails with "Sequence contains more than
+  one matching element". Uninstall until `dotnet new list` is clean, and clear
+  `~/.templateengine/packages/`, before reinstalling.
 
 ## Next
 
-Step 4. `Bennewitz.Ninja.DiffView/tests/DiffView.Avalonia.Tests/PackagingTests.cs` already reads ids
-from the `.nuspec` inside each `.nupkg` and asserts the release workflow names its pushes rather than
-globbing — generalise both, then add the `packed == push ∪ local` assertion over the two list files.
+Step 6, the `package-release` skill, in `bb-skills` — proposed as `*.proposed` and approved before
+it installs, since it lands in `~/.claude/skills/`. It must **decline** in a repository that has no
+`packages.push`: installed globally, it fires in `Bennewitz.Ninja.FileServer`, `AutoVersioning` and
+`chisel` too, and all three glob their pushes by their own deliberate design.
 
-⚠ The tests must run against **both** release workflows: this repo's own, and the one shipped inside
-`templates/bbpkg/.github/workflows/`, which GitHub Actions never executes from here.
+⚠ Still outstanding from the plan: this repository has **no `release.yml` of its own** yet, so it
+cannot publish itself. That is step 8, and until it exists the shipped workflow inside
+`templates/bbpkg/.github/workflows/` is guarded only by the generated repo's own tests — which is
+the weakness the plan names rather than hides.

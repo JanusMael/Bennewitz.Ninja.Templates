@@ -40,6 +40,17 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+
+    <!--
+      ⛔ NuGet excludes files starting with '.' from a package BY DEFAULT, which for a template
+      means the generated repo silently arrives with no .gitignore and no .gitattributes — the
+      files most likely to be missed precisely because nobody opens them.
+
+      ⚠ Without TreatWarningsAsErrors this is NU5119, a warning, and the broken template ships. The
+      family props promoting it to an error is the only reason it surfaced here rather than in
+      somebody's generated repo.
+    -->
+    <NoDefaultExcludes>true</NoDefaultExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -57,9 +68,25 @@
 
       So the recursive path is preserved by hand, and the tests assert the generated TREE.
     -->
+    <!--
+      ⛔ The path is the bare ROOT. NuGet appends %(RecursiveDir)%(Filename)%(Extension) itself.
+
+      Both more explicit-looking forms are wrong, and both were tried:
+
+        content\%(RecursiveDir)%(Filename)%(Extension)
+          correct for every file WITH an extension, and wrong for every file without one. NuGet
+          treats a PackagePath whose last segment has no extension as a folder, so LICENSE packed
+          to content/bbpkg/LICENSE/bbpkg/LICENSE. Dockerfile and Makefile would do the same.
+
+        content\%(RecursiveDir)
+          a folder, so NuGet appends the recursive path again: content/bbpkg/bbpkg/.gitignore.
+
+      Leaving it at the root lets NuGet do the whole job, which it does correctly for extensionless
+      files and dotfiles alike.
+    -->
     <Content Include="templates\**\*"
              Exclude="templates\**\bin\**;templates\**\obj\**"
-             PackagePath="content\%(RecursiveDir)%(Filename)%(Extension)" />
+             PackagePath="content\" />
     <Compile Remove="**\*" />
   </ItemGroup>
 
