@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The packaging project. It compiles nothing: its whole job is to wrap templates/ as a
+    PackageType=Template NuGet package so `dotnet new install Bennewitz.Ninja.PackageTemplate`
+    works. The template content itself lives under templates/ and is never built from here.
+  -->
+  <PropertyGroup>
+    <PackageId>Bennewitz.Ninja.PackageTemplate</PackageId>
+    <PackageType>Template</PackageType>
+    <IsPackable>true</IsPackable>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <PackageTags>template;dotnet-new;nuget;trusted-publishing;scaffold</PackageTags>
+    <Description>
+      A dotnet new template and GitHub template for Bennewitz.Ninja NuGet packages: CI, a release
+      workflow with a credential preflight, the two-list packaging guard that keeps a local-only
+      package off nuget.org, and the publishing runbook.
+    </Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      ⛔ NU5128 is unavoidable here and Directory.Build.props turns it into an error.
+
+      A template package ships no lib/ or ref/ assemblies by design, which is exactly what NU5128
+      reports; TreatWarningsAsErrors then fails the pack. Reproduced against this family's real
+      props before this line existed.
+
+      ⚠ IncludeContentInPack=false is NOT the alternative fix. It gates the whole _GetPackageFiles
+      target, which drops the README that Directory.Build.props packs, and pack dies with NU5017
+      "cannot create a package that has no dependencies nor content" instead.
+    -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      ⛔ PackagePath is explicit, NOT left to ContentTargetFolders.
+
+      Relying on ContentTargetFolders alone has two failure modes, both reproduced, and the second
+      is the dangerous one:
+
+        1. A source folder named "content" packs to content/content/... and is never found.
+        2. Content outside this project's cone is FLATTENED, which drops .template.config/
+           entirely — and the resulting package still installs, still lists, and still "generates",
+           emitting the extracted nupkg instead of a project. Every check written against an exit
+           code passes on that package.
+
+      So the recursive path is preserved by hand, and the tests assert the generated TREE.
+    -->
+    <Content Include="templates\**\*"
+             Exclude="templates\**\bin\**;templates\**\obj\**"
+             PackagePath="content\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Remove="**\*" />
+  </ItemGroup>
+
+</Project>
