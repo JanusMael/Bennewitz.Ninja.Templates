@@ -2,11 +2,16 @@
 
   <!--
     The packaging project. It compiles nothing: its whole job is to wrap templates/ as a
-    PackageType=Template NuGet package so `dotnet new install Bennewitz.Ninja.PackageTemplate`
-    works. The template content itself lives under templates/ and is never built from here.
+    PackageType=Template NuGet package so `dotnet new install Bennewitz.Ninja.Templates` works.
+    The template content itself lives under templates/ and is never built from here.
+
+    ⭐ The id is PLURAL and generic because a template package is a CONTAINER: it bundles one or
+    more templates. `bbpkg` is the first; a second ships inside this same package rather than
+    needing a new id. That also matches the ecosystem — Microsoft.Android.Templates,
+    Microsoft.iOS.Templates, Aspire.ProjectTemplates.
   -->
   <PropertyGroup>
-    <PackageId>Bennewitz.Ninja.PackageTemplate</PackageId>
+    <PackageId>Bennewitz.Ninja.Templates</PackageId>
     <PackageType>Template</PackageType>
     <IsPackable>true</IsPackable>
     <IncludeContentInPack>true</IncludeContentInPack>

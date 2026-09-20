@@ -1,6 +1,6 @@
 # Progress
 
-Work state for `Bennewitz.Ninja.PackageTemplate`. Plan: [plans/00001-package-template.md](plans/00001-package-template.md),
+Work state for `Bennewitz.Ninja.Templates`. Plan: [plans/00001-package-template.md](plans/00001-package-template.md),
 approved 2026-09-20 and frozen — drift from it is recorded here, never edited into it.
 
 ## Status
@@ -17,6 +17,21 @@ approved 2026-09-20 and frozen — drift from it is recorded here, never edited 
 | 8 · First release | — | |
 
 ## Drift from the approved plan
+
+**Renamed to `Bennewitz.Ninja.Templates`** — repo, package id and directory. The plan's Decisions
+table names `Bennewitz.Ninja.PackageTemplate`, decided before the ecosystem convention was checked.
+
+Every `PackageType=Template` package with meaningful download share is **plural**:
+`Microsoft.Android.Templates`, `Microsoft.iOS.Templates`, `Microsoft.MacCatalyst.Templates`,
+`Aspire.ProjectTemplates`, `Uno.ProjectTemplates.Dotnet`, `HotChocolate.Templates.Server`. Singular
+survives only in `Furion.Template.*`, where it is a prefix across a dozen per-flavour packages.
+
+The structural reason matters more than the convention: a template package **bundles one or more
+templates**, so the id names a container. `bbpkg` is the first; a second ships inside the same
+package instead of claiming a new id, which a singular name fights.
+
+Done while nothing was published and no remote existed, which is the only cheap moment for it. The
+repo name still follows the package stem, so that decision is unchanged.
 
 **Package path has no `templates/` segment.** The plan's step 2 verification names
 `content/templates/bbpkg/.template.config/template.json`. The explicit

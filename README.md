@@ -1,16 +1,19 @@
-# Bennewitz.Ninja.PackageTemplate
+# Bennewitz.Ninja.Templates
 
-A starting point for a .NET NuGet package that publishes through **NuGet.org Trusted Publishing
-(OIDC)** — no long-lived API key anywhere. It is two things at once:
+Templates for .NET projects that publish to nuget.org through **Trusted Publishing (OIDC)** — no
+long-lived API key anywhere. One template today, `bbpkg`, reachable two ways:
 
 ```bash
 # GitHub route
-gh repo create Bennewitz.Ninja.Widget --template JanusMael/Bennewitz.Ninja.PackageTemplate
+gh repo create Bennewitz.Ninja.Widget --template JanusMael/Bennewitz.Ninja.Templates
 
 # SDK route
-dotnet new install Bennewitz.Ninja.PackageTemplate
+dotnet new install Bennewitz.Ninja.Templates
 dotnet new bbpkg -n Widget --RepoOwner JanusMael
 ```
+
+⭐ The package id is plural because a template package is a **container** — it bundles one or more
+templates. A second one ships inside this same package rather than claiming a new id.
 
 ⚠ **`-n` takes the unprefixed stem.** `-n Widget` produces assembly `Widget` and package id
 `Bennewitz.Ninja.Widget`, which is the convention across these repos. Passing the full id instead

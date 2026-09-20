@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/template",
   "author": "Brian Bennewitz",
   "classifications": [ "Common", "Library", "NuGet" ],
-  "identity": "Bennewitz.Ninja.PackageTemplate.Package",
+  "identity": "Bennewitz.Ninja.Templates.Package",
   "name": "Bennewitz.Ninja NuGet package",
   "shortName": "bbpkg",
   "preferNameDirectory": true,
