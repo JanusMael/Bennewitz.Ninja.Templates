@@ -182,14 +182,10 @@ All eight steps are done. `Bennewitz.Ninja.Templates 2026.3.921` is published an
 the feed, and the repository is marked as a GitHub template. What remains is follow-on work, none
 of it blocking:
 
-1. **Fold the published half into `verify-release`.** It now has a proven shape — install from
-   nuget.org, generate, assert the tree, build/test/pack — but it lives in a scratch script rather
-   than in `scripts/verify-release.cs`. The local and published paths should share one
-   tree-assertion routine and differ only in where the template comes from.
-2. **Carry the `NUGET_USER` variable change to the other package repositories.**
+1. **Carry the `NUGET_USER` variable change to the other package repositories.**
    `Bennewitz.Ninja.XamlQuality` still reads `secrets.NUGET_USER`. It works, so this is hygiene
    rather than repair — but it is the repository most likely to hit the same masked 401 next.
-3. **`plans/00002`** — apply the template to `Bennewitz.Ninja.DiffView`, which has never released,
+2. **`plans/00002`** — apply the template to `Bennewitz.Ninja.DiffView`, which has never released,
    so it is a first release rather than a retrofit.
 
 ⓘ The `NUGET_USER` **secret** is still present on this repository alongside the variable. Harmless

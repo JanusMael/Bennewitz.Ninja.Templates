@@ -11,11 +11,20 @@
 //     dotfiles excluded by NuGet's default rules   → content check 2 (NU5119)
 //     LICENSE packed as a FOLDER, not a file       → content check 3
 //
-// ⚠ This is the LOCAL half of the release check. The published half — feed poll, then
-// `dotnet new install` from nuget.org and assert the tree again — belongs to the first release,
-// because neither can run against a package that does not exist yet.
+// ⭐ Two modes, and they differ in ONE thing: where the template comes from. Everything after the
+// install — generate, assert the tree, build, test, pack, run the packaging guard — is the same
+// code running the same assertions. A published check that re-implemented those assertions could
+// drift from the local one and start proving something subtly different, and a release is exactly
+// when you cannot afford a check that has quietly become a different check.
+//
+//   default       pack this working tree, assert the packed content, install from that .nupkg.
+//                 Run it before tagging.
+//   --published   install the id from nuget.org at the given version. Run it AFTER releasing,
+//                 because it is the only mode that tests the artifact people will actually get.
+//                 Packing locally and calling it "verified" proves the working tree instead.
 //
 // Usage:  dotnet run --file scripts/verify-release.cs
+//         dotnet run --file scripts/verify-release.cs -- --published 2026.3.921
 //         dotnet run --file scripts/verify-release.cs -- --keep   (keep the scratch dirs)
 //
 // ⚠ `--file` is required HERE and not in a generated repository. `dotnet run <file.cs>` binds to
@@ -33,8 +42,22 @@ using System.Xml.Linq;
 const string TemplateShortName = "bbpkg";
 const string TemplateFolder = "bbpkg";
 const string GeneratedStem = "Widget";
+const string PackageId = "Bennewitz.Ninja.Templates";
 
 bool keep = args.Contains("--keep", StringComparer.OrdinalIgnoreCase);
+
+// ⭐ --published <version> swaps ONLY where the template comes from: nuget.org instead of a local
+// pack. Everything after the install is the same code on the same assertions, which is the point.
+// A published check that re-implemented the tree assertions could drift from the local one and
+// start proving something slightly different — and the release is exactly when you cannot afford
+// a check that has quietly become a different check.
+int publishedFlag = Array.FindIndex(args, argument => string.Equals(argument, "--published", StringComparison.OrdinalIgnoreCase));
+string? publishedVersion = publishedFlag >= 0 && publishedFlag + 1 < args.Length ? args[publishedFlag + 1] : null;
+
+if (publishedFlag >= 0 && publishedVersion is null)
+{
+    return Fail("--published needs a version, e.g. --published 2026.3.921.");
+}
 
 string repoRoot = Directory.GetCurrentDirectory();
 string packagingProject = Path.Combine(repoRoot, "Bennewitz.Ninja.Templates.csproj");
@@ -67,6 +90,22 @@ bool installed = false;
 
 try
 {
+    // What `dotnet new install` is pointed at: a freshly packed file, or the published id.
+    string installSource;
+
+    if (publishedVersion is not null)
+    {
+        // ── 1p · The published package, straight off the feed ───────────────────────────────
+        // ⚠ Nothing is packed here on purpose. Packing locally and then "verifying the release"
+        // proves the working tree, not the artifact somebody will actually install — and those
+        // differ exactly when it matters, as the Linux flattening showed.
+        Step($"Use the published {PackageId} {publishedVersion}");
+        installSource = $"{PackageId}::{publishedVersion}";
+        Console.WriteLine($"  {installSource}");
+    }
+    else
+    {
+
     // ── 1 · Pack the template package ───────────────────────────────────────────────────────
     Step("Pack the template package");
 
@@ -166,6 +205,10 @@ try
         Console.WriteLine($"  package type Template; metadata points at {expected}");
     }
 
+    installSource = nupkg;
+
+    } // end of the local-pack path
+
     // ── 3 · Clear any earlier registration of THIS template ─────────────────────────────────
     // ⚠ Two registrations of one identity — say a folder install and a nupkg install — make
     // generation fail with "Sequence contains more than one matching element".
@@ -198,13 +241,34 @@ try
         }
     }
 
-    // ── 4 · Install FROM THE PACKED .nupkg, never from the folder ───────────────────────────
+    // ── 4 · Install FROM THE PACKAGE, never from the folder ─────────────────────────────────
     // Installing from '.' reads the source tree and so cannot see a packaging mistake at all.
-    Step("Install from the packed .nupkg");
+    Step("Install the template");
 
-    if (!Dotnet(["new", "install", nupkg], repoRoot, out string installLog))
+    // ⚠ Retried, and only in the published case. The CLI's own index lags the flat container by
+    // minutes after a push, so an immediate miss means "not yet indexed", never "not published".
+    // A local .nupkg has no such excuse, so it gets one attempt and a real failure.
+    int attempts = publishedVersion is null ? 1 : 20;
+    string installLog = string.Empty;
+    bool ok = false;
+
+    for (int attempt = 1; attempt <= attempts && !ok; attempt++)
     {
-        return Fail("dotnet new install failed:" + Environment.NewLine + installLog);
+        ok = Dotnet(["new", "install", installSource], repoRoot, out installLog);
+
+        if (!ok && attempt < attempts)
+        {
+            Thread.Sleep(TimeSpan.FromSeconds(30));
+        }
+        else if (ok && attempt > 1)
+        {
+            Console.WriteLine($"  installed on attempt {attempt}");
+        }
+    }
+
+    if (!ok)
+    {
+        return Fail($"dotnet new install failed for '{installSource}':" + Environment.NewLine + installLog);
     }
 
     installed = true;
@@ -371,7 +435,9 @@ try
     Console.WriteLine("  " + LastNonEmptyLines(assertLog, 1));
 
     Console.WriteLine();
-    Console.WriteLine("verify-release: PASS — packed, installed from the .nupkg, generated, and the generated repository builds, tests and packs.");
+    Console.WriteLine(publishedVersion is null
+        ? "verify-release: PASS — packed, installed from the .nupkg, generated, and the generated repository builds, tests and packs."
+        : $"verify-release: PASS — {PackageId} {publishedVersion} installed FROM NUGET.ORG, generated, and the generated repository builds, tests and packs.");
 
     return 0;
 }
