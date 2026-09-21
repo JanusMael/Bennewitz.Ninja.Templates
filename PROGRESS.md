@@ -113,6 +113,15 @@ not surface.
   genuinely-used entries and the TrxReport version-pin rationale stayed. Verified by deleting
   every `bin/` and `obj/` outside `templates/` and restoring from scratch, because an existing
   `obj/` caches the dependency graph and would have hidden a pin that was doing work.
+- **`grep -qv '^[[:space:]]*#'` is not "has a real id" — a blank line is not a comment either.**
+  The preflight's `packages.local` guard used the negated form, so a single blank line made it
+  print the `⛔ That pattern must NOT match anything in packages.local:` header with nothing
+  beneath it — while `packages.local`'s own header promises blank lines are ignored. Code
+  contradicting its file's documented contract. Replaced in **both** workflows with the positive
+  form `grep -qE '^[[:space:]]*[^#[:space:]]'`, checked against six shapes: comments only,
+  comments plus a blank line, blanks only, a bare id, an indented id, and an empty file. Only the
+  two blank-line cases changed behaviour. Cosmetic — it never affected what was pushed — but it
+  shipped inside the template, so every generated repository would have inherited it.
 - **`dotnet test --nologo` is rejected under Microsoft.Testing.Platform.** `global.json` selects
   MTP, which forwards unrecognised switches to the test app; xunit's runner answers
   *"Unknown option '--nologo'"* and the run ends **"Zero tests ran"**. It does exit non-zero

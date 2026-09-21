@@ -136,7 +136,11 @@ jobs:
             echo "NOT a policy per id: one exchange mints one key scoped to one policy, so a second"
             echo "policy is never consulted and its package is rejected 403 — after the first is"
             echo "already permanent."
-            if grep -qv '^[[:space:]]*#' packages.local 2>/dev/null; then
+            # ⚠ Matches a line that HAS a real id, rather than `grep -qv` for "not a comment".
+            # A blank line is not a comment either, so the negated form fired on any
+            # packages.local containing one — printing the warning header below with nothing
+            # under it. packages.local's own header promises blank lines are ignored.
+            if grep -qE '^[[:space:]]*[^#[:space:]]' packages.local 2>/dev/null; then
               echo ""
               echo "⛔ That pattern must NOT match anything in packages.local:"
               grep -v '^[[:space:]]*#' packages.local | grep -v '^[[:space:]]*$' | sed 's/^/- `/; s/$/`/'
