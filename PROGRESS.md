@@ -12,9 +12,9 @@ approved 2026-09-20 and frozen — drift from it is recorded here, never edited 
 | 3 · `template.json` | **done** | Install-from-nupkg → generate → names verified |
 | 4 · Packaging tests | **done** | `PackagingTests` + `scripts/assert-packages.cs`; both mutation-tested |
 | 5 · Both CI and release workflows | **done** | Preflight, `RELEASING` gating, `NUGET_USER` guard, nothing globbed |
-| 6 · `package-release` skill, in `bb-skills` | next | Proposed as `*.proposed` before it installs |
-| 7 · `verify-release` | — | |
-| 8 · First release | — | |
+| 6 · `package-release` skill, in `bb-skills` | **done** | Approved as `*.proposed`, then installed alone — see below |
+| 7 · `verify-release` | next | Pack → local install → feed poll → published install |
+| 8 · First release | — | Also flips `isTemplate`, currently `false` by design |
 
 Generating a repo from the template currently yields: **build clean with `-warnaserror`, 11 tests
 passing, pack succeeding, and `assert-packages` green** — on the first run, with no edits.
@@ -91,12 +91,27 @@ not surface.
   one matching element". Uninstall until `dotnet new list` is clean, and clear
   `~/.templateengine/packages/`, before reinstalling.
 
+## The skill, as built (step 6)
+
+It lives at `C:\c\cl\bb-skills\package-release\SKILL.md` and is installed to `~/.claude/skills/`.
+
+⚠ **Its gate is not `packages.push`.** That was the first design, and testing it against the real
+repositories showed it would decline in `Bennewitz.Ninja.XamlQuality` — the repository that taught it
+every rule it states — because none of the five package repos has that file yet. It greps for
+`NuGet/login` instead, engages in all five, and declines in a repository that does not publish to
+nuget.org at all. That matters because it is installed globally and fires everywhere: FileServer,
+AutoVersioning and chisel all glob their pushes by deliberate design.
+
+⚠ **`Install-Skills.ps1` was NOT run.** It replaces every skill, and four of the eight differ from
+their installed copies in both directions. `package-release` was installed on its own by copying its
+folder. Resolving that drift is deferred.
+
 ## Next
 
-Step 6, the `package-release` skill, in `bb-skills` — proposed as `*.proposed` and approved before
-it installs, since it lands in `~/.claude/skills/`. It must **decline** in a repository that has no
-`packages.push`: installed globally, it fires in `Bennewitz.Ninja.FileServer`, `AutoVersioning` and
-`chisel` too, and all three glob their pushes by their own deliberate design.
+Step 7, `verify-release`. Then step 8, which is the template's own `release.yml` and first release —
+until that exists, this repository cannot publish itself, so the workflow shipped inside
+`templates/bbpkg/.github/workflows/` is guarded only by the generated repo's own tests. That is the
+weakness [the plan](plans/00001-package-template.md) names rather than hides.
 
 ⚠ Still outstanding from the plan: this repository has **no `release.yml` of its own** yet, so it
 cannot publish itself. That is step 8, and until it exists the shipped workflow inside
