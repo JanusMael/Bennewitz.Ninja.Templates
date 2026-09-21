@@ -78,11 +78,23 @@ not surface.
   repos with no `.gitignore` and no `.gitattributes`. `NoDefaultExcludes` fixes it. ⚠ This is a
   *warning*: the family's `TreatWarningsAsErrors` is the only reason it surfaced here rather than in
   somebody's generated repo.
-- **`PackagePath` must be the bare root `content\`.** Both more explicit forms are wrong, and both
-  were tried: `content\%(RecursiveDir)%(Filename)%(Extension)` is correct for every file *with* an
+- **`PackagePath` must be the bare root `content/`.** Both more explicit forms are wrong, and both
+  were tried: `content/%(RecursiveDir)%(Filename)%(Extension)` is correct for every file *with* an
   extension and packs `LICENSE` to `content/bbpkg/LICENSE/bbpkg/LICENSE`, because NuGet reads a
-  final segment with no extension as a folder. `content\%(RecursiveDir)` is a folder too, so NuGet
+  final segment with no extension as a folder. `content/%(RecursiveDir)` is a folder too, so NuGet
   appends the recursive path a second time.
+- **⛔ The trailing separator must be a FORWARD slash, and this one shipped broken.** NuGet decides
+  "folder or file?" by whether `PackagePath` ends in a directory separator, and a backslash is
+  only a separator on Windows. `content\` was correct on Windows and **flattened on Linux**,
+  dropping `.template.config/` — precisely the failure the bare-root form exists to prevent,
+  reintroduced by the separator rather than the path. Every earlier observation in this section
+  was a Windows pack, which is why nothing caught it; the release runs on `ubuntu-latest`, so the
+  first real release would have published a template that installs, lists and "generates" while
+  emitting the extracted nupkg.
+  ⭐ Found by `verify-release` on this repository's **first CI run**, in the 26 seconds after the
+  branch merged. That is the whole argument for running the gate on the platform that publishes
+  rather than trusting a green local check — and the bug predates all of step 7, having been in
+  the packaging project since step 2.
 - **Both guards fail when they should.** Removing the id from `packages.push` fails
   `Every_packable_project_is_classified` *and* makes `assert-packages` exit `1` — checked without a
   pipe, since `$?` after one reports the last command's status rather than the script's.

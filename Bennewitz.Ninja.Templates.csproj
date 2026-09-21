@@ -83,11 +83,26 @@
 
       Leaving it at the root lets NuGet do the whole job, which it does correctly for extensionless
       files and dotfiles alike.
+
+      ⛔ FORWARD SLASH, and the trailing one is load-bearing. NuGet decides "folder or file?" by
+      whether PackagePath ends in a directory separator — and a backslash is only a separator on
+      Windows. `content\` therefore worked here and FLATTENED on Linux, dropping
+      .template.config/ from the package: the exact failure the block above exists to prevent,
+      reintroduced by the separator rather than by the path.
+
+      ⚠ It was invisible for as long as the only evidence was a Windows pack. The release runs on
+      ubuntu-latest, so the first real release would have published a template that installs,
+      lists and "generates" while emitting the extracted nupkg. Caught by verify-release on this
+      repository's own first CI run, which is the entire argument for running it there rather
+      than trusting a green local check.
+
+      ⓘ Forward slashes work on both platforms in Include and Exclude too, so all three are
+      spelled the same way and none of them depends on where the build happens to run.
     -->
-    <Content Include="templates\**\*"
-             Exclude="templates\**\bin\**;templates\**\obj\**"
-             PackagePath="content\" />
-    <Compile Remove="**\*" />
+    <Content Include="templates/**/*"
+             Exclude="templates/**/bin/**;templates/**/obj/**"
+             PackagePath="content/" />
+    <Compile Remove="**/*" />
   </ItemGroup>
 
 </Project>
