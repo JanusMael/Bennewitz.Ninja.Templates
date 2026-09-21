@@ -13,7 +13,7 @@ approved 2026-09-20 and frozen — drift from it is recorded here, never edited 
 | 4 · Packaging tests | **done** | `PackagingTests` + `scripts/assert-packages.cs`; both mutation-tested |
 | 5 · Both CI and release workflows | **done** | Preflight, `RELEASING` gating, `NUGET_USER` guard, nothing globbed |
 | 6 · `package-release` skill, in `bb-skills` | **done** | Approved as `*.proposed`, then installed alone — see below |
-| 7 · `verify-release` | next | Pack → local install → feed poll → published install |
+| 7 · `verify-release` | **done** | `scripts/verify-release.cs`; pack → packed-content → install-from-nupkg → generate → tree → build/test/pack. Feed poll and published install are step 8's, per the plan |
 | 8 · First release | — | Also flips `isTemplate`, currently `false` by design |
 
 Generating a repo from the template currently yields: **build clean with `-warnaserror`, 11 tests
@@ -90,6 +90,12 @@ not surface.
   from a `.nupkg` leaves two registrations and `dotnet new` fails with "Sequence contains more than
   one matching element". Uninstall until `dotnet new list` is clean, and clear
   `~/.templateengine/packages/`, before reinstalling.
+- **`dotnet run <file.cs>` binds to the PROJECT when the working directory has one.** From this
+  repository root it tries to run `Bennewitz.Ninja.Templates.csproj` and fails with *"The current
+  OutputType is 'Library'"*. `verify-release` therefore needs `dotnet run --file`, while
+  `assert-packages` does not: a generated repository keeps its projects under `src/` and `tests/`,
+  so nothing at its root captures the bare form. Both invocations are correct where they appear,
+  which is why they differ.
 
 ## The skill, as built (step 6)
 
@@ -108,12 +114,14 @@ folder. Resolving that drift is deferred.
 
 ## Next
 
-Step 7, `verify-release`. Then step 8, which is the template's own `release.yml` and first release —
-until that exists, this repository cannot publish itself, so the workflow shipped inside
-`templates/bbpkg/.github/workflows/` is guarded only by the generated repo's own tests. That is the
-weakness [the plan](plans/00001-package-template.md) names rather than hides.
+Step 8: the template's own `ci.yml` and `release.yml`, its first release, then flipping
+`isTemplate`. `verify-release` is the gate to run before that tag, and its two remaining phases —
+feed poll, then `dotnet new install` from nuget.org and assert the generated tree again — are
+step 8's to add, because neither can run against a package that does not exist yet.
 
-⚠ Still outstanding from the plan: this repository has **no `release.yml` of its own** yet, so it
-cannot publish itself. That is step 8, and until it exists the shipped workflow inside
-`templates/bbpkg/.github/workflows/` is guarded only by the generated repo's own tests — which is
-the weakness the plan names rather than hides.
+⚠ Still outstanding from the plan: this repository has **no workflows of its own** yet — no
+`ci.yml` and no `release.yml` — so it cannot publish itself and nothing runs `verify-release`
+automatically. The plan marks both as step 5, which is recorded **done** above on the strength of
+the shipped pair under `templates/bbpkg/.github/workflows/`; the template repo's own half was not
+built. Until it is, that shipped workflow is guarded only by the generated repo's own tests, which
+is the weakness [the plan](plans/00001-package-template.md) names rather than hides.
