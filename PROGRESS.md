@@ -14,7 +14,7 @@ approved 2026-09-20 and frozen — drift from it is recorded here, never edited 
 | 5 · Both CI and release workflows | **done** | Both halves. The root pair was missing until step 8 and this row wrongly read done — see the drift note |
 | 6 · `package-release` skill, in `bb-skills` | **done** | Approved as `*.proposed`, then installed alone — see below |
 | 7 · `verify-release` | **done** | `scripts/verify-release.cs`; pack → packed-content → install-from-nupkg → generate → tree → build/test/pack. Feed poll and published install are step 8's, per the plan |
-| 8 · First release | **blocked** | Workflows, lists and guards all built and green locally. The release itself waits on `NUGET_USER` and a trusted-publishing policy — both account-owner work. Also flips `isTemplate`, currently `false` |
+| 8 · First release | **done** | `2026.3.921` published 2026-09-21 and verified from the feed: installed from nuget.org, generated, tree asserted, generated repo builds/tests/packs. `isTemplate` flipped |
 
 Generating a repo from the template currently yields: **build clean with `-warnaserror`, 11 tests
 passing, pack succeeding, and `assert-packages` green** — on the first run, with no edits.
@@ -147,6 +147,19 @@ not surface.
     `The_release_workflow_globs_nothing_and_publishes_what_is_declared` fails for the shipped
     path. That is the mutation that matters: the shipped workflow never runs in this repository,
     so this test is the only thing standing between a glob and somebody's first generated release.
+- **⛔ `NUGET_USER` was a secret, and the masking is what made the first release cost six runs.**
+  The value was not a nuget.org username. Every preflight therefore returned nuget.org's
+  deliberately vague 401 — `No matching trust policy owned by user '***' was found` — with the
+  one diagnostic fact redacted by GitHub's secret masking. Six runs went into the policy fields
+  instead: Environment, scopes, creator-versus-owner, delete-and-recreate. **The policy was
+  correct from the first attempt.** Setting the value to the profile name `JanusMael` turned it
+  green immediately.
+  ⭐ It is now a repo **variable**, in both workflows and in the shipped runbook, so the error
+  names the value. A profile name is public; the secret bought no protection and cost the
+  diagnosis. The runbook's "Working the 401" list now *starts* with "read the value out loud".
+  ⚠ The trap worth naming: the push step takes `--api-key`, so "this variable is the API key" is
+  the natural reading. It is not — the key is an **output** of `NuGet/login`, minted per run. The
+  action's documented input is *"Your NuGet account username."*
 
 ## The skill, as built (step 6)
 
@@ -165,21 +178,20 @@ folder. Resolving that drift is deferred.
 
 ## Next
 
-Step 8's build is finished; its release is blocked on two things only the nuget.org account owner
-can do. **In this order:**
+All eight steps are done. `Bennewitz.Ninja.Templates 2026.3.921` is published and verified from
+the feed, and the repository is marked as a GitHub template. What remains is follow-on work, none
+of it blocking:
 
-1. **Set `NUGET_USER`** — `gh secret set NUGET_USER --repo JanusMael/Bennewitz.Ninja.Templates`.
-   The repository currently has **no secrets at all**. The value is the nuget.org **profile name**,
-   not an email, and it is the name of whoever *created* the policy.
-2. **Create the trusted-publishing policy** at <https://www.nuget.org/account/trustedpublishing>:
-   owner `JanusMael`, repository `Bennewitz.Ninja.Templates`, workflow file `release.yml`,
-   Environment **blank**, scopes allowing **new packages**, pattern `Bennewitz.Ninja.Templates`.
-   ⛔ One policy, never one per id — the rule `2026.3.920` paid for.
-3. **Preflight** — Release → *Run workflow* → version **blank**. Free, publishes nothing.
-4. **Tag.** One release per calendar day; `YYYY.Q.MMDD`.
-5. **Flip `isTemplate`** — `gh repo edit --template`. Currently `false`.
+1. **Fold the published half into `verify-release`.** It now has a proven shape — install from
+   nuget.org, generate, assert the tree, build/test/pack — but it lives in a scratch script rather
+   than in `scripts/verify-release.cs`. The local and published paths should share one
+   tree-assertion routine and differ only in where the template comes from.
+2. **Carry the `NUGET_USER` variable change to the other package repositories.**
+   `Bennewitz.Ninja.XamlQuality` still reads `secrets.NUGET_USER`. It works, so this is hygiene
+   rather than repair — but it is the repository most likely to hit the same masked 401 next.
+3. **`plans/00002`** — apply the template to `Bennewitz.Ninja.DiffView`, which has never released,
+   so it is a first release rather than a retrofit.
 
-⚠ `verify-release` still has two phases unbuilt: feed poll, then `dotnet new install` from
-nuget.org and assert the generated tree again. They are deliberately unwritten, because neither can
-be exercised against a package that does not exist — writing them now would ship untested code into
-the one script the release depends on. Add them with the first release, when they can be run.
+ⓘ The `NUGET_USER` **secret** is still present on this repository alongside the variable. Harmless
+and unread — the workflows take `vars.` — but delete it when convenient so there is one home for
+the value.

@@ -14,16 +14,25 @@ The release workflow reads both, so the declaration has exactly one home.
 
 Steps 1 and 2 are account-level and have to be done by the nuget.org account owner.
 
-### 1 · Add the `NUGET_USER` secret
+### 1 · Add the `NUGET_USER` variable
 
 ```bash
-gh secret set NUGET_USER --repo REPO_OWNER/PKG_ID
+gh variable set NUGET_USER --body <your-nuget.org-profile-name> --repo REPO_OWNER/PKG_ID
 ```
 
-It prompts for the value, so it stays out of shell history.
+⭐ **A variable, not a secret.** Trusted publishing carries nothing to leak — this is the
+nuget.org profile name the OIDC token is exchanged against, and a profile name is public. Making
+it a secret buys no protection and costs the one thing you need when it is wrong: GitHub masks a
+secret in logs, so the 401 below reads `owned by user '***'` and never tells you what was sent.
 
-⛔ **The value is the nuget.org PROFILE NAME, not an email address.** An email is accepted by the
-secret store and then fails at login, where the error points at the policy rather than at the value.
+⛔ **The value is the nuget.org PROFILE NAME, not an email address.** An email is accepted and
+then fails at login, where the error points at the policy rather than at the value.
+
+⛔ **It is NOT an API key.** The easiest mistake to make, because the push step below takes
+`--api-key` — but that key is an **output** of `NuGet/login`, minted per run and expiring. The
+action's documented input is *"Your NuGet account username."* A key here produces the same 401 as
+every other wrong value; if you generated one to try it, revoke it, because this setup exists so
+that no long-lived key is needed at all.
 
 ⛔ **It is the profile name of whoever CREATED the policy**, which is not always whoever owns the
 package. They differ whenever a policy is created under an organization.
@@ -155,8 +164,18 @@ policy first, since a rerun against an unchanged policy fails identically.
 nuget.org returns the same message whichever field is wrong and never says which, so change one
 thing at a time and re-run the preflight, which costs nothing:
 
-1. **`NUGET_USER` is the profile name**, not an email, and is the account that **created** the policy.
-2. **The policy owner is the individual account**, not an organization.
-3. **The scope allows publishing new packages.**
-4. **A single policy's patterns cover every id** in `packages.push`.
-5. **The policy shows no pending or inactive warning** in the UI.
+1. **Read `NUGET_USER` out loud before anything else.** `gh variable get NUGET_USER`. It is a
+   variable precisely so you can: the value is what nuget.org is failing to find, and every other
+   step below is guesswork until you have looked at it.
+2. **It is the profile name** — not an email, and **not an API key** (see step 1 of the setup).
+   It is the account that **created** the policy, which is not always the one that owns it.
+3. **The policy owner is the individual account**, not an organization.
+4. **The scope allows publishing new packages.**
+5. **A single policy's patterns cover every id** in `packages.push`.
+6. **The policy shows no pending or inactive warning** in the UI.
+
+⚠ **Order matters, and this list used to start at what is now step 2.** On 2026-09-21 the
+`Bennewitz.Ninja.Templates` first release burned six preflight runs working down the policy
+fields — Environment, scopes, creator-versus-owner, delete-and-recreate — while the actual fault
+was the value itself, unreadable because it was stored as a secret. The policy was correct the
+whole time. Look at the value first.
