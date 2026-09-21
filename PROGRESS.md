@@ -96,6 +96,13 @@ not surface.
   `assert-packages` does not: a generated repository keeps its projects under `src/` and `tests/`,
   so nothing at its root captures the bare form. Both invocations are correct where they appear,
   which is why they differ.
+- **This repository's own `Directory.Build.props` still carried XamlQuality's identity** — both
+  `PackageProjectUrl` and `RepositoryUrl` pointed at `Bennewitz.Ninja.XamlQuality`, and
+  `AssemblyProduct` read `XamlQuality`. The shipped props under `templates/bbpkg/` were always
+  correct, tokenised as `REPO_OWNER`/`PKG_ID`; this was the template repo's own copy-paste
+  leftover. Found by `verify-release` on its first run, before step 8 could make it permanent.
+  Fixed, and the check compares the packed nuspec against `git remote get-url origin` rather than
+  a constant, so a rename cannot rot it.
 
 ## The skill, as built (step 6)
 
