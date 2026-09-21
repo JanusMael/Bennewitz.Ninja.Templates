@@ -8,24 +8,18 @@
     <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.914" />
   </ItemGroup>
 
-  <ItemGroup Label="Tool">
-    <!-- The CLI face only. ⛔ The rules LIBRARY takes no package reference at all, and that is a
-         contract rather than an accident: a quality analyser that drags dependencies into a
-         consumer's test project is one people stop referencing. -->
-    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta7.25380.108" />
-  </ItemGroup>
-
   <ItemGroup Label="Testing">
-    <!-- ⚠ xunit.v3 rather than MSTest, and that is a porting decision rather than a preference.
-         The ThemeAudit rules and their fourteen test files came from a repository that uses
-         xunit; matching it let those tests move VERBATIM. Converting them instead would have
-         meant rewriting the one thing that proves the ported analysis still behaves — which is
-         the worst possible file to rewrite during a move.
-         ⓘ The rules library itself references no test framework at all, so this choice binds
-         nobody: a consumer asserts on findings with whatever runner they already use. -->
+    <!-- xunit.v3 on Microsoft.Testing.Platform — see global.json. The VSTest bridge packages are
+         deliberately absent; TrxReport is what gives CI its .trx files.
+
+         ⭐ The same framework the template SHIPS, and that is the reason rather than a preference:
+         this repository's own tests and the skeleton's under templates/bbpkg/ are read side by
+         side constantly, and one of them switching idiom would make every comparison harder than
+         the choice is worth. -->
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
-    <!-- Same Microsoft.Testing.Platform line as xunit.v3 3.2.2 (1.9.1); a newer TrxReport pins
-         the platform above what xunit's bundled MSBuild extension can load. -->
+    <!-- ⚠ Same Microsoft.Testing.Platform line as xunit.v3 3.2.2 (1.9.1). A NEWER TrxReport pins
+         the platform above what xunit's bundled MSBuild extension can load, and the failure reads
+         as an unrelated loader error. -->
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
   </ItemGroup>
 </Project>

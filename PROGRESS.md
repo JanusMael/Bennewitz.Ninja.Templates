@@ -103,6 +103,16 @@ not surface.
   leftover. Found by `verify-release` on its first run, before step 8 could make it permanent.
   Fixed, and the check compares the packed nuspec against `git remote get-url origin` rather than
   a constant, so a rename cannot rot it.
+- **The same leftover was in `Directory.Packages.props`, and grep did not find it.** A
+  `System.CommandLine` `PackageVersion` nothing here references, under a comment about "the rules
+  LIBRARY", beside an xunit comment explaining the ThemeAudit port. Both describe XamlQuality
+  without ever writing the word, so a search for `XamlQuality` — which is what confirmed the
+  `Directory.Build.props` fix had no twins — came back clean. It was found by reading the file.
+  ⚠ **The lesson is about the search, not the file:** copy-paste residue is identifiable by what
+  it *describes*, and a string search only finds residue that names its origin. Removed; the two
+  genuinely-used entries and the TrxReport version-pin rationale stayed. Verified by deleting
+  every `bin/` and `obj/` outside `templates/` and restoring from scratch, because an existing
+  `obj/` caches the dependency graph and would have hidden a pin that was doing work.
 - **`dotnet test --nologo` is rejected under Microsoft.Testing.Platform.** `global.json` selects
   MTP, which forwards unrecognised switches to the test app; xunit's runner answers
   *"Unknown option '--nologo'"* and the run ends **"Zero tests ran"**. It does exit non-zero
@@ -152,9 +162,3 @@ can do. **In this order:**
 nuget.org and assert the generated tree again. They are deliberately unwritten, because neither can
 be exercised against a package that does not exist — writing them now would ship untested code into
 the one script the release depends on. Add them with the first release, when they can be run.
-
-⚠ **`Directory.Packages.props` carries more XamlQuality residue**, not yet fixed: a
-`System.CommandLine` `PackageVersion` that nothing in this repository references, and comments
-describing the ThemeAudit rules port. Inert — an unreferenced `PackageVersion` does nothing — but
-it is the same copy-paste leftover as the one `verify-release` caught in `Directory.Build.props`,
-and misleading documentation in a repository whose whole job is to be copied.
