@@ -10,11 +10,11 @@ approved 2026-09-20 and frozen — drift from it is recorded here, never edited 
 | 1 · Repo + approved plan | **done** | `ca2552f`, the plan alone |
 | 2 · Packaging project + skeleton | **done** | Packs clean; layout verified inside the `.nupkg` |
 | 3 · `template.json` | **done** | Install-from-nupkg → generate → names verified |
-| 4 · Packaging tests | **done** | `PackagingTests` + `scripts/assert-packages.cs`; both mutation-tested |
-| 5 · Both CI and release workflows | **done** | Preflight, `RELEASING` gating, `NUGET_USER` guard, nothing globbed |
+| 4 · Packaging tests | **done** | Both halves. Shipped: `PackagingTests` + `scripts/assert-packages.cs`. Root: `tests/Templates.Tests`, 13 tests, asserting **both** release workflows by path. Mutation-tested |
+| 5 · Both CI and release workflows | **done** | Both halves. The root pair was missing until step 8 and this row wrongly read done — see the drift note |
 | 6 · `package-release` skill, in `bb-skills` | **done** | Approved as `*.proposed`, then installed alone — see below |
 | 7 · `verify-release` | **done** | `scripts/verify-release.cs`; pack → packed-content → install-from-nupkg → generate → tree → build/test/pack. Feed poll and published install are step 8's, per the plan |
-| 8 · First release | — | Also flips `isTemplate`, currently `false` by design |
+| 8 · First release | **blocked** | Workflows, lists and guards all built and green locally. The release itself waits on `NUGET_USER` and a trusted-publishing policy — both account-owner work. Also flips `isTemplate`, currently `false` |
 
 Generating a repo from the template currently yields: **build clean with `-warnaserror`, 11 tests
 passing, pack succeeding, and `assert-packages` green** — on the first run, with no edits.
@@ -103,6 +103,19 @@ not surface.
   leftover. Found by `verify-release` on its first run, before step 8 could make it permanent.
   Fixed, and the check compares the packed nuspec against `git remote get-url origin` rather than
   a constant, so a rename cannot rot it.
+- **`dotnet test --nologo` is rejected under Microsoft.Testing.Platform.** `global.json` selects
+  MTP, which forwards unrecognised switches to the test app; xunit's runner answers
+  *"Unknown option '--nologo'"* and the run ends **"Zero tests ran"**. It does exit non-zero
+  (5), so CI fails rather than passing vacuously — but the message names the option, not the
+  platform, so it reads like a typo rather than a runner difference. Neither workflow passes it.
+- **The root packaging tests fail when they should**, checked rather than assumed, one mutation at
+  a time with everything else restored in between:
+  - id removed from `packages.push` → `Every_packable_project_is_classified` fails, naming
+    `Bennewitz.Ninja.Templates`; 12 others still pass.
+  - a `*.nupkg` glob put into the **shipped** `gh release create` →
+    `The_release_workflow_globs_nothing_and_publishes_what_is_declared` fails for the shipped
+    path. That is the mutation that matters: the shipped workflow never runs in this repository,
+    so this test is the only thing standing between a glob and somebody's first generated release.
 
 ## The skill, as built (step 6)
 
@@ -121,14 +134,27 @@ folder. Resolving that drift is deferred.
 
 ## Next
 
-Step 8: the template's own `ci.yml` and `release.yml`, its first release, then flipping
-`isTemplate`. `verify-release` is the gate to run before that tag, and its two remaining phases —
-feed poll, then `dotnet new install` from nuget.org and assert the generated tree again — are
-step 8's to add, because neither can run against a package that does not exist yet.
+Step 8's build is finished; its release is blocked on two things only the nuget.org account owner
+can do. **In this order:**
 
-⚠ Still outstanding from the plan: this repository has **no workflows of its own** yet — no
-`ci.yml` and no `release.yml` — so it cannot publish itself and nothing runs `verify-release`
-automatically. The plan marks both as step 5, which is recorded **done** above on the strength of
-the shipped pair under `templates/bbpkg/.github/workflows/`; the template repo's own half was not
-built. Until it is, that shipped workflow is guarded only by the generated repo's own tests, which
-is the weakness [the plan](plans/00001-package-template.md) names rather than hides.
+1. **Set `NUGET_USER`** — `gh secret set NUGET_USER --repo JanusMael/Bennewitz.Ninja.Templates`.
+   The repository currently has **no secrets at all**. The value is the nuget.org **profile name**,
+   not an email, and it is the name of whoever *created* the policy.
+2. **Create the trusted-publishing policy** at <https://www.nuget.org/account/trustedpublishing>:
+   owner `JanusMael`, repository `Bennewitz.Ninja.Templates`, workflow file `release.yml`,
+   Environment **blank**, scopes allowing **new packages**, pattern `Bennewitz.Ninja.Templates`.
+   ⛔ One policy, never one per id — the rule `2026.3.920` paid for.
+3. **Preflight** — Release → *Run workflow* → version **blank**. Free, publishes nothing.
+4. **Tag.** One release per calendar day; `YYYY.Q.MMDD`.
+5. **Flip `isTemplate`** — `gh repo edit --template`. Currently `false`.
+
+⚠ `verify-release` still has two phases unbuilt: feed poll, then `dotnet new install` from
+nuget.org and assert the generated tree again. They are deliberately unwritten, because neither can
+be exercised against a package that does not exist — writing them now would ship untested code into
+the one script the release depends on. Add them with the first release, when they can be run.
+
+⚠ **`Directory.Packages.props` carries more XamlQuality residue**, not yet fixed: a
+`System.CommandLine` `PackageVersion` that nothing in this repository references, and comments
+describing the ThemeAudit rules port. Inert — an unreferenced `PackageVersion` does nothing — but
+it is the same copy-paste leftover as the one `verify-release` caught in `Directory.Build.props`,
+and misleading documentation in a repository whose whole job is to be copied.
