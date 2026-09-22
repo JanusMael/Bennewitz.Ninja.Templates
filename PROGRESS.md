@@ -182,11 +182,24 @@ All eight steps are done. `Bennewitz.Ninja.Templates 2026.3.921` is published an
 the feed, and the repository is marked as a GitHub template. What remains is follow-on work, none
 of it blocking:
 
-1. **Carry the `NUGET_USER` variable change to the other package repositories.**
-   `Bennewitz.Ninja.XamlQuality` still reads `secrets.NUGET_USER`. It works, so this is hygiene
-   rather than repair — but it is the repository most likely to hit the same masked 401 next.
-2. **`plans/00002`** — apply the template to `Bennewitz.Ninja.DiffView`, which has never released,
-   so it is a first release rather than a retrofit.
+1. ✅ **`NUGET_USER` carried to `Bennewitz.Ninja.XamlQuality`** on 2026-09-21, and verified by a
+   real credential preflight rather than by reading the diff: the run logged the profile name in
+   plain text, which as a secret had printed `***`. ⓘ That run also proved a trusted-publishing
+   policy is **not branch-scoped** — it matched from a feature branch — so credentials can be
+   proven before anything is tagged.
+2. **[`plans/00002`](plans/00002-layerededitors-becomes-two-package-repositories.md) is approved**
+   — the first application of this template, to the shared libraries in `JanusMael/ClaudeForge`.
+   Seven ids across two new repositories, `Bennewitz.Ninja.AppServices` and
+   `Bennewitz.Ninja.ScopedEditors`. Its evidence is
+   [`docs/layered-editors-package-split.md`](docs/layered-editors-package-split.md).
+
+⛔ **This entry used to reserve `plans/00002` for `Bennewitz.Ninja.DiffView`, and that was wrong
+twice over.** DiffView stopped being the interesting case when its ThemeAudit tool moved to
+XamlQuality: it now packs two ordinary ids and names both explicitly, so it would never exercise
+the `packages.local` half the template exists for. ClaudeForge does — eleven packable projects
+across three families, one of which must not reach nuget.org. ⚠ DiffView is handled by a session on
+another machine and is **not** tracked here; if it ever needs a plan it takes the next free number,
+not this one.
 
 ⓘ The `NUGET_USER` **secret** is still present on this repository alongside the variable. Harmless
 and unread — the workflows take `vars.` — but delete it when convenient so there is one home for
