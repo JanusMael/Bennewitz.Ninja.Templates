@@ -198,15 +198,34 @@ of it blocking:
    ⛔ **But `2026.3.923` shipped without `IsTrimmable`, and the gap started in THIS repository** —
    see the drift record. Both package repositories are fixed and ship `2026.3.924` on 2026-09-24.
 
-   ⚠ **`2026.3.924` carries three more changes, each verified against a control that fires:**
+   ⚠ **`2026.3.924` carries more than the trim fix, each change verified against a control that
+   fires.** In the packages:
    - **The two `.Avalonia` packages become `.AvaloniaUI`** — id, assembly, namespace and folder —
      because `Bennewitz.Ninja.AssemblyQuality`'s AQ1004 forbids a namespace segment that shadows a
      referenced assembly's root. The `.Avalonia` ids are deprecated in favour of the successors.
+     ⚠ Every `avares://` URI a host wrote changes with the assembly name, and a stale one is not
+     silent: a build error in AXAML, and an exception at layout in a single-family `FontFamily`.
    - **No `CancellationToken` has a default** (AQ1001), so `ShareTextAsync`'s `uri` became required
-     as well.
+     as well, and `ShareOutcome` gained `Cancelled`.
+   - **`AvaloniaDiagnosticsOptions` gains `ConfigureLogger` and `EventListener`**, so a host extends
+     the log pipeline and receives events without reaching into the library. The jmui session wires
+     ClaudeForge's F12 windows through them.
+
+   In the repositories, guarding what ships:
    - **The original test suites were ported**, MSTest 4 → xunit v3: 92 cases into AppServices and
      219 into ScopedEditors, with class-by-class case-count parity against the originals. The plan's
-     scope said "moving the projects and their tests"; step 2 moved only the projects.
+     scope said "moving the projects and their tests"; step 2 moved only the projects. **17 more**
+     followed into AppServices (`cfb5b14`): `DefaultShareService` and the two dialogs had been
+     tested only from ClaudeForge, through public API, so the scan that sized the port missed them.
+   - **The family's AssemblyQuality rules run as tests** over every shipped assembly in both
+     repositories, so the two rules `2026.3.923` broke would now fail CI.
+   - **ScopedEditors' CI publishes every assembly trimmed and ROOTED**, and fails if ILLink's
+     warnings change in either direction (`5b08b46`). It is the only check that reads compiled XAML.
+   - **ScopedEditors lays out text in every bundled font by its documented URI** (`ab442f7`).
+
+   What was learned along the way is in XamlQuality's
+   [`docs/avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md)
+   (`d80e53b`): the library side of trim safety, and the four ways an `avares://` URI fails.
 3. ✅ **The trim fix is released as `Bennewitz.Ninja.Templates 2026.3.923`**, 2026-09-23, and
    verified from the feed rather than from the green run. `verify-release --published 2026.3.923`
    installed it FROM NUGET.ORG, generated a repository and built, tested and packed it — the tree
@@ -215,10 +234,11 @@ of it blocking:
    `src/Directory.Build.props` with `IsTrimmable` and `EnableTrimAnalyzer` both `true`, and the
    shipped `TrimmableTests`. ⚠ A repository generated from `2026.3.922` or earlier lacks all three
    and has to add `src/Directory.Build.props` by hand.
-4. **Stage two belongs to the jmui session**, scoped to ClaudeForge's consumers first with the
-   AgentForge side after. ⚠ AgentForge still imports the LayeredEditors namespaces, so the first pass
-   repoints ClaudeForge at the packages and deletes nothing; the projects come out only once both
-   sides have moved.
+4. **Stage two belongs to the jmui session**: its `plans/00005` in OpenForge2k, which its
+   maintainer widened to ClaudeForge and AgentForge together. As of 2026-09-23 it reports steps 1–5
+   done in code against local `2026.3.924` packs, with the F12 hook adopted. Its next steps, by its
+   own account: check ScopedEditors' ported suite against the original, then delete the
+   LayeredEditors family. It gets the flat-container proof once `.924` is published.
 
 ⛔ **This entry used to reserve `plans/00002` for `Bennewitz.Ninja.DiffView`, and that was wrong
 twice over.** DiffView stopped being the interesting case when its ThemeAudit tool moved to
@@ -302,7 +322,7 @@ reports zero warnings under `src/` in both repositories, proven to be running by
 `Type.GetType(string)` that reddened with `IL2057`. ⭐ And because **the analyser cannot see compiled
 XAML** — XamlIl weaves that IL in after Roslyn — an ILLink trimmed publish of the *published*
 packages, every assembly rooted with `TrimmerRootAssembly` and `TrimmerSingleWarn=false`, reported
-nothing from them; its only warning was one `IL2070` inside `Avalonia.Controls.DataGrid`.
+nothing from them; its only warnings were three distinct `IL2070`s in one `Avalonia.Controls.DataGrid` method.
 
 What was missing is the DECLARATION, and it travels in the package: `IsTrimmable` compiles to
 `[AssemblyMetadata("IsTrimmable", "True")]`, and an app publishing with `TrimMode=partial` trims
