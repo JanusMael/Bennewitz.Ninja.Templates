@@ -193,6 +193,27 @@ of it blocking:
    `Bennewitz.Ninja.ScopedEditors`. Its evidence is
    [`docs/layered-editors-package-split.md`](docs/layered-editors-package-split.md).
 
+   **Standing on 2026-09-23, verified against `gh`:** both repositories exist, public, default
+   branch `main`, each carrying `ci.yml` and `release.yml`. Both trusted-publishing policies are
+   created with the correct patterns — `Bennewitz.Ninja.AppServices*` without a dot so it covers the
+   bare stem, `Bennewitz.Ninja.ScopedEditors.*` with one so it cannot authorise a bare-stem id —
+   owner `JanusMael`, workflow `release.yml`, which matches what is in both repos.
+   `NUGET_USER=JanusMael` is set as a **variable** on both.
+
+   ⛔ **The policies expire.** Both read *"Use within 7 day(s) to keep it permanently active"*,
+   created 2026-09-23, so the window closes around **2026-09-30**. A first successful publish inside
+   it makes them permanent, and nuget.org offers "Activate for 7 days" to restart the window — so a
+   miss is recoverable, but it should not be discovered at tag time.
+
+   ⛔ **Step 1 of the plan is not what the plan says.** The repositories were made with GitHub's
+   *Use this template* on THIS repository rather than with `dotnet new bbpkg`, so each is a full copy
+   of it — `templates/`, `plans/`, `scripts/`, and a `Bennewitz.Ninja.Templates.csproj` declaring
+   `<PackageId>Bennewitz.Ninja.Templates</PackageId>`. ⚠ Running `release.yml` in either as it stands
+   would attempt to publish an id that already exists and belongs here; the policies would reject it
+   `403`, which is them working, but the csproj must be replaced before any release. Step 1 is
+   therefore **strip, then populate** — and the repositories must not be deleted and recreated,
+   because the policies bind to these names.
+
 ⛔ **This entry used to reserve `plans/00002` for `Bennewitz.Ninja.DiffView`, and that was wrong
 twice over.** DiffView stopped being the interesting case when its ThemeAudit tool moved to
 XamlQuality: it now packs two ordinary ids and names both explicitly, so it would never exercise
