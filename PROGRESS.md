@@ -197,6 +197,16 @@ of it blocking:
 
    ⛔ **But `2026.3.923` shipped without `IsTrimmable`, and the gap started in THIS repository** —
    see the drift record. Both package repositories are fixed and ship `2026.3.924` on 2026-09-24.
+
+   ⚠ **`2026.3.924` carries three more changes, each verified against a control that fires:**
+   - **The two `.Avalonia` packages become `.AvaloniaUI`** — id, assembly, namespace and folder —
+     because `Bennewitz.Ninja.AssemblyQuality`'s AQ1004 forbids a namespace segment that shadows a
+     referenced assembly's root. The `.Avalonia` ids are deprecated in favour of the successors.
+   - **No `CancellationToken` has a default** (AQ1001), so `ShareTextAsync`'s `uri` became required
+     as well.
+   - **The original test suites were ported**, MSTest 4 → xunit v3: 92 cases into AppServices and
+     219 into ScopedEditors, with class-by-class case-count parity against the originals. The plan's
+     scope said "moving the projects and their tests"; step 2 moved only the projects.
 3. ✅ **The trim fix is released as `Bennewitz.Ninja.Templates 2026.3.923`**, 2026-09-23, and
    verified from the feed rather than from the green run. `verify-release --published 2026.3.923`
    installed it FROM NUGET.ORG, generated a repository and built, tested and packed it — the tree
