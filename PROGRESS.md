@@ -235,10 +235,13 @@ of it blocking:
    shipped `TrimmableTests`. ⚠ A repository generated from `2026.3.922` or earlier lacks all three
    and has to add `src/Directory.Build.props` by hand.
 4. **Stage two belongs to the jmui session**: its `plans/00005` in OpenForge2k, which its
-   maintainer widened to ClaudeForge and AgentForge together. As of 2026-09-23 it reports steps 1–5
-   done in code against local `2026.3.924` packs, with the F12 hook adopted. Its next steps, by its
-   own account: check ScopedEditors' ported suite against the original, then delete the
-   LayeredEditors family. It gets the flat-container proof once `.924` is published.
+   maintainer widened to ClaudeForge and AgentForge together. As of 2026-09-23 it reports steps 1–8
+   done on `feat/scopededitors-stage-two` (`de22e55`, pushed), with the F12 hook adopted. Step 9
+   waits for `.924` on nuget.org and gets the flat-container proof once that is published.
+   ⚠ It also reports four markup guards that covered the package's AXAML from ClaudeForge and now
+   cover nothing: AXAML accessibility, `LE.*` token integrity, the danger banner and severity-glyph
+   sizing. Porting them into ScopedEditors is open, and one half of the token check needs a decision:
+   consumers reference `LE.*` keys the package itself never uses.
 
 ⛔ **This entry used to reserve `plans/00002` for `Bennewitz.Ninja.DiffView`, and that was wrong
 twice over.** DiffView stopped being the interesting case when its ThemeAudit tool moved to
