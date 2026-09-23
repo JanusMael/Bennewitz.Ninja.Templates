@@ -200,10 +200,11 @@ of it blocking:
 
    ⚠ **`2026.3.924` carries more than the trim fix, each change verified against a control that
    fires.** In the packages:
-   - **The two `.Avalonia` packages become `.AvaloniaUI`** — id, assembly, namespace and folder —
+   - **Inside the two Avalonia packages, the assembly and namespaces become `.AvaloniaUI`**,
      because `Bennewitz.Ninja.AssemblyQuality`'s AQ1004 forbids a namespace segment that shadows a
-     referenced assembly's root. Once `.924` is published, the `.Avalonia` ids are deprecated in
-     favour of the successors. ⚠ Every `avares://` URI a host wrote changes with the assembly name,
+     referenced assembly's root. The package ids keep `.Avalonia`: renamed at first, they were put
+     back the same evening before anything was published, so `.924` is the next version of the same
+     packages and nothing is deprecated. ⚠ Every `avares://` URI a host wrote changes with the assembly name,
      and a stale one is not silent: a build error in AXAML, and an exception at layout in a
      single-family `FontFamily`. Every rename since the split, with its reason, is in
      [`docs/layered-editors-renames.md`](docs/layered-editors-renames.md).
