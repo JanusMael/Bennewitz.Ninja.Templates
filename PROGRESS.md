@@ -222,6 +222,64 @@ across three families, one of which must not reach nuget.org. ⚠ DiffView is ha
 another machine and is **not** tracked here; if it ever needs a plan it takes the next free number,
 not this one.
 
-ⓘ The `NUGET_USER` **secret** is still present on this repository alongside the variable. Harmless
-and unread — the workflows take `vars.` — but delete it when convenient so there is one home for
-the value.
+✅ The `NUGET_USER` **secret is gone** from this repository and from XamlQuality, AppServices and
+ScopedEditors — checked 2026-09-23, all four report no secrets and a `NUGET_USER` variable. This
+entry previously said it was still present; that was stale.
+
+## Drift from `plans/00002`, recorded during steps 1–3
+
+The plan is approved and frozen, so this is where its drift lives. Steps 1, 2 and 3 are done in both
+repositories — AppServices at `0928c61`, ScopedEditors at `582a68e`, CI green on both, seven ids
+packing and no bare `Bennewitz.Ninja.ScopedEditors`.
+
+**Step 1 was "strip and populate", not "generate".** The repositories were created with GitHub's
+*Use this template* rather than `dotnet new bbpkg`, so each arrived as a full copy of this one,
+carrying a root `Bennewitz.Ninja.Templates.csproj`. They were populated from a freshly generated
+`bbpkg` tree rather than stripped by hand, because generation emits a correctly tokenised
+`Directory.Build.props` and stripping inherits the identity leftovers this repository has already
+paid for twice. ⭐ **`verify-release` caught the inherited leftover on its own** — CI was red on the
+initial commit of both repositories, reporting packed metadata pointing at
+`Bennewitz.Ninja.Templates`. The check written in step 7 here, firing in a different repository,
+before anything was released.
+
+**⛔ The plan is wrong about `LiveLogWindowSink`, and it changed what ships.** The Out section states
+it "ships without the window it is named after, and never referenced one". It does reference one:
+`LiveLogWindowSink.Emit` calls `LiveLogWindow.EnqueueLog` directly, and the type is `internal`, so it
+can neither ship without the window nor cross an assembly boundary to whoever wires it. The split
+document's claim that `AppServices.Logging` touches "no window, no Avalonia" is false for that one
+file and true for `BucketedRollingFileSink`.
+
+Resolved by **severing the edge** rather than publishing the held-back windows.
+`AvaloniaDiagnostics` was the only shipping type reaching into that cluster — six reaches and three
+options — so `ToggleLiveLogWindow`, `ToggleEventTailWindow`, the sink wiring, the window
+construction and `EnableLiveLogWindow` / `LiveLogWindowTitle` / `EnableEventTailWindow` /
+`EventTailWindowTitle` / `EventTailLaunchLabel` are gone from the first release. Host-fed events keep
+their rolling **file**, which never needed a window. `LiveLogWindow`, `LiveTailWindow`, `HeaderLink`
+and the sink stay in OpenForge2k.
+
+**⚠ `AppServices.Avalonia` references `AppServices`, an edge the split document's graph does not
+draw.** `ShowNativeFatalError` wraps `NativeErrorDialog`, a T0 implementation, so the edge already
+existed in the code and the graph missed it. Kept rather than dropping the wrapper: T3 → T0 is the
+natural direction.
+
+**⛔ The bundled fonts nearly did not travel, and nothing would have failed.**
+`ScopedEditors.Avalonia` embeds five JetBrains Mono faces and their OFL licence as
+`AvaloniaResource`, ~1.2 MB, and a move carrying only `.cs` and `.axaml` drops them. A bad
+`avares://` path **falls back to a default face rather than throwing**, which is the precise failure
+bundling exists to prevent. Verified after packing by reading the `!AvaloniaResources` blob out of
+the assembly. ⚠ The assembly name changed with the rename, so a consumer's URI must change with it —
+`ClaudeForge/App.axaml` still says `avares://LayeredEditors.Avalonia/Assets/Fonts`. Stage two's work.
+
+**⚠ `GenerateDocumentationFile` is on here and was off in OpenForge2k**, so roughly 250 public
+members needed comments on arrival. Overrides and `IValueConverter` members took `<inheritdoc/>`;
+accessors, singletons and constructors took written summaries. ⭐ The compiler caught three that
+would otherwise have shipped **wrong**: a generated `param` tag naming a parameter that does not
+exist, a stale `paramref` on `BaseSizeFrom` pointing at a `culture` parameter it never had, and a
+styled property documented as an attached one.
+
+⭐ **The packaging guard failed before it passed**, naming all three unclassified ids in AppServices
+and refusing them. That is step 6 arriving early because a test demanded it.
+
+**Decided 2026-09-23:** the trusted-publishing expiry clock is treated as **non-binding** —
+reactivation is a UI click, while a published version is permanent — so steps 4–8 are done properly
+rather than compressed to beat it.
