@@ -202,9 +202,11 @@ of it blocking:
    fires.** In the packages:
    - **The two `.Avalonia` packages become `.AvaloniaUI`** — id, assembly, namespace and folder —
      because `Bennewitz.Ninja.AssemblyQuality`'s AQ1004 forbids a namespace segment that shadows a
-     referenced assembly's root. The `.Avalonia` ids are deprecated in favour of the successors.
-     ⚠ Every `avares://` URI a host wrote changes with the assembly name, and a stale one is not
-     silent: a build error in AXAML, and an exception at layout in a single-family `FontFamily`.
+     referenced assembly's root. Once `.924` is published, the `.Avalonia` ids are deprecated in
+     favour of the successors. ⚠ Every `avares://` URI a host wrote changes with the assembly name,
+     and a stale one is not silent: a build error in AXAML, and an exception at layout in a
+     single-family `FontFamily`. Every rename since the split, with its reason, is in
+     [`docs/layered-editors-renames.md`](docs/layered-editors-renames.md).
    - **No `CancellationToken` has a default** (AQ1001), so `ShareTextAsync`'s `uri` became required
      as well, and `ShareOutcome` gained `Cancelled`.
    - **`AvaloniaDiagnosticsOptions` gains `ConfigureLogger` and `EventListener`**, so a host extends
