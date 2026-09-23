@@ -197,11 +197,14 @@ of it blocking:
 
    ⛔ **But `2026.3.923` shipped without `IsTrimmable`, and the gap started in THIS repository** —
    see the drift record. Both package repositories are fixed and ship `2026.3.924` on 2026-09-24.
-3. **This template is fixed but NOT released.** `templates/bbpkg/src/Directory.Build.props` now sets
-   `IsTrimmable` and `EnableTrimAnalyzer`, a shipped `TrimmableTests` reads the mark off the compiled
-   assembly, and `verify-release` requires the file in a generated tree. ⚠ Until a release,
-   `dotnet new install Bennewitz.Ninja.Templates` still resolves `2026.3.922`, which has none of the
-   three — so a repository generated before then inherits the gap.
+3. ✅ **The trim fix is released as `Bennewitz.Ninja.Templates 2026.3.923`**, 2026-09-23, and
+   verified from the feed rather than from the green run. `verify-release --published 2026.3.923`
+   installed it FROM NUGET.ORG, generated a repository and built, tested and packed it — the tree
+   check now requires `src/Directory.Build.props`, so passing it proves the published package carries
+   the file. The `.nupkg` downloaded from the flat-container was also read directly:
+   `src/Directory.Build.props` with `IsTrimmable` and `EnableTrimAnalyzer` both `true`, and the
+   shipped `TrimmableTests`. ⚠ A repository generated from `2026.3.922` or earlier lacks all three
+   and has to add `src/Directory.Build.props` by hand.
 4. **Stage two belongs to the jmui session**, scoped to ClaudeForge's consumers first with the
    AgentForge side after. ⚠ AgentForge still imports the LayeredEditors namespaces, so the first pass
    repoints ClaudeForge at the packages and deletes nothing; the projects come out only once both
