@@ -308,6 +308,9 @@ try
         Path.Combine("docs", "publishing.md"),
         Path.Combine(".github", "workflows", "ci.yml"),
         Path.Combine(".github", "workflows", "release.yml"),
+        // ⛔ Carries IsTrimmable. Its absence builds, tests and packs perfectly well, and ships every
+        // assembly unmarked, so a tree check is the earliest place it can fail loudly.
+        Path.Combine("src", "Directory.Build.props"),
         Path.Combine("src", GeneratedStem, $"{GeneratedStem}.csproj"),
         Path.Combine("tests", $"{GeneratedStem}.Tests", $"{GeneratedStem}.Tests.csproj"),
     ];

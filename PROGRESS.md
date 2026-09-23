@@ -187,32 +187,25 @@ of it blocking:
    plain text, which as a secret had printed `***`. ⓘ That run also proved a trusted-publishing
    policy is **not branch-scoped** — it matched from a feature branch — so credentials can be
    proven before anything is tagged.
-2. **[`plans/00002`](plans/00002-layerededitors-becomes-two-package-repositories.md) is approved**
-   — the first application of this template, to the shared libraries in `JanusMael/ClaudeForge`.
-   Seven ids across two new repositories, `Bennewitz.Ninja.AppServices` and
-   `Bennewitz.Ninja.ScopedEditors`. Its evidence is
-   [`docs/layered-editors-package-split.md`](docs/layered-editors-package-split.md).
+2. ✅ **[`plans/00002`](plans/00002-layerededitors-becomes-two-package-repositories.md) is
+   complete** — all nine steps, 2026-09-23. Seven ids published at `2026.3.923` across
+   `Bennewitz.Ninja.AppServices` (4) and `Bennewitz.Ninja.ScopedEditors` (3), verified from the
+   nuget.org flat-container rather than from a green run, and consumed from a project whose
+   `nuget.config` names only nuget.org, so they resolve with no PAT anywhere. The publish landed
+   inside the policies' seven-day window, which by nuget.org's own description makes both permanent;
+   not re-checked in the UI. Drift is recorded below.
 
-   **Standing on 2026-09-23, verified against `gh`:** both repositories exist, public, default
-   branch `main`, each carrying `ci.yml` and `release.yml`. Both trusted-publishing policies are
-   created with the correct patterns — `Bennewitz.Ninja.AppServices*` without a dot so it covers the
-   bare stem, `Bennewitz.Ninja.ScopedEditors.*` with one so it cannot authorise a bare-stem id —
-   owner `JanusMael`, workflow `release.yml`, which matches what is in both repos.
-   `NUGET_USER=JanusMael` is set as a **variable** on both.
-
-   ⛔ **The policies expire.** Both read *"Use within 7 day(s) to keep it permanently active"*,
-   created 2026-09-23, so the window closes around **2026-09-30**. A first successful publish inside
-   it makes them permanent, and nuget.org offers "Activate for 7 days" to restart the window — so a
-   miss is recoverable, but it should not be discovered at tag time.
-
-   ⛔ **Step 1 of the plan is not what the plan says.** The repositories were made with GitHub's
-   *Use this template* on THIS repository rather than with `dotnet new bbpkg`, so each is a full copy
-   of it — `templates/`, `plans/`, `scripts/`, and a `Bennewitz.Ninja.Templates.csproj` declaring
-   `<PackageId>Bennewitz.Ninja.Templates</PackageId>`. ⚠ Running `release.yml` in either as it stands
-   would attempt to publish an id that already exists and belongs here; the policies would reject it
-   `403`, which is them working, but the csproj must be replaced before any release. Step 1 is
-   therefore **strip, then populate** — and the repositories must not be deleted and recreated,
-   because the policies bind to these names.
+   ⛔ **But `2026.3.923` shipped without `IsTrimmable`, and the gap started in THIS repository** —
+   see the drift record. Both package repositories are fixed and ship `2026.3.924` on 2026-09-24.
+3. **This template is fixed but NOT released.** `templates/bbpkg/src/Directory.Build.props` now sets
+   `IsTrimmable` and `EnableTrimAnalyzer`, a shipped `TrimmableTests` reads the mark off the compiled
+   assembly, and `verify-release` requires the file in a generated tree. ⚠ Until a release,
+   `dotnet new install Bennewitz.Ninja.Templates` still resolves `2026.3.922`, which has none of the
+   three — so a repository generated before then inherits the gap.
+4. **Stage two belongs to the jmui session**, scoped to ClaudeForge's consumers first with the
+   AgentForge side after. ⚠ AgentForge still imports the LayeredEditors namespaces, so the first pass
+   repoints ClaudeForge at the packages and deletes nothing; the projects come out only once both
+   sides have moved.
 
 ⛔ **This entry used to reserve `plans/00002` for `Bennewitz.Ninja.DiffView`, and that was wrong
 twice over.** DiffView stopped being the interesting case when its ThemeAudit tool moved to
@@ -226,11 +219,11 @@ not this one.
 ScopedEditors — checked 2026-09-23, all four report no secrets and a `NUGET_USER` variable. This
 entry previously said it was still present; that was stale.
 
-## Drift from `plans/00002`, recorded during steps 1–3
+## Drift from `plans/00002`
 
-The plan is approved and frozen, so this is where its drift lives. Steps 1, 2 and 3 are done in both
-repositories — AppServices at `0928c61`, ScopedEditors at `582a68e`, CI green on both, seven ids
-packing and no bare `Bennewitz.Ninja.ScopedEditors`.
+The plan is approved and frozen, so this is where its drift lives. All nine steps are done;
+seven ids published at `2026.3.923`, with no bare `Bennewitz.Ninja.ScopedEditors` — still 404 on
+nuget.org, and the policy's dotted pattern could not have authorised one.
 
 **Step 1 was "strip and populate", not "generate".** The repositories were created with GitHub's
 *Use this template* rather than `dotnet new bbpkg`, so each arrived as a full copy of this one,
@@ -283,3 +276,49 @@ and refusing them. That is step 6 arriving early because a test demanded it.
 **Decided 2026-09-23:** the trusted-publishing expiry clock is treated as **non-binding** —
 reactivation is a UI click, while a published version is permanent — so steps 4–8 are done properly
 rather than compressed to beat it.
+
+
+**⛔ `2026.3.923` shipped without `IsTrimmable`, and the root cause is this template.** OpenForge2k set
+`IsTrimmable` and `EnableTrimAnalyzer` for every shipped assembly in a **nested**
+`src/Directory.Build.props`, deliberately and with measured reasons in its comments. The move copied
+project files and never read that one — and `bbpkg` set neither, so the generated repositories had
+nothing to fall back on. The plan never mentions trimming, so no step was positioned to notice.
+
+The CODE was never the problem, and that was measured rather than assumed. The Roslyn trim analyser
+reports zero warnings under `src/` in both repositories, proven to be running by a planted
+`Type.GetType(string)` that reddened with `IL2057`. ⭐ And because **the analyser cannot see compiled
+XAML** — XamlIl weaves that IL in after Roslyn — an ILLink trimmed publish of the *published*
+packages, every assembly rooted with `TrimmerRootAssembly` and `TrimmerSingleWarn=false`, reported
+nothing from them; its only warning was one `IL2070` inside `Avalonia.Controls.DataGrid`.
+
+What was missing is the DECLARATION, and it travels in the package: `IsTrimmable` compiles to
+`[AssemblyMetadata("IsTrimmable", "True")]`, and an app publishing with `TrimMode=partial` trims
+**only** assemblies carrying it. ClaudeForge publishes exactly that way, so consuming `2026.3.923`
+keeps these assemblies whole and outside its trim analysis. Nothing fails — which is how it shipped.
+
+Fixed in all three repositories with one byte-identical `src/Directory.Build.props`, which imports
+the root props explicitly because MSBuild applies only the closest one. Verified from **evaluated**
+properties rather than files, and proven by mutation:
+
+| Mutation | Result |
+|---|---|
+| `src/Directory.Build.props` removed, package repo | guard **failed**, naming every assembly |
+| trim break planted, **plain** `dotnet build -c Release` | **failed** on `IL2057` — green before the fix |
+| repository generated from the fixed template | guard **passed** as generated |
+| same, with `src/Directory.Build.props` removed | guard **failed** |
+
+ⓘ **How it would have been caught:** diff the evaluated properties of the source project against the
+moved one — `dotnet msbuild <proj> -getProperty:IsTrimmable -getProperty:EnableTrimAnalyzer` — not the
+files. It is the second loss of the same shape in this plan: the bundled fonts were the first. A
+file-by-file move carries only what it can see.
+
+⚠ `IsAotCompatible` stays off everywhere. It would also switch on the AOT and single-file analysers,
+which is a claim about these libraries that nothing has measured.
+
+**Step 5's guards were written as the plan asked, and two of its mutations could not be.** A reference
+into the other family cannot be added while none of its ids is published — the restore fails and the
+build breaks before any test runs — and an UNUSED `PackageReference` never reaches the assembly
+reference table, so the reflection check cannot see it either. Both were re-aimed at references that
+genuinely exist. ⭐ The first finding is the csproj-versus-reflection argument demonstrated rather than
+asserted: an unused bad `ProjectReference` fails the project check and leaves the reflection check
+green, in both repositories.
