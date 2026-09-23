@@ -225,13 +225,14 @@ of it blocking:
    - **ScopedEditors' CI publishes every assembly trimmed and ROOTED**, and fails if ILLink's
      warnings change in either direction (`5b08b46`). It is the only check that reads compiled XAML.
    - **ScopedEditors lays out text in every bundled font by its documented URI** (`ab442f7`).
-   - **ScopedEditors guards its own markup again** (`3ee1593`): the package-side halves of the five
-     ClaudeForge scans the move left behind, namely AXAML accessibility and Expander names (now
-     XamlQuality's XQ1002 and XQ1001), `LE.*` token integrity, the danger banner and severity-glyph
-     sizing. 11 cases against the originals' 10 package-side ones, each proven by a planted defect.
-     `LE.DangerText` and `LE.DangerBorder` stay declared for hosts, on a list that fails once either
-     is deleted or used by the package itself. ⓘ No OpenForge2k app resolves any `LE.*` key; every
-     mention there is a comment.
+   - **ScopedEditors guards its own markup again** (`3ee1593`, `14bd2a9`): the package-side halves
+     of the five ClaudeForge scans the move left behind, namely AXAML accessibility and Expander
+     names (now XamlQuality's XQ1002 and XQ1001), `LE.*` token integrity, the danger banner and
+     severity-glyph sizing. `LE.DangerText` and `LE.DangerBorder` stay declared for hosts, on a list
+     that fails once either is deleted or used by the package itself. 12 cases against the
+     originals' 10 package-side ones, each proven by a planted defect: the two added are that list's
+     self-check and a check that every `LE.*` key the C# resolves is declared. ⓘ No OpenForge2k app
+     resolves any `LE.*` key; every mention there is a comment.
 
    What was learned along the way is in XamlQuality's
    [`docs/avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md)
