@@ -8,6 +8,13 @@
     <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.914" />
   </ItemGroup>
 
+  <ItemGroup Label="Tools">
+    <!-- scripts/mstest-to-xunit.cs. File-based apps honour central package management, so the
+         script's `#:package` carries no version (NU1008 otherwise) and the pin lives here.
+         5.x parses C# 14 and `preview`, which the suites it converts are written in. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Testing">
     <!-- xunit.v3 on Microsoft.Testing.Platform — see global.json. The VSTest bridge packages are
          deliberately absent; TrxReport is what gives CI its .trx files.

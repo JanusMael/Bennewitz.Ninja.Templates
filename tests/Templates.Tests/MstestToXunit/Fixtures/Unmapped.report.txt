@@ -1,0 +1,12 @@
+Unmapped.cs:3: UNMAPPED [assembly: Parallelize(…)] — xUnit parallelises by collection (per class by default) and has no method-level mode; choose the assembly's behaviour by hand
+Unmapped.cs:14: UNMAPPED [TestInitialize] Setup — the class already has a constructor
+Unmapped.cs:18: UNMAPPED [Timeout(1000)] on SyncWithTimeout — xUnit v3 fails a SYNCHRONOUS test that carries a Timeout; make the test async, or drop the timeout, by hand
+Unmapped.cs:22: UNMAPPED [Ignore] without a reason — xUnit needs a skip reason; supply one
+Unmapped.cs:26: UNMAPPED [DataRow(1, DisplayName = "one")] — named DataRow arguments (DisplayName, IgnoreMessage…) have no InlineData equivalent
+Unmapped.cs:29: UNMAPPED [TestMethod("display name")] — a display name has no xUnit equivalent here; convert by hand
+Unmapped.cs:33: UNMAPPED [TestCategory("slow")] on Categorised — no rule for this attribute
+Unmapped.cs:36: UNMAPPED Assert.AreEqual(3 arguments) — the third argument is neither a message, a numeric tolerance nor an ignoreCase flag that can be recognised from its syntax
+Unmapped.cs:37: UNMAPPED Assert.AreEqual — named, ref or out arguments
+Unmapped.cs:38: UNMAPPED Assert.Fail(0 arguments) — no rule for this form
+Unmapped.cs:39: UNMAPPED Assert.HasCount(2 arguments) — no rule for this form
+Unmapped.cs:40: UNMAPPED Assert.ThrowsExactly(1 argument) — a throw-expression lambda binds to xUnit's obsolete Throws<T>(Func<Task>); give it a statement body or an Action type by hand

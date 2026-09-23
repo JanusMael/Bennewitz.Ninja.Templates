@@ -1,0 +1,135 @@
+using System.Text.RegularExpressions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+[assembly: DoNotParallelize]
+
+namespace Sample.Tests;
+
+/// <summary>Every attribute rule.</summary>
+[TestClass]
+public sealed class AttributeRules
+{
+    public TestContext TestContext { get; set; } = null!;
+
+    private int _state;
+
+    [TestInitialize]
+    public void Setup()
+    {
+        _state = 1;
+    }
+
+    [TestCleanup]
+    public void Teardown()
+    {
+        _state = 0;
+    }
+
+    private static IEnumerable<object[]> Rows => [[1], [2]];
+
+    [TestMethod]
+    public void Plain() => Assert.AreEqual(1, _state);
+
+    [TestMethod]
+    [DataRow(1, "a")]
+    [DataRow(2, "b")]
+    public void Rows_(int n, string s) => Assert.IsTrue(n > 0, s);
+
+    [TestMethod]
+    [DynamicData(nameof(Rows))]
+    public void Dynamic(int n) => Assert.IsFalse(n < 0);
+
+    [TestMethod]
+    [Ignore("flaky on CI")]
+    public void Skipped() { }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task Timed() => await Task.Delay(1, TestContext.CancellationToken);
+
+    [TestMethod]
+    public async Task Token() => await Task.Delay(1, TestContext.CancellationTokenSource.Token);
+}
+
+[TestClass]
+[DoNotParallelize]
+public class AsyncCleanup
+{
+    [TestCleanup]
+    public async Task Release() => await Task.Yield();
+
+    [TestMethod]
+    public void Nothing() { }
+}
+
+/// <summary>Every assertion rule.</summary>
+[TestClass]
+public sealed class AssertionRules
+{
+    [TestMethod]
+    public void All()
+    {
+        object o = "x";
+        string s = "hello";
+        List<int> list = [1, 2];
+
+        Assert.AreEqual(1, 1);
+        Assert.AreEqual(1, 1, "why");
+        Assert.AreEqual(1.0, 1.05, 0.1);
+        Assert.AreEqual(1.0, 1.05, 0.1, $"why {s}");
+        Assert.AreEqual("A", "a", true);
+        Assert.AreNotEqual(1, 2);
+        Assert.AreNotEqual(1, 2, "why");
+        Assert.AreSame(o, o);
+        Assert.AreSame(o, o, "why");
+        Assert.AreNotSame(o, s + "!");
+        Assert.AreNotSame(o, s + "!", "why");
+        Assert.IsTrue(true);
+        Assert.IsTrue(true, "why " + s);
+        Assert.IsFalse(false);
+        Assert.IsNull(null);
+        Assert.IsNull(null, "why");
+        Assert.IsNotNull(o);
+        Assert.IsNotNull(o, "why");
+        Assert.IsInstanceOfType<string>(o);
+        Assert.IsInstanceOfType<string>(o, "why");
+        Assert.IsInstanceOfType(o, typeof(string));
+        Assert.IsInstanceOfType(o, typeof(string), "why");
+        Assert.ThrowsExactly<InvalidOperationException>(() => Boom());
+        Assert.ThrowsExactly<InvalidOperationException>(() => throw new InvalidOperationException(), "why");
+        Assert.AreEqual(null, (object?)null);
+        Assert.AreEqual(true, s.Length > 0);
+        Assert.AreEqual(2, list.Count);
+        Assert.AreEqual(1, new[] { 9 }.Length);
+        Assert.AreEqual(0, list.Where(x => x > 5).Count());
+        Assert.AreEqual(1, list.Count(x => x == 1));
+        Assert.AreEqual(0, Array.Empty<int>().Length);
+
+        StringAssert.Contains(s, "ell");
+        StringAssert.Contains(s, "ell", "why");
+        StringAssert.Contains(s, "ELL", StringComparison.OrdinalIgnoreCase);
+        StringAssert.StartsWith(s, "he");
+        StringAssert.EndsWith(s, "lo", "why");
+        StringAssert.DoesNotMatch(s, new Regex("^z"));
+
+        CollectionAssert.AreEqual(new[] { 1, 2 }, list);
+        CollectionAssert.AreEqual(new[] { 1, 2 }, list, "why");
+        CollectionAssert.Contains(list, 1);
+        CollectionAssert.DoesNotContain(list, 3, "why");
+        CollectionAssert.AreEquivalent(new[] { 2, 1 }, list);
+        CollectionAssert.AllItemsAreUnique(list);
+
+        if (list.Count > 5)
+        {
+            Assert.Inconclusive("not here");
+        }
+        Assert.Fail("unreachable");
+    }
+
+    private static void Boom() => throw new InvalidOperationException();
+
+    [TestMethod]
+    public async Task Async() =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(
+            () => Task.FromException(new InvalidOperationException()));
+}

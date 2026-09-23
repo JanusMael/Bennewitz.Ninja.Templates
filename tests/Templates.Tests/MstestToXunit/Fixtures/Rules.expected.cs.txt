@@ -1,0 +1,139 @@
+using System.Text.RegularExpressions;
+using Xunit;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
+namespace Sample.Tests;
+
+/// <summary>Every attribute rule.</summary>
+public sealed class AttributeRules : IDisposable
+{
+    private int _state;
+
+    public AttributeRules() => Setup();
+
+    private void Setup()
+    {
+        _state = 1;
+    }
+
+    private void Teardown()
+    {
+        _state = 0;
+    }
+
+    public void Dispose()
+    {
+        Teardown();
+        GC.SuppressFinalize(this);
+    }
+
+    public static IEnumerable<object[]> Rows => [[1], [2]];
+
+    [Fact]
+    public void Plain() => Assert.Equal(1, _state);
+
+    [Theory]
+    [InlineData(1, "a")]
+    [InlineData(2, "b")]
+    public void Rows_(int n, string s) => Assert.True(n > 0, s);
+
+    [Theory]
+    [MemberData(nameof(Rows))]
+    public void Dynamic(int n) => Assert.False(n < 0);
+
+    [Fact(Skip = "flaky on CI")]
+    public void Skipped() { }
+
+    [Fact(Timeout = 5000)]
+    public async Task Timed() => await Task.Delay(1, TestContext.Current.CancellationToken);
+
+    [Fact]
+    public async Task Token() => await Task.Delay(1, TestContext.Current.CancellationToken);
+}
+
+[Collection("DoNotParallelize")]
+public class AsyncCleanup : IAsyncDisposable
+{
+    private async Task Release() => await Task.Yield();
+
+    public async ValueTask DisposeAsync()
+    {
+        await Release();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
+    public void Nothing() { }
+}
+
+/// <summary>Every assertion rule.</summary>
+public sealed class AssertionRules
+{
+    [Fact]
+    public void All()
+    {
+        object o = "x";
+        string s = "hello";
+        List<int> list = [1, 2];
+
+        Assert.Equal(1, 1);
+        MessageAssert.Equal(1, 1, "why");
+        Assert.Equal(1.0, 1.05, 0.1);
+        MessageAssert.Equal(1.0, 1.05, 0.1, $"why {s}");
+        Assert.Equal("A", "a", true);
+        Assert.NotEqual(1, 2);
+        MessageAssert.NotEqual(1, 2, "why");
+        Assert.Same(o, o);
+        MessageAssert.Same(o, o, "why");
+        Assert.NotSame(o, s + "!");
+        MessageAssert.NotSame(o, s + "!", "why");
+        Assert.True(true);
+        Assert.True(true, "why " + s);
+        Assert.False(false);
+        Assert.Null(null);
+        MessageAssert.Null(null, "why");
+        Assert.NotNull(o);
+        MessageAssert.NotNull(o, "why");
+        Assert.IsAssignableFrom<string>(o);
+        MessageAssert.IsAssignableFrom<string>(o, "why");
+        Assert.IsAssignableFrom<string>(o);
+        MessageAssert.IsAssignableFrom<string>(o, "why");
+        Assert.Throws<InvalidOperationException>(() => Boom());
+        MessageAssert.Throws<InvalidOperationException>(() => throw new InvalidOperationException(), "why");
+        Assert.Null((object?)null);
+        Assert.True(s.Length > 0);
+        Assert.Equal(2, list.Count);
+        Assert.Single(new[] { 9 });
+        Assert.DoesNotContain(list, x => x > 5);
+        Assert.Single(list, x => x == 1);
+        Assert.Empty(Array.Empty<int>());
+
+        Assert.Contains("ell", s);
+        MessageAssert.Contains("ell", s, "why");
+        Assert.Contains("ELL", s, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith("he", s);
+        MessageAssert.EndsWith("lo", s, "why");
+        Assert.DoesNotMatch(new Regex("^z"), s);
+
+        Assert.Equal(new[] { 1, 2 }, list);
+        MessageAssert.SequenceEqual(new[] { 1, 2 }, list, "why");
+        Assert.Contains(1, list);
+        MessageAssert.DoesNotContain(3, list, "why");
+        MessageAssert.SameElements(new[] { 2, 1 }, list);
+        Assert.Distinct(list);
+
+        if (list.Count > 5)
+        {
+            Assert.Skip("not here");
+        }
+        Assert.Fail("unreachable");
+    }
+
+    private static void Boom() => throw new InvalidOperationException();
+
+    [Fact]
+    public async Task Async() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => Task.FromException(new InvalidOperationException()));
+}

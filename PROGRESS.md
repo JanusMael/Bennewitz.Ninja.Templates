@@ -176,6 +176,30 @@ AutoVersioning and chisel all glob their pushes by deliberate design.
 their installed copies in both directions. `package-release` was installed on its own by copying its
 folder. Resolving that drift is deferred.
 
+## `scripts/mstest-to-xunit.cs` — outside the plans
+
+Added 2026-09-23 at the maintainer's request. It lives here because this repository defines the
+family's test shape (`bbpkg` ships `xunit.v3` on MTP), and it is not specific to any one suite.
+OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repository.
+
+- **Rewrites the syntax tree** (Roslyn `5.9.0`, pinned in `Directory.Packages.props`, because a
+  file-based app under central package management may not carry a `#:package` version — NU1008).
+- **Never guesses.** Anything outside its rules is left as written and listed with its line; exit
+  code 2 says so. The MSTest leftover then fails the build, which is the second list.
+- **`--emit-helpers`** writes `MessageAssert` — derived from `Bennewitz.Ninja.ScopedEditors`' hand
+  port, extended — and the `DoNotParallelize` collection definition.
+- ✅ **Proven on a real suite before it was committed:** OpenForge2k's `JsonC.Tests` converted with
+  nothing unmapped, built with 0 warnings, and ran 73 of 73, the same identities by fully-qualified
+  name (the theory rows by count — their display names differ by design).
+- ⭐ **The pilot's build found rules the table lacked**, all now in it: `MemberData` must be public
+  (xUnit1016); `Equal(0|1, xs.Count)` must be `Empty`/`Single` (xUnit2013), and a filtered count the
+  predicate overloads (xUnit2029/2030); a typeof must use the generic `IsAssignableFrom<T>`
+  (xUnit2007, CA2263); former setup methods must not stay public (xUnit1013); and a throw-lambda
+  binds to xUnit's obsolete `Throws<T>(Func<Task>)` (CS0619), so it is refused.
+- Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
+  and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
+  file and a broken rule each fail exactly one test.
+
 ## Next
 
 All eight steps are done. `Bennewitz.Ninja.Templates 2026.3.921` is published and verified from
