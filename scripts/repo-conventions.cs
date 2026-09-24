@@ -171,15 +171,7 @@ int Check()
 
     Rulesets.Check(api, config, admin, findings);
 
-    if (admin)
-    {
-        Settings.Check(api, live, branch, findings);
-    }
-    else
-    {
-        findings.Add(Finding.Note("settings", "Merge options, features and security toggles need admin rights to read. `check --admin` covers them."));
-    }
-
+    Settings.Check(api, live, branch, admin, findings);
     Drift.Check(tree, remoteTree, findings);
     return Report();
 }
@@ -685,18 +677,39 @@ static class Rulesets
 
 static class Settings
 {
-    public static void Check(Api api, JsonObject live, string branch, List<Finding> findings)
+    /// <summary>
+    /// Every setting GitHub returns is checked, at either depth. Measured with a workflow's
+    /// read-only GITHUB_TOKEN: the four feature toggles come back, while the six merge options,
+    /// security_and_analysis, vulnerability alerts and branch protection do not. So CI checks the
+    /// features, and only --admin reaches the rest.
+    /// </summary>
+    public static void Check(Api api, JsonObject live, string branch, bool admin, List<Finding> findings)
     {
+        List<string> unread = [];
         foreach ((string name, bool wanted) in Baseline.Settings)
         {
             if (live[name] is not JsonValue value || !value.TryGetValue(out bool actual))
             {
-                findings.Add(Finding.Unverified("settings", $"\"{name}\" was not returned, so it could not be checked."));
+                if (admin)
+                {
+                    findings.Add(Finding.Unverified("settings", $"\"{name}\" was not returned, so it could not be checked."));
+                }
+                else
+                {
+                    unread.Add(name);
+                }
             }
             else if (actual != wanted)
             {
                 findings.Add(Finding.Fail("settings", $"\"{name}\" is {Lower(actual)}; the family baseline is {Lower(wanted)}. Run `apply`."));
             }
+        }
+
+        if (!admin)
+        {
+            string settings = unread.Count == 0 ? "" : string.Join(", ", unread) + ", ";
+            findings.Add(Finding.Note("settings", $"{settings}the security toggles and branch protection need admin rights to read. `check --admin` covers them."));
+            return;
         }
 
         // 204 when alerts are on, 404 when they are off. Only an admin can ask.

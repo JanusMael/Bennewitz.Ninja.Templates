@@ -46,6 +46,18 @@ public sealed class RepoConventionsTests
     }
 
     [Fact]
+    public void Token_depth_checks_the_feature_toggles_a_workflow_token_can_read()
+    {
+        Fixture fixture = WithoutAdminFields();
+        fixture.Api["repo"]!["has_wiki"] = true;
+
+        Result result = fixture.Run("check");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL settings: \"has_wiki\" is true; the family baseline is false.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Admin_depth_fails_on_anything_it_could_not_read()
     {
         Result result = WithoutAdminFields().Run("check", "--admin");
@@ -309,7 +321,10 @@ public sealed class RepoConventionsTests
     private static JsonNode Rule(JsonNode ruleset, string type) =>
         ruleset["rules"]!.AsArray().Single(r => r!["type"]!.GetValue<string>() == type)!;
 
-    /// <summary>The conforming repository with every field only an admin can read taken away.</summary>
+    /// <summary>
+    /// The conforming repository as a workflow's read-only GITHUB_TOKEN sees it: exactly the fields
+    /// a probe run found absent (plans/00003 step 2) are taken away, and the feature toggles stay.
+    /// </summary>
     private static Fixture WithoutAdminFields()
     {
         Fixture fixture = Conforming();

@@ -420,8 +420,22 @@ green, in both repositories.
 | Step | State | Notes |
 |---|---|---|
 | 1 · `repository.json` + `repo-conventions.cs` | **done** | `check`, `check --admin`, `check --release`, `apply [--dry-run]`, `--repo`. 22 tests in `RepoConventions/`; 9 planted defects, all caught. Against AppServices live, `check --admin --repo` reported 26 findings, including the empty description, the missing topics and every baseline difference |
-| 2 · What `GITHUB_TOKEN` can read | next | Anonymous reads are the stand-in so far |
-| 3–10 | not started | |
+| 2 · What `GITHUB_TOKEN` can read | **done** | Measured by a throwaway workflow on a deleted branch, `permissions: contents: read`, which is this repository's default. See below |
+| 3 · `docs/repository-conventions.md` + template documents + `verify-release` tree check | next | |
+| 4–10 | not started | |
+
+**What a workflow's read-only `GITHUB_TOKEN` reads** (2026-09-24):
+
+| Returned | Not returned |
+|---|---|
+| description, homepage, topics, default branch | the six merge options: `allow_merge_commit`, `allow_squash_merge`, `allow_rebase_merge`, `allow_auto_merge`, `delete_branch_on_merge`, `allow_update_branch` |
+| `has_issues`, `has_wiki`, `has_projects`, `has_discussions` | `security_and_analysis` |
+| the rulesets list, the tree, file contents | vulnerability alerts, classic branch protection |
+
+The feature toggles were a finding: the anonymous stand-in did not predict them. `check` now checks
+every setting GitHub returns, at either depth, and notes by name the ones it could not read.
+⚠ No repository has a ruleset yet, so whether the token reads a ruleset's rules and its bypass list
+is still unmeasured. Step 5 creates the first one; `check` in that run's CI answers it.
 
 ### Drift from `plans/00003`
 
