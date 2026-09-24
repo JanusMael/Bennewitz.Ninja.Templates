@@ -200,6 +200,14 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.
 
+## `docs/windows-defender-dev-exclusions.md` — outside the plans
+
+Added 2026-09-23 at the maintainer's request: a Windows-only runbook for excluding development
+locations from Defender real-time scanning, with PowerShell 7 snippets to add, verify, measure and
+remove exclusions, and the Dev Drive alternative. Prompted by GraphVizDotNet's gate pass, whose
+cost is dominated by thousands of short-lived process launches. Not packed — the package ships
+`templates/**` only.
+
 ## Next
 
 All eight steps are done. `Bennewitz.Ninja.Templates 2026.3.921` is published and verified from
