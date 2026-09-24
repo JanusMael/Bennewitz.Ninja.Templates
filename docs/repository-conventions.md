@@ -103,7 +103,8 @@ workflow's `GITHUB_TOKEN`, which is read-only in these repositories, sees:
 |---|---|
 | description, homepage, topics | the six merge options |
 | `has_issues`, `has_wiki`, `has_projects`, `has_discussions` | `security_and_analysis` (Dependabot) |
-| the rulesets list | vulnerability alerts, classic branch protection |
+| each ruleset's rules, conditions and required checks | who may bypass a ruleset |
+| | vulnerability alerts, classic branch protection |
 
 So CI's `check` covers the left column and the documentation, and `check --admin`, run with the
 maintainer's `gh` login, covers everything. `check --admin` **fails** on anything it could not

@@ -423,8 +423,9 @@ green, in both repositories.
 | 2 · What `GITHUB_TOKEN` can read | **done** | Measured by a throwaway workflow on a deleted branch, `permissions: contents: read`, which is this repository's default. See below |
 | 3 · `docs/repository-conventions.md` + template documents + `verify-release` tree check | **done** | The template ships `AGENTS.md` and a `CLAUDE.md` pointer at the root and in `src/`, `tests/`, `scripts/`, `docs/` and `.github/`, plus `PROGRESS.md`, `.github/copilot-instructions.md` and `.github/repository.json`. `verify-release` requires all 16, failed naming `tests\CLAUDE.md` with only that file removed, and passes with all present. A generated repository's `check` reports only the empty description and 8 markers, nothing structural |
 | 4 · CI job + release preflight in the template's workflows | **done** | Shipped `ci.yml` gains a `conventions` job (`contents: read`), and `release.yml` runs `check --release` before login and push, in the preflight dispatch too. `conventions` joins the template's `requiredChecks`. 4 tests in `ConventionsWorkflowTests`; 5 planted defects, all caught. The two `NUGET_USER secret` comments in the shipped `release.yml` now say variable |
-| 5 · Adopt it all in this repository, then `apply` | **in progress** | Adopted locally: `AGENTS.md` and a pointer at the root and in all six top-level directories, `.github/repository.json`, the `conventions` CI job and the release preflight, with `ConventionsWorkflowTests` covering both repositories' workflows. `check --admin` now reports only the 12 live-settings findings `apply` exists to fix. **`apply` waits for the maintainer's go-ahead**: it changes live GitHub settings. The first ruleset anywhere, so its CI run also answers whether the token reads a ruleset's rules |
-| 6–10 | not started | |
+| 5 · Adopt it all in this repository, then `apply` | **done** | `AGENTS.md` and a pointer at the root and in all six top-level directories, `.github/repository.json`, the `conventions` CI job and the release preflight; `ConventionsWorkflowTests` covers both repositories' workflows. `apply` ran 2026-09-24 with the maintainer's go-ahead, and `check --admin` then passed against the rulesets as GitHub returns them. The direct push after it went through the admin bypass, with GitHub listing the two rules bypassed. CI green on `e1d2695`, `verify` and `conventions` both |
+| 6 · The other seven: script, CI job and `repository.json`, then `apply` | next | One repository at a time; the `conventions` job is not required until that repository's documentation lands. DiffView through a pull request |
+| 7–10 | not started | |
 
 **What a workflow's read-only `GITHUB_TOKEN` reads** (2026-09-24):
 
@@ -436,8 +437,9 @@ green, in both repositories.
 
 The feature toggles were a finding: the anonymous stand-in did not predict them. `check` now checks
 every setting GitHub returns, at either depth, and notes by name the ones it could not read.
-⚠ No repository has a ruleset yet, so whether the token reads a ruleset's rules and its bypass list
-is still unmeasured. Step 5 creates the first one; `check` in that run's CI answers it.
+**Rulesets, measured in step 5's CI run:** the token reads each ruleset's rules, conditions and
+required checks, but not `bypass_actors`. So CI checks every ruleset rule, and only `check --admin`
+checks who may bypass.
 
 ### Drift from `plans/00003`
 
