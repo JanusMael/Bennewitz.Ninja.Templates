@@ -38,5 +38,6 @@ public sealed class Refused
         Assert.Fail();
         Assert.HasCount(2, new[] { 1, 2 });
         Assert.ThrowsExactly<InvalidOperationException>(() => throw new InvalidOperationException());
+        Assert.AreEqual(1.0, 1.05, message: "why", delta: 0.1);
     }
 }

@@ -49,6 +49,11 @@ public sealed class AttributeRules
 
     [TestMethod]
     public async Task Token() => await Task.Delay(1, TestContext.CancellationTokenSource.Token);
+
+    [TestMethod]
+    [Description("Why this " +
+                 "test exists.")]
+    public void Described() { }
 }
 
 [TestClass]
@@ -106,6 +111,12 @@ public sealed class AssertionRules
         Assert.AreEqual(0, Array.Empty<int>().Length);
         Assert.IsTrue(list.Any(x => x == 1));
         Assert.IsFalse(list.Any(x => x > 5));
+        Assert.AreEqual(s, s, nameof(s));
+        Assert.AreEqual(1.0, 1.05, delta: 0.1);
+        Assert.AreEqual("A", "a", ignoreCase: true, message: "why");
+        Assert.AreEqual("A", "a", StringComparer.OrdinalIgnoreCase, "why");
+        Assert.AreNotEqual("A", "b", StringComparer.OrdinalIgnoreCase, "why");
+        Assert.StartsWith("he", s, StringComparison.Ordinal, "why");
 
         StringAssert.Contains(s, "ell");
         StringAssert.Contains(s, "ell", "why");
@@ -113,6 +124,8 @@ public sealed class AssertionRules
         StringAssert.StartsWith(s, "he");
         StringAssert.EndsWith(s, "lo", "why");
         StringAssert.DoesNotMatch(s, new Regex("^z"));
+        StringAssert.Contains(s, "ELL", StringComparison.OrdinalIgnoreCase, "why");
+        StringAssert.EndsWith(s, "LO", StringComparison.OrdinalIgnoreCase, "why");
 
         CollectionAssert.AreEqual(new[] { 1, 2 }, list);
         CollectionAssert.AreEqual(new[] { 1, 2 }, list, "why");
@@ -120,6 +133,8 @@ public sealed class AssertionRules
         CollectionAssert.DoesNotContain(list, 3, "why");
         CollectionAssert.AreEquivalent(new[] { 2, 1 }, list);
         CollectionAssert.AllItemsAreUnique(list);
+        CollectionAssert.AllItemsAreUnique(list, $"why {s}");
+        CollectionAssert.AreNotEqual(new[] { 2, 1 }, list, "why");
 
         if (list.Count > 5)
         {

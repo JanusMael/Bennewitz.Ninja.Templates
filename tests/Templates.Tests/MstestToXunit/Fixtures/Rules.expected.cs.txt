@@ -50,6 +50,11 @@ public sealed class AttributeRules : IDisposable
 
     [Fact]
     public async Task Token() => await Task.Delay(1, TestContext.Current.CancellationToken);
+
+    [Fact]
+    [Trait("Description", "Why this " +
+                 "test exists.")]
+    public void Described() { }
 }
 
 [Collection("DoNotParallelize")]
@@ -110,6 +115,12 @@ public sealed class AssertionRules
         Assert.Empty(Array.Empty<int>());
         Assert.Contains(list, x => x == 1);
         Assert.DoesNotContain(list, x => x > 5);
+        MessageAssert.Equal(s, s, nameof(s));
+        Assert.Equal(1.0, 1.05, 0.1);
+        MessageAssert.Equal("A", "a", true, "why");
+        MessageAssert.Equal("A", "a", StringComparer.OrdinalIgnoreCase, "why");
+        MessageAssert.NotEqual("A", "b", StringComparer.OrdinalIgnoreCase, "why");
+        MessageAssert.StartsWith("he", s, StringComparison.Ordinal, "why");
 
         Assert.Contains("ell", s);
         MessageAssert.Contains("ell", s, "why");
@@ -117,6 +128,8 @@ public sealed class AssertionRules
         Assert.StartsWith("he", s);
         MessageAssert.EndsWith("lo", s, "why");
         Assert.DoesNotMatch(new Regex("^z"), s);
+        MessageAssert.Contains("ELL", s, StringComparison.OrdinalIgnoreCase, "why");
+        MessageAssert.EndsWith("LO", s, StringComparison.OrdinalIgnoreCase, "why");
 
         Assert.Equal(new[] { 1, 2 }, list);
         MessageAssert.SequenceEqual(new[] { 1, 2 }, list, "why");
@@ -124,6 +137,8 @@ public sealed class AssertionRules
         MessageAssert.DoesNotContain(3, list, "why");
         MessageAssert.SameElements(new[] { 2, 1 }, list);
         Assert.Distinct(list);
+        MessageAssert.Distinct(list, $"why {s}");
+        MessageAssert.SequenceNotEqual(new[] { 2, 1 }, list, "why");
 
         if (list.Count > 5)
         {
