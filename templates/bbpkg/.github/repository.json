@@ -2,7 +2,7 @@
   "description": "",
   "homepage": "",
   "topics": ["csharp", "dotnet", "nuget"],
-  "requiredChecks": ["build", "pack"],
+  "requiredChecks": ["build", "pack", "conventions"],
   "content": [],
   "undocumented": {}
 }
