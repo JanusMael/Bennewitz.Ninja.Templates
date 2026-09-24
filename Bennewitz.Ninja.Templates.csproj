@@ -98,9 +98,14 @@
 
       ⓘ Forward slashes work on both platforms in Include and Exclude too, so all three are
       spelled the same way and none of them depends on where the build happens to run.
+
+      ⛔ `templates/*` excludes the files directly in templates/, which are this repository's own
+      documents about that directory, and keeps every template folder beneath it. Without it,
+      templates/AGENTS.md packed to content/AGENTS.md. verify-release now fails on any packed
+      file that belongs to no template.
     -->
     <Content Include="templates/**/*"
-             Exclude="templates/**/bin/**;templates/**/obj/**"
+             Exclude="templates/*;templates/**/bin/**;templates/**/obj/**"
              PackagePath="content/" />
     <Compile Remove="**/*" />
   </ItemGroup>

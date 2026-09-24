@@ -436,6 +436,16 @@ green, in both repositories.
 3. ScopedEditors' README names the package in its Semi warning: done in `3b0c45f`.
 4. Stale items found along the way go into each repository's own `PROGRESS.md`: XamlQuality `45c080a` and AssemblyQuality `eea0de4` gained a Follow-ups section; AppServices and ScopedEditors already listed theirs under Next.
 
+⛔ **Step 5 leaked this repository's own documents into the package, and nothing caught it.**
+`templates/AGENTS.md` and `templates/CLAUDE.md`, which describe the `templates/` directory, fell
+under `Content Include="templates/**/*"` and packed to `content/AGENTS.md` and `content/CLAUDE.md`.
+`verify-release` passed, because every check it had asserted what must be present, never what must
+not. Found by listing the packed content before a release. Fixed by excluding `templates/*`, which
+keeps every template folder beneath it, and by a fourth packed-content check in `verify-release`:
+every `content/` entry must lie inside a folder with its own `.template.config/template.json`. That
+check failed naming both files before the exclusion, and passes after it. Nothing was released with
+the leak: the last release, `2026.3.923`, predates step 5.
+
 **Found during step 9, not fixed here:**
 - FileServer: CI builds `samples/SampleWebApp` without `-p:FileServerVersion`, so it restores the default from nuget.org rather than the package it just packed, while two comments say otherwise; the sample's `FileServerVersion` was not bumped after `v2026.9.23`; `publish/Pack-Local.ps1` reads `$env:USERPROFILE`, null on Linux and macOS; `NUGET_USER` is still a secret there, not a variable; the release runs no tests before publishing.
 - AutoVersioning: the release pushes a `*.nupkg` glob and runs no tests; `AnalyzerReleases.Shipped.md` is empty across three tagged releases; `Microsoft.Bcl.HashCode` is referenced but not shipped, which `EnumTypeInfo.GetHashCode` would need on netstandard2.0 if anything called it during generation; no test builds a consuming project.

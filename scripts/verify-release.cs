@@ -169,7 +169,33 @@ try
             return Fail("LICENSE was packed as a FOLDER: " + string.Join(", ", licenseAsFolder));
         }
 
-        Console.WriteLine($"  {entries.Count} entries; .template.config, dotfiles and LICENSE all present");
+        // Check 4 — nothing rides along. Every content entry must sit inside a template: a folder
+        // under content/ that carries its own .template.config/template.json. The checks above
+        // prove what must be present; only this one notices a file that should not be. It exists
+        // because templates/AGENTS.md, this repository's own note about that directory, packed
+        // to content/AGENTS.md and passed every other check.
+        HashSet<string> templates =
+        [
+            .. entries
+                .Where(entry => entry.StartsWith("content/", StringComparison.Ordinal) &&
+                    entry.EndsWith("/.template.config/template.json", StringComparison.Ordinal))
+                .Select(entry => entry[..(entry.IndexOf("/.template.config/", StringComparison.Ordinal) + 1)]),
+        ];
+
+        string[] strays =
+        [
+            .. entries.Where(entry =>
+                entry.StartsWith("content/", StringComparison.Ordinal) &&
+                !templates.Any(root => entry.StartsWith(root, StringComparison.Ordinal))),
+        ];
+
+        if (strays.Length > 0)
+        {
+            return Fail("Packed content that belongs to no template: " + string.Join(", ", strays) +
+                ". Only a folder with its own .template.config/ should reach content/.");
+        }
+
+        Console.WriteLine($"  {entries.Count} entries; .template.config, dotfiles and LICENSE all present; nothing outside a template");
 
         // The nuspec has to say Template, or `dotnet new install` treats it as an ordinary package.
         XDocument nuspec = ReadNuspec(archive) ?? throw new InvalidOperationException("no .nuspec");
