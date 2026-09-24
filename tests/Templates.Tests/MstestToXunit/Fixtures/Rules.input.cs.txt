@@ -104,6 +104,8 @@ public sealed class AssertionRules
         Assert.AreEqual(0, list.Where(x => x > 5).Count());
         Assert.AreEqual(1, list.Count(x => x == 1));
         Assert.AreEqual(0, Array.Empty<int>().Length);
+        Assert.IsTrue(list.Any(x => x == 1));
+        Assert.IsFalse(list.Any(x => x > 5));
 
         StringAssert.Contains(s, "ell");
         StringAssert.Contains(s, "ell", "why");
