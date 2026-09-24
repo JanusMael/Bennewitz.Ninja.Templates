@@ -54,6 +54,20 @@ public sealed class AttributeRules
     [Description("Why this " +
                  "test exists.")]
     public void Described() { }
+
+    [TestMethod]
+    public void Logs()
+    {
+        TestContext?.WriteLine($"a {_state}");
+        TestContext.WriteLine("b");
+        try
+        {
+            throw new AssertFailedException("x");
+        }
+        catch (AssertFailedException)
+        {
+        }
+    }
 }
 
 [TestClass]
@@ -117,6 +131,11 @@ public sealed class AssertionRules
         Assert.AreEqual("A", "a", StringComparer.OrdinalIgnoreCase, "why");
         Assert.AreNotEqual("A", "b", StringComparer.OrdinalIgnoreCase, "why");
         Assert.StartsWith("he", s, StringComparison.Ordinal, "why");
+        Assert.IsTrue(s.Contains("ell"));
+        Assert.IsFalse(list.Contains(3));
+        Assert.IsTrue(s.StartsWith("he", StringComparison.Ordinal));
+        Assert.IsTrue(s.EndsWith("lo"));
+        Assert.IsFalse(s.StartsWith("z"));
 
         StringAssert.Contains(s, "ell");
         StringAssert.Contains(s, "ell", "why");

@@ -34,7 +34,11 @@
 //   [assembly: Parallelize(…)]       UNMAPPED: xUnit has no method-level parallelism; decide by hand
 //   TestContext property             removed; TestContext.CancellationToken and
 //                                    TestContext.CancellationTokenSource.Token become
-//                                    TestContext.Current.CancellationToken
+//                                    TestContext.Current.CancellationToken, and
+//                                    TestContext[?].WriteLine(…) becomes
+//                                    TestContext.Current.TestOutputHelper?.WriteLine(…)
+//   [Description("why")]             [Trait("Description", "why")]
+//   AssertFailedException            Xunit.Sdk.XunitException, where a type is thrown or caught
 //   using …TestTools.UnitTesting;    using Xunit;  (--no-using: removed, for a project with a
 //                                    global <Using Include="Xunit" />)
 //   Assert / StringAssert / CollectionAssert calls: see AssertRules below.
@@ -689,10 +693,58 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
         return base.VisitMemberAccessExpression(node);
     }
 
+    // ── TestContext output, and MSTest's failure exception ───────────────────────────────────
+
+    /// <summary><c>TestContext?.WriteLine(…)</c> → <c>TestContext.Current.TestOutputHelper?.WriteLine(…)</c>.</summary>
+    public override SyntaxNode? VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node)
+    {
+        if (node is
+            {
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "TestContext" },
+                WhenNotNull: InvocationExpressionSyntax { Expression: MemberBindingExpressionSyntax { Name.Identifier.ValueText: "WriteLine" } } call,
+            })
+        {
+            report.Converted("TestContext.WriteLine → TestContext.Current.TestOutputHelper?.WriteLine");
+            var visited = (InvocationExpressionSyntax)Visit(call)!;
+            return SyntaxFactory.ParseExpression("TestContext.Current.TestOutputHelper?.WriteLine" + visited.ArgumentList.ToFullString())
+                .WithTriviaFrom(node);
+        }
+        return base.VisitConditionalAccessExpression(node);
+    }
+
+    /// <summary>
+    /// MSTest's <c>AssertFailedException</c>, thrown or caught by name → xUnit's <c>XunitException</c>.
+    /// Only where a TYPE stands, so a same-named member elsewhere is untouched.
+    /// </summary>
+    public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
+    {
+        if (node.Identifier.ValueText == "AssertFailedException"
+            && node.Parent is ObjectCreationExpressionSyntax or CatchDeclarationSyntax or TypeOfExpressionSyntax)
+        {
+            report.Converted("AssertFailedException → Xunit.Sdk.XunitException");
+            return SyntaxFactory.ParseTypeName("Xunit.Sdk.XunitException").WithTriviaFrom(node);
+        }
+        return base.VisitIdentifierName(node);
+    }
+
     // ── assertions ───────────────────────────────────────────────────────────────────────────
 
     public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax original)
     {
+        // TestContext.WriteLine(…) → TestContext.Current.TestOutputHelper?.WriteLine(…), taken
+        // before the default visit, which would report TestContext.WriteLine as unmapped.
+        if (original.Expression is MemberAccessExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "TestContext" },
+                Name.Identifier.ValueText: "WriteLine",
+            })
+        {
+            report.Converted("TestContext.WriteLine → TestContext.Current.TestOutputHelper?.WriteLine");
+            var visitedArgs = (ArgumentListSyntax)Visit(original.ArgumentList)!;
+            return SyntaxFactory.ParseExpression("TestContext.Current.TestOutputHelper?.WriteLine" + visitedArgs.ToFullString())
+                .WithTriviaFrom(original);
+        }
+
         var node = (InvocationExpressionSyntax)base.VisitInvocationExpression(original)!;
         if (node.Expression is not MemberAccessExpressionSyntax
             {
@@ -940,6 +992,30 @@ static class AssertRules
         if (method is "IsTrue" or "IsFalse" && args.Count == 1 && AnyWithPredicate(args[0].Expression) is var (anySource, anyPredicate))
         {
             return (method == "IsTrue" ? "Assert.Contains" : "Assert.DoesNotContain", null, [anySource, anyPredicate]);
+        }
+
+        // IsTrue/IsFalse(x.Contains(y)) → Contains/DoesNotContain(y, x): xUnit2009 for a string, xUnit2017
+        // for a collection, and the same call shape serves both. IsTrue(x.StartsWith|EndsWith(y[, c]))
+        // → StartsWith|EndsWith(y, x[, c]) (xUnit2009). xUnit has no negated StartsWith/EndsWith, so
+        // IsFalse of those is left alone. Only without a message.
+        if (method is "IsTrue" or "IsFalse" && args.Count == 1 && args[0].Expression is InvocationExpressionSyntax
+            {
+                Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Contains" or "StartsWith" or "EndsWith" } call,
+                ArgumentList.Arguments: var callArgs,
+            })
+        {
+            string name = call.Name.Identifier.ValueText;
+            bool comparison = callArgs.Count == 2 && Classify(callArgs[1].Expression) == Arg.Comparison;
+            if (name == "Contains" && callArgs.Count == 1 && callArgs[0].NameColon is null)
+            {
+                return (method == "IsTrue" ? "Assert.Contains" : "Assert.DoesNotContain", null, [callArgs[0].Expression, call.Expression]);
+            }
+            if (name != "Contains" && method == "IsTrue" && (callArgs.Count == 1 || comparison)
+                && callArgs.All(a => a.NameColon is null))
+            {
+                return ($"Assert.{name}", null,
+                    comparison ? [callArgs[0].Expression, call.Expression, callArgs[1].Expression] : [callArgs[0].Expression, call.Expression]);
+            }
         }
 
         if (method is not ("AreEqual" or "AreNotEqual") || args.Count != 2)
