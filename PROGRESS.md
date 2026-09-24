@@ -237,6 +237,11 @@ of it blocking:
    - **`AvaloniaDiagnosticsOptions` gains `ConfigureLogger` and `EventListener`**, so a host extends
      the log pipeline and receives events without reaching into the library. The jmui session wires
      ClaudeForge's F12 windows through them.
+   - **Both Avalonia packages require Avalonia 12.1.3 or later** (AppServices `d1c5c9c`,
+     ScopedEditors `64769ae`), the developer's floor for every project in the family: 12.1.3 fixes UI
+     Automation selection never reaching the client on Windows (AvaloniaUI/Avalonia#22151). ⚠ A
+     host referencing Avalonia directly below that fails restore with `NU1605`, measured against both
+     packed packages. ClaudeForge and AgentForge pin 12.1.0, and jmui has been told.
 
    In the repositories, guarding what ships:
    - **The original test suites were ported**, MSTest 4 → xunit v3: 92 cases into AppServices and
