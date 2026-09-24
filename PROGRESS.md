@@ -1,7 +1,8 @@
 # Progress
 
 Work state for `Bennewitz.Ninja.Templates`. Plan: [plans/00001-package-template.md](plans/00001-package-template.md),
-approved 2026-09-20 and frozen — drift from it is recorded here, never edited into it.
+approved 2026-09-20 and frozen — drift from it is recorded here, never edited into it. The same
+holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see its own section.
 
 ## Status
 
@@ -411,3 +412,42 @@ reference table, so the reflection check cannot see it either. Both were re-aime
 genuinely exist. ⭐ The first finding is the csproj-versus-reflection argument demonstrated rather than
 asserted: an unused bad `ProjectReference` fails the project check and leaves the reflection check
 green, in both repositories.
+
+## `plans/00003` — repository conventions
+
+[`plans/00003`](plans/00003-repository-conventions.md), approved 2026-09-24 (`faa5c4f`) and frozen.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · `repository.json` + `repo-conventions.cs` | **done** | `check`, `check --admin`, `check --release`, `apply [--dry-run]`, `--repo`. 22 tests in `RepoConventions/`; 9 planted defects, all caught. Against AppServices live, `check --admin --repo` reported 26 findings, including the empty description, the missing topics and every baseline difference |
+| 2 · What `GITHUB_TOKEN` can read | next | Anonymous reads are the stand-in so far |
+| 3–10 | not started | |
+
+### Drift from `plans/00003`
+
+**The family baseline lives in the script, not in `repository.json`.** Decision 1 makes
+`repository.json` the source of truth for merge options, features, security toggles and rulesets.
+As built, those values are in `Baseline` inside `scripts/repo-conventions.cs`, and
+`repository.json` holds only what varies from one repository to the next: description, homepage,
+topics, required checks, shipped-content paths, and exempt directories with their reasons. Two
+reasons:
+- A per-repository copy of the baseline could differ from one repository to the next, which is the
+  inconsistency this plan exists to remove. The script is byte-identical everywhere because
+  decision 10 checks that it is.
+- `check` can then compare a repository with no `repository.json` yet against the baseline. Step 1's
+  own verification against AppServices depends on that.
+
+**The copy comparison ignores line endings.** Decision 10 says "byte for byte". A Windows checkout
+converts to CRLF, so a strict byte comparison would report every Windows copy as drifted.
+
+**The canonical copy is `templates/bbpkg/scripts/repo-conventions.cs`**, and this repository's
+`scripts/repo-conventions.cs` is a copy of it. Both are identical as committed.
+
+⭐ **Planting defects found a real flaw, not just a weak test.** `check` compared a ruleset's bypass
+against a hard-coded `always` instead of against the baseline `apply` writes, so the two could have
+drifted apart silently. The expected bypass is now derived from the baseline, like every other
+facet, and the planted `pull_request` mode fails the conforming test.
+
+⚠ **A file-based app compiles trimmed.** A `JsonArray` built from a collection expression, or passed
+a `JsonObject` to `Add`, binds to the generic `Add<T>` and fails the build with `IL2026`/`IL3050`.
+The script builds its arrays through the constructor.
