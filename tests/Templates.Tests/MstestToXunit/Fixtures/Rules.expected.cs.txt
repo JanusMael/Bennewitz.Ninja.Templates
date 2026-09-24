@@ -55,6 +55,20 @@ public sealed class AttributeRules : IDisposable
     [Trait("Description", "Why this " +
                  "test exists.")]
     public void Described() { }
+
+    [Fact]
+    public void Logs()
+    {
+        TestContext.Current.TestOutputHelper?.WriteLine($"a {_state}");
+        TestContext.Current.TestOutputHelper?.WriteLine("b");
+        try
+        {
+            throw new Xunit.Sdk.XunitException("x");
+        }
+        catch (Xunit.Sdk.XunitException)
+        {
+        }
+    }
 }
 
 [Collection("DoNotParallelize")]
@@ -121,6 +135,11 @@ public sealed class AssertionRules
         MessageAssert.Equal("A", "a", StringComparer.OrdinalIgnoreCase, "why");
         MessageAssert.NotEqual("A", "b", StringComparer.OrdinalIgnoreCase, "why");
         MessageAssert.StartsWith("he", s, StringComparison.Ordinal, "why");
+        Assert.Contains("ell", s);
+        Assert.DoesNotContain(3, list);
+        Assert.StartsWith("he", s, StringComparison.Ordinal);
+        Assert.EndsWith("lo", s);
+        Assert.False(s.StartsWith("z"));
 
         Assert.Contains("ell", s);
         MessageAssert.Contains("ell", s, "why");
