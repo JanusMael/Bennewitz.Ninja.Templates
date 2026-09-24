@@ -174,6 +174,10 @@ What generation does is marked ✅; the rest is yours.
 ## Bringing an existing repository in
 
 1. Copy `scripts/repo-conventions.cs` from this repository's `templates/bbpkg/scripts/`.
+   ⛔ **A project at the repository root compiles it**, because an SDK project's default glob takes
+   every `.cs` beneath it, and the build fails with `CS9314` on the script's `#!` line. Add
+   `scripts\**` to that project's `DefaultItemExcludes` in the same change, and run the
+   repository's own build before pushing: `check` compiles the script alone and cannot see this.
 2. Write `.github/repository.json`, listing in `requiredChecks` only jobs that already exist.
 3. Add the `conventions` job to CI and the preflight step to the release workflow, as the template's
    workflows have them.

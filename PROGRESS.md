@@ -424,8 +424,9 @@ green, in both repositories.
 | 3 · `docs/repository-conventions.md` + template documents + `verify-release` tree check | **done** | The template ships `AGENTS.md` and a `CLAUDE.md` pointer at the root and in `src/`, `tests/`, `scripts/`, `docs/` and `.github/`, plus `PROGRESS.md`, `.github/copilot-instructions.md` and `.github/repository.json`. `verify-release` requires all 16, failed naming `tests\CLAUDE.md` with only that file removed, and passes with all present. A generated repository's `check` reports only the empty description and 8 markers, nothing structural |
 | 4 · CI job + release preflight in the template's workflows | **done** | Shipped `ci.yml` gains a `conventions` job (`contents: read`), and `release.yml` runs `check --release` before login and push, in the preflight dispatch too. `conventions` joins the template's `requiredChecks`. 4 tests in `ConventionsWorkflowTests`; 5 planted defects, all caught. The two `NUGET_USER secret` comments in the shipped `release.yml` now say variable |
 | 5 · Adopt it all in this repository, then `apply` | **done** | `AGENTS.md` and a pointer at the root and in all six top-level directories, `.github/repository.json`, the `conventions` CI job and the release preflight; `ConventionsWorkflowTests` covers both repositories' workflows. `apply` ran 2026-09-24 with the maintainer's go-ahead, and `check --admin` then passed against the rulesets as GitHub returns them. The direct push after it went through the admin bypass, with GitHub listing the two rules bypassed. CI green on `e1d2695`, `verify` and `conventions` both |
-| 6 · The other seven: script, CI job and `repository.json`, then `apply` | next | One repository at a time; the `conventions` job is not required until that repository's documentation lands. DiffView through a pull request |
-| 7–10 | not started | |
+| 6 · The other seven: script, CI job and `repository.json`, then `apply` | **done** | All seven applied 2026-09-24 with the maintainer's go-ahead; `check --admin --repo` then reported only documentation gaps in each. Pushed direct to `main` in six; DiffView through [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2), still open. AutoVersioning's classic branch protection replaced by its ruleset. A throwaway draft PR in each of the six showed every required check reporting, then was closed and its branch deleted: all green except AutoVersioning, see below. Worked from worktrees of `origin/main`, because XamlQuality's and DiffView's clones sit on other sessions' branches |
+| 7 · Documentation in AppServices and ScopedEditors | next | Then the `conventions` job becomes required in each, and the release preflight is added with it |
+| 8–10 | not started | |
 
 **What a workflow's read-only `GITHUB_TOKEN` reads** (2026-09-24):
 
@@ -465,6 +466,18 @@ converts to CRLF, so a strict byte comparison would report every Windows copy as
 against a hard-coded `always` instead of against the baseline `apply` writes, so the two could have
 drifted apart silently. The expected bypass is now derived from the baseline, like every other
 facet, and the planted `pull_request` mode fails the conforming test.
+
+⛔ **Step 6 broke AutoVersioning's `main` for about 35 minutes.** Its project sits at the repository
+root, so the SDK's default glob compiled `scripts/repo-conventions.cs` into it and the build failed
+with `CS9314` on the `#!` line (`162fdbf`). The local `check` in the worktree compiled the script
+alone and could not see it; the throwaway PR's required `build` did. Fixed in `3100149`, which adds
+`scripts\**` to `DefaultItemExcludes` beside `Tests\**`, and `build` is green again. The conventions
+document now warns about a root project in its checklist for bringing a repository in.
+
+**The release preflight is not in the other seven yet.** Plan step 6 names the script, the CI job
+and `repository.json`. The preflight would refuse every release until that repository's
+documentation exists, so it lands with the documentation in steps 7–9, when the `conventions` job
+also becomes required.
 
 ⛔ **The marker check matched prose about markers.** It looked for `<!-- bbpkg:` anywhere in a
 line, so this repository's own check failed on `docs/repository-conventions.md`,
