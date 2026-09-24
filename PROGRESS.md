@@ -288,6 +288,12 @@ of it blocking:
    waits for `.924` on nuget.org and gets the flat-container proof once that is published.
    ✅ The markup guards it reported as covering nothing are ported into ScopedEditors, along with a
    fifth, the Expander-name check, which was left behind the same way. See item 2.
+5. **`Bennewitz.Ninja.AutoVersioning` is pinned at `2026.3.916`**, raised from `.914` on 2026-09-24
+   in both the template and this repository. Upstream calls it a drop-in: its suppressions move to
+   `Build.targets`, so a `GenerateAutoVersionedAssemblyInfo` set in a `.csproj` now takes effect.
+   Verified by the 18 tests and a passing `verify-release`. ⚠ **Not yet released**: repositories
+   generated from `2026.3.923` still get `.914`, so the next template release carries it. Nothing
+   else under `templates/` has changed since `.923`.
 
 ⛔ **This entry used to reserve `plans/00002` for `Bennewitz.Ninja.DiffView`, and that was wrong
 twice over.** DiffView stopped being the interesting case when its ThemeAudit tool moved to
