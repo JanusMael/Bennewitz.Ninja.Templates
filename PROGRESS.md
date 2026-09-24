@@ -201,6 +201,15 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
   `IsTrue`/`IsFalse(xs.Any(p))` must be `Contains`/`DoesNotContain(xs, p)` (xUnit2012). It is the
   first form that takes MORE arguments than the original, which crashed the rewrite (no separator to
   reuse) until the site learned to make one.
+- ⭐ **2026-09-24, the rest of OpenForge2k's suite needed six more**, all now in the table:
+  `[Description]` → `[Trait("Description", …)]` (the maintainer's choice); `nameof(x)` is a message;
+  named `delta:`/`ignoreCase:`/`message:` arguments become positional — ⚠ and a call that then finds
+  no rule is returned WITH its names, since a refused form is left exactly as written; the
+  4-argument `StringComparison` + message string forms; `AreEqual`/`AreNotEqual` with a
+  `StringComparer` and a message; `CollectionAssert.AreNotEqual` and `AllItemsAreUnique` with a
+  message. Each has a `MessageAssert` overload. The new expected output compiled with the emitted
+  helpers under warnings-as-errors and xUnit's analyzers before it was accepted; breaking the
+  `nameof` rule fails the two fixture tests that see it.
 - Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.

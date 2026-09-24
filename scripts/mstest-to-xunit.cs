@@ -612,6 +612,19 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
                             "xUnit v3 fails a SYNCHRONOUS test that carries a Timeout; make the test async, or drop the timeout, by hand");
                     }
                     break;
+                case "Description":
+                    // xUnit has no description; a trait keeps the text as metadata a runner and
+                    // the TRX still show, which is what MSTest's attribute was for.
+                    if (args.Count == 1 && args[0].NameEquals is null && args[0].NameColon is null)
+                    {
+                        replaced[a] = Attr($"Trait(\"Description\", {args[0].Expression})", a);
+                        report.Converted("[Description] → [Trait(\"Description\", …)]");
+                    }
+                    else
+                    {
+                        report.Skip(file, a, $"[{a}] on {node.Identifier.ValueText}", "only a single positional description maps to a trait");
+                    }
+                    break;
                 case string n when MsTestAttributes.Contains(n):
                     report.Skip(file, a, $"[{a}] on {node.Identifier.ValueText}", "no rule for this attribute");
                     break;
@@ -692,6 +705,22 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
         string family = receiver.Identifier.ValueText;
         string method = access.Name.Identifier.ValueText;
         var args = node.ArgumentList.Arguments;
+        // What a refused call returns: never the name-stripped form below.
+        InvocationExpressionSyntax asWritten = node;
+
+        // AreEqual/AreNotEqual(e, a, delta: d | ignoreCase: b, message: m): the names only restate
+        // positions, so drop them and let the positional rules decide. An order the rules do not
+        // expect then simply finds no rule and is listed.
+        if (family == "Assert" && method is "AreEqual" or "AreNotEqual"
+            && args.Any(a => a.NameColon is not null)
+            && args.All(a => a.RefKindKeyword.IsKind(SyntaxKind.None)
+                && a.NameColon?.Name.Identifier.ValueText is null or "delta" or "ignoreCase" or "message"))
+        {
+            var positional = args.Select(a => a.NameColon is null ? a : a.WithNameColon(null).WithTriviaFrom(a));
+            node = node.WithArgumentList(node.ArgumentList.WithArguments(SyntaxFactory.SeparatedList(positional, args.GetSeparators())));
+            args = node.ArgumentList.Arguments;
+        }
+
         if (args.Any(a => a.NameColon is not null || !a.RefKindKeyword.IsKind(SyntaxKind.None)))
         {
             report.Skip(file, node, $"{family}.{method}", "named, ref or out arguments");
@@ -731,7 +760,7 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
         if (rule is null)
         {
             report.Skip(file, node, $"{family}.{method}({args.Count} argument{(args.Count == 1 ? "" : "s")})", why ?? "no rule");
-            return node;
+            return asWritten;
         }
 
         (string to, int[] order) = rule.Value;
@@ -768,7 +797,7 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
 /// </summary>
 static class AssertRules
 {
-    enum Arg { Message, Number, Bool, Comparison, Lambda, Unknown }
+    enum Arg { Message, Number, Bool, Comparison, Comparer, Lambda, Unknown }
 
     public static (string To, int[] Order)? Map(string family, string method, bool generic,
         SeparatedSyntaxList<ArgumentSyntax> args, out string? why)
@@ -777,7 +806,7 @@ static class AssertRules
         int n = args.Count;
         Arg Kind(int i) => Classify(args[i].Expression);
         int[] Same = [.. Enumerable.Range(0, n)];
-        int[] Swap = n switch { 2 => [1, 0], 3 => [1, 0, 2], _ => [] };
+        int[] Swap = n switch { 2 => [1, 0], 3 => [1, 0, 2], 4 => [1, 0, 2, 3], _ => [] };
 
         (string, int[])? r = (family, method, n) switch
         {
@@ -791,6 +820,9 @@ static class AssertRules
                 _ => null,
             },
             ("Assert", "AreEqual", 4) when Kind(2) == Arg.Number && Kind(3) == Arg.Message => ("MessageAssert.Equal", Same),
+            ("Assert", "AreEqual", 4) when Kind(2) == Arg.Bool && Kind(3) == Arg.Message => ("MessageAssert.Equal", Same),     // ignoreCase
+            ("Assert", "AreEqual" or "AreNotEqual", 4) when Kind(2) == Arg.Comparer && Kind(3) == Arg.Message
+                => (method == "AreEqual" ? "MessageAssert.Equal" : "MessageAssert.NotEqual", Same),
             ("Assert", "AreNotEqual", 2) => ("Assert.NotEqual", Same),
             ("Assert", "AreNotEqual", 3) when Kind(2) == Arg.Message => ("MessageAssert.NotEqual", Same),
             ("Assert", "AreSame", 2) => ("Assert.Same", Same),
@@ -832,6 +864,8 @@ static class AssertRules
                 Arg.Comparison => ($"Assert.{method}", Same),
                 _ => null,
             },
+            ("Assert", "Contains" or "DoesNotContain" or "StartsWith" or "EndsWith", 4)
+                when Kind(2) == Arg.Comparison && Kind(3) == Arg.Message => ($"MessageAssert.{method}", Same),
             ("Assert", "IsEmpty", 1) => ("Assert.Empty", Same),
             ("Assert", "IsNotEmpty", 1) => ("Assert.NotEmpty", Same),
 
@@ -843,6 +877,8 @@ static class AssertRules
                 Arg.Comparison => ($"Assert.{method}", Swap),
                 _ => null,
             },
+            ("StringAssert", "Contains" or "StartsWith" or "EndsWith", 4)
+                when Kind(2) == Arg.Comparison && Kind(3) == Arg.Message => ($"MessageAssert.{method}", Swap),
             ("StringAssert", "Matches" or "DoesNotMatch", 2) => ($"Assert.{method}", Swap),
             ("StringAssert", "Matches" or "DoesNotMatch", 3) when Kind(2) == Arg.Message => ($"MessageAssert.{method}", Swap),
 
@@ -850,6 +886,7 @@ static class AssertRules
             ("CollectionAssert", "AreEqual", 2) => ("Assert.Equal", Same),
             ("CollectionAssert", "AreEqual", 3) when Kind(2) == Arg.Message => ("MessageAssert.SequenceEqual", Same),
             ("CollectionAssert", "AreNotEqual", 2) => ("Assert.NotEqual", Same),
+            ("CollectionAssert", "AreNotEqual", 3) when Kind(2) == Arg.Message => ("MessageAssert.SequenceNotEqual", Same),
             // (collection, element) — xUnit takes (element, collection)
             ("CollectionAssert", "Contains" or "DoesNotContain", 2) => ($"Assert.{method}", Swap),
             ("CollectionAssert", "Contains" or "DoesNotContain", 3) => ($"MessageAssert.{method}", Swap),
@@ -857,6 +894,7 @@ static class AssertRules
             // comparison with different rules, so this goes to a helper that implements MSTest's.
             ("CollectionAssert", "AreEquivalent", 2 or 3) => ("MessageAssert.SameElements", Same),
             ("CollectionAssert", "AllItemsAreUnique", 1) => ("Assert.Distinct", Same),
+            ("CollectionAssert", "AllItemsAreUnique", 2) when Kind(1) == Arg.Message => ("MessageAssert.Distinct", Same),
             _ => null,
         };
 
@@ -1003,7 +1041,10 @@ static class AssertRules
         {
             Expression: PredefinedTypeSyntax p, Name.Identifier.ValueText: "Format" or "Join" or "Concat",
         } } when p.Keyword.IsKind(SyntaxKind.StringKeyword) => Arg.Message,
+        // nameof() is a compile-time string: in a message position it can only be the message.
+        InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" } } => Arg.Message,
         MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "StringComparison" } } => Arg.Comparison,
+        MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "StringComparer" } } => Arg.Comparer,
         LambdaExpressionSyntax => Arg.Lambda,
         ParenthesizedExpressionSyntax p => Classify(p.Expression),
         _ => Arg.Unknown,
@@ -1244,6 +1285,38 @@ static class Helpers
             /// <summary>MSTest's CollectionAssert.AreEqual with a message: same elements, same order.</summary>
             public static void SequenceEqual<T>(IEnumerable<T>? expected, IEnumerable<T>? actual, string message) =>
                 With(message, () => Assert.Equal(expected, actual));
+
+            /// <summary>MSTest's CollectionAssert.AreNotEqual with a message: differs in elements or order.</summary>
+            public static void SequenceNotEqual<T>(IEnumerable<T>? expected, IEnumerable<T>? actual, string message) =>
+                With(message, () => Assert.NotEqual(expected, actual));
+
+            /// <summary>MSTest's CollectionAssert.AllItemsAreUnique with a message.</summary>
+            public static void Distinct<T>(IEnumerable<T> collection, string message) =>
+                With(message, () => Assert.Distinct(collection));
+
+            /// <summary>MSTest's AreEqual(string, string, ignoreCase, message).</summary>
+            public static void Equal(string? expected, string? actual, bool ignoreCase, string message) =>
+                With(message, () => Assert.Equal(expected, actual, ignoreCase: ignoreCase));
+
+            /// <summary>MSTest's AreEqual(expected, actual, comparer, message).</summary>
+            public static void Equal<T>(T expected, T actual, IEqualityComparer<T> comparer, string message) =>
+                With(message, () => Assert.Equal(expected, actual, comparer));
+
+            /// <summary>MSTest's AreNotEqual(notExpected, actual, comparer, message).</summary>
+            public static void NotEqual<T>(T expected, T actual, IEqualityComparer<T> comparer, string message) =>
+                With(message, () => Assert.NotEqual(expected, actual, comparer));
+
+            public static void Contains(string expectedSubstring, string? actualString, StringComparison comparisonType, string message) =>
+                With(message, () => Assert.Contains(expectedSubstring, actualString, comparisonType));
+
+            public static void DoesNotContain(string expectedSubstring, string? actualString, StringComparison comparisonType, string message) =>
+                With(message, () => Assert.DoesNotContain(expectedSubstring, actualString, comparisonType));
+
+            public static void StartsWith(string? expectedStart, string? actualString, StringComparison comparisonType, string message) =>
+                With(message, () => Assert.StartsWith(expectedStart, actualString, comparisonType));
+
+            public static void EndsWith(string? expectedEnd, string? actualString, StringComparison comparisonType, string message) =>
+                With(message, () => Assert.EndsWith(expectedEnd, actualString, comparisonType));
 
             public static T Throws<T>(Action testCode, string message) where T : Exception
             {
