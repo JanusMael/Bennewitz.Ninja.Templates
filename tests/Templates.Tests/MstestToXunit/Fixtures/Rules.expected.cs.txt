@@ -135,16 +135,16 @@ public sealed class AssertionRules
         MessageAssert.Equal("A", "a", StringComparer.OrdinalIgnoreCase, "why");
         MessageAssert.NotEqual("A", "b", StringComparer.OrdinalIgnoreCase, "why");
         MessageAssert.StartsWith("he", s, StringComparison.Ordinal, "why");
-        Assert.Contains("ell", s);
-        Assert.DoesNotContain(3, list);
+        OrdinalAssert.Contains("ell", s);
+        OrdinalAssert.DoesNotContain(3, list);
         Assert.StartsWith("he", s, StringComparison.Ordinal);
         Assert.EndsWith("lo", s);
         Assert.False(s.StartsWith("z"));
 
-        Assert.Contains("ell", s);
+        OrdinalAssert.Contains("ell", s);
         MessageAssert.Contains("ell", s, "why");
         Assert.Contains("ELL", s, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith("he", s);
+        OrdinalAssert.StartsWith("he", s);
         MessageAssert.EndsWith("lo", s, "why");
         Assert.DoesNotMatch(new Regex("^z"), s);
         MessageAssert.Contains("ELL", s, StringComparison.OrdinalIgnoreCase, "why");
