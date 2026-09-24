@@ -430,6 +430,15 @@ green, in both repositories.
 | 9 · FileServer, AutoVersioning, then DiffView by pull request | **done except DiffView** | FileServer `d9edae6` and AutoVersioning `3e27363`: `AGENTS.md` and a pointer at the root and in every top-level directory (FileServer's `publish/` holds hand-written scripts, so it is documented, not exempted), `.github/copilot-instructions.md`, `conventions` required, and the release preflight, before `Publish all RIDs` in FileServer. Every cited name resolves; AutoVersioning's own build and tests ran clean before the push. `check --admin` conforms in both; CI green on every job. **DiffView is handed to its own session** (maintainer's decision, 2026-09-24): its `main` was already red before any of this, on `ReferenceAuditTests.The_committed_report_equals_a_fresh_run`, and the ruleset now requires those checks, so no DiffView pull request, DiffView#2 included, can merge until that session makes `main` green |
 | 10 · Record the outcome | **done, 7 of 8** | `check --admin --repo` from this repository, 2026-09-24: Templates, AppServices, ScopedEditors, XamlQuality, AssemblyQuality, FileServer and AutoVersioning conform. DiffView reports 23 findings, all waiting on DiffView#2 and its documentation |
 
+✅ **Released as `Bennewitz.Ninja.Templates 2026.3.924`**, 2026-09-24, tag `v2026.3.924` at
+`6425705`, so `dotnet new bbpkg` now generates everything above. The credential preflight passed
+first, including the new `check --release`. Verified from the feed rather than the green run: the
+nuget.org flat-container lists `2026.3.924`; the `.nupkg` downloaded from it carries 40 content
+entries, none outside `content/bbpkg/`, among them `scripts/repo-conventions.cs` and `AGENTS.md`;
+and `verify-release --published 2026.3.924` installed it from nuget.org, generated a repository,
+asserted the tree, and built, tested and packed it. It also carries AutoVersioning `2026.3.916` and
+drops `IsContinuousIntegration`.
+
 **Decided 2026-09-24** (maintainer, through `choices`):
 1. Step 9 proceeds for FileServer and AutoVersioning.
 2. DiffView goes to its own session, which owns its red `main` and DiffView#2. No DiffView session runs on this machine, so it has not been told yet.
