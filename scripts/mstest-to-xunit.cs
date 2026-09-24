@@ -784,9 +784,9 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
             report.Converted($"{family}.{method} → {specialTo}{(typeArgument is null ? "" : "<T>")} (the form xUnit's analyzers require)");
             string specialReceiver = specialTo[..specialTo.IndexOf('.')];
             string specialMethod = specialTo[(specialTo.IndexOf('.') + 1)..];
-            if (specialReceiver == "MessageAssert")
+            if (specialReceiver is "MessageAssert" or "OrdinalAssert")
             {
-                report.HelpersUsed.Add("MessageAssert." + specialMethod);
+                report.HelpersUsed.Add(specialReceiver + "." + specialMethod);
             }
             SyntaxToken id = SyntaxFactory.Identifier(specialMethod).WithTriviaFrom(access.Name.Identifier);
             SimpleNameSyntax specialName = typeArgument is null
@@ -818,9 +818,9 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
         (string to, int[] order) = rule.Value;
         string newReceiver = to[..to.IndexOf('.')];
         string newMethod = to[(to.IndexOf('.') + 1)..];
-        if (newReceiver == "MessageAssert")
+        if (newReceiver is "MessageAssert" or "OrdinalAssert")
         {
-            report.HelpersUsed.Add("MessageAssert." + newMethod);
+            report.HelpersUsed.Add(newReceiver + "." + newMethod);
         }
         report.Converted($"{family}.{method} → {to}");
 
@@ -909,7 +909,8 @@ static class AssertRules
             ("Assert", "ThrowsAsync", 1) => ("Assert.ThrowsAnyAsync", Same),
             // MSTest 4's Contains/StartsWith/EndsWith already take (expected, actual), as xUnit does.
             ("Assert", "Contains" or "DoesNotContain", 2) when Kind(0) == Arg.Lambda => ($"Assert.{method}", Swap),
-            ("Assert", "Contains" or "DoesNotContain" or "StartsWith" or "EndsWith", 2) => ($"Assert.{method}", Same),
+            // ⛔ OrdinalAssert, not Assert: MSTest compares strings ordinally, xUnit by culture.
+            ("Assert", "Contains" or "DoesNotContain" or "StartsWith" or "EndsWith", 2) => ($"OrdinalAssert.{method}", Same),
             ("Assert", "Contains" or "DoesNotContain" or "StartsWith" or "EndsWith", 3) => Kind(2) switch
             {
                 Arg.Message => ($"MessageAssert.{method}", Same),
@@ -922,7 +923,7 @@ static class AssertRules
             ("Assert", "IsNotEmpty", 1) => ("Assert.NotEmpty", Same),
 
             // ── StringAssert: (value, substring) — xUnit takes (substring, value) ──
-            ("StringAssert", "Contains" or "StartsWith" or "EndsWith", 2) => ($"Assert.{method}", Swap),
+            ("StringAssert", "Contains" or "StartsWith" or "EndsWith", 2) => ($"OrdinalAssert.{method}", Swap),
             ("StringAssert", "Contains" or "StartsWith" or "EndsWith", 3) => Kind(2) switch
             {
                 Arg.Message => ($"MessageAssert.{method}", Swap),
@@ -994,10 +995,14 @@ static class AssertRules
             return (method == "IsTrue" ? "Assert.Contains" : "Assert.DoesNotContain", null, [anySource, anyPredicate]);
         }
 
-        // IsTrue/IsFalse(x.Contains(y)) → Contains/DoesNotContain(y, x): xUnit2009 for a string, xUnit2017
-        // for a collection, and the same call shape serves both. IsTrue(x.StartsWith|EndsWith(y[, c]))
-        // → StartsWith|EndsWith(y, x[, c]) (xUnit2009). xUnit has no negated StartsWith/EndsWith, so
-        // IsFalse of those is left alone. Only without a message.
+        // IsTrue/IsFalse(x.Contains(y)) → OrdinalAssert.Contains/DoesNotContain(y, x): xUnit2009 for a
+        // string, xUnit2017 for a collection. OrdinalAssert because string.Contains is ORDINAL and
+        // xUnit's string Contains is not; its overloads bind exactly as x.Contains(y) did.
+        // IsTrue(x.StartsWith|EndsWith(y[, c])) → Assert.StartsWith|EndsWith(y, x[, c]) (xUnit2009):
+        // string.StartsWith(string) is CULTURE-sensitive, like xUnit's default, so that pair agrees.
+        // A char literal is left alone — string.StartsWith(char) is ordinal and xUnit has no char
+        // overload. xUnit has no negated StartsWith/EndsWith, so IsFalse of those is left alone too.
+        // Only without a message.
         if (method is "IsTrue" or "IsFalse" && args.Count == 1 && args[0].Expression is InvocationExpressionSyntax
             {
                 Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Contains" or "StartsWith" or "EndsWith" } call,
@@ -1008,10 +1013,11 @@ static class AssertRules
             bool comparison = callArgs.Count == 2 && Classify(callArgs[1].Expression) == Arg.Comparison;
             if (name == "Contains" && callArgs.Count == 1 && callArgs[0].NameColon is null)
             {
-                return (method == "IsTrue" ? "Assert.Contains" : "Assert.DoesNotContain", null, [callArgs[0].Expression, call.Expression]);
+                return (method == "IsTrue" ? "OrdinalAssert.Contains" : "OrdinalAssert.DoesNotContain", null, [callArgs[0].Expression, call.Expression]);
             }
             if (name != "Contains" && method == "IsTrue" && (callArgs.Count == 1 || comparison)
-                && callArgs.All(a => a.NameColon is null))
+                && callArgs.All(a => a.NameColon is null)
+                && !callArgs[0].Expression.IsKind(SyntaxKind.CharacterLiteralExpression))
             {
                 return ($"Assert.{name}", null,
                     comparison ? [callArgs[0].Expression, call.Expression, callArgs[1].Expression] : [callArgs[0].Expression, call.Expression]);
@@ -1321,8 +1327,13 @@ static class Helpers
             public static void Contains<T>(T expected, IEnumerable<T> collection, string message) =>
                 With(message, () => Assert.Contains(expected, collection));
 
+            /// <remarks>
+            /// ⛔ ORDINAL, as every MSTest string assertion is. xUnit's own default is the CURRENT CULTURE,
+            /// which ignores characters such as a soft hyphen — measured: <c>Contains("coop", "co­op")</c>
+            /// passes in xUnit and fails in MSTest. Converting without the comparison would weaken the test.
+            /// </remarks>
             public static void Contains(string expectedSubstring, string? actualString, string message) =>
-                With(message, () => Assert.Contains(expectedSubstring, actualString));
+                With(message, () => Assert.Contains(expectedSubstring, actualString, StringComparison.Ordinal));
 
             public static T IsAssignableFrom<T>(object? value, string message)
             {
@@ -1343,14 +1354,17 @@ static class Helpers
             public static void DoesNotContain<T>(T expected, IEnumerable<T> collection, string message) =>
                 With(message, () => Assert.DoesNotContain(expected, collection));
 
+            /// <remarks>Ordinal, like every MSTest string assertion; see <see cref="Contains(string, string?, string)"/>.</remarks>
             public static void DoesNotContain(string expectedSubstring, string? actualString, string message) =>
-                With(message, () => Assert.DoesNotContain(expectedSubstring, actualString));
+                With(message, () => Assert.DoesNotContain(expectedSubstring, actualString, StringComparison.Ordinal));
 
+            /// <remarks>Ordinal, like every MSTest string assertion; see <see cref="Contains(string, string?, string)"/>.</remarks>
             public static void StartsWith(string? expectedStart, string? actualString, string message) =>
-                With(message, () => Assert.StartsWith(expectedStart, actualString));
+                With(message, () => Assert.StartsWith(expectedStart, actualString, StringComparison.Ordinal));
 
+            /// <remarks>Ordinal, like every MSTest string assertion; see <see cref="Contains(string, string?, string)"/>.</remarks>
             public static void EndsWith(string? expectedEnd, string? actualString, string message) =>
-                With(message, () => Assert.EndsWith(expectedEnd, actualString));
+                With(message, () => Assert.EndsWith(expectedEnd, actualString, StringComparison.Ordinal));
 
             public static void Matches(Regex expectedRegex, string? actualString, string message) =>
                 With(message, () => Assert.Matches(expectedRegex, actualString));
@@ -1471,6 +1485,44 @@ static class Helpers
                     throw new XunitException(message + Environment.NewLine + failure.Message, failure);
                 }
             }
+        }
+
+        /// <summary>
+        /// MSTest's string assertions without a message, keeping MSTest's ORDINAL comparison.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// ⛔ xUnit's string <c>Contains</c>/<c>StartsWith</c>/<c>EndsWith</c> default to the CURRENT
+        /// CULTURE; MSTest's are ordinal. Measured: <c>Contains("coop", "co­op")</c> passes in xUnit
+        /// and fails in MSTest, and <c>DoesNotContain</c> fails where MSTest passed. A converted
+        /// assertion must keep the meaning it had, so every string form comes here.
+        /// </para>
+        /// <para>
+        /// ⭐ <c>Contains</c>/<c>DoesNotContain</c> also take a collection — MSTest 4's <c>Assert.Contains</c>
+        /// is overloaded the same way, and the syntax alone cannot tell which a call means. Overload
+        /// resolution can: a string argument binds the ordinal overload, anything else the generic one,
+        /// exactly as it bound MSTest's.
+        /// </para>
+        /// </remarks>
+        internal static class OrdinalAssert
+        {
+            public static void Contains(string expectedSubstring, string? actualString) =>
+                Assert.Contains(expectedSubstring, actualString, StringComparison.Ordinal);
+
+            public static void Contains<T>(T expected, IEnumerable<T> collection) =>
+                Assert.Contains(expected, collection);
+
+            public static void DoesNotContain(string expectedSubstring, string? actualString) =>
+                Assert.DoesNotContain(expectedSubstring, actualString, StringComparison.Ordinal);
+
+            public static void DoesNotContain<T>(T expected, IEnumerable<T> collection) =>
+                Assert.DoesNotContain(expected, collection);
+
+            public static void StartsWith(string? expectedStart, string? actualString) =>
+                Assert.StartsWith(expectedStart, actualString, StringComparison.Ordinal);
+
+            public static void EndsWith(string? expectedEnd, string? actualString) =>
+                Assert.EndsWith(expectedEnd, actualString, StringComparison.Ordinal);
         }
 
         /// <summary>

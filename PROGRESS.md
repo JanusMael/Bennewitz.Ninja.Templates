@@ -210,6 +210,17 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
   message. Each has a `MessageAssert` overload. The new expected output compiled with the emitted
   helpers under warnings-as-errors and xUnit's analyzers before it was accepted; breaking the
   `nameof` rule fails the two fixture tests that see it.
+- ⛔⛔ **Every string assertion was converted WEAKER until 2026-09-24.** MSTest's `StringAssert.*` and
+  string `Assert.Contains/StartsWith/EndsWith` are ORDINAL; xUnit's default to the CURRENT CULTURE,
+  which ignores e.g. a soft hyphen. Measured both sides: `Contains("coop", "co­op")` FAILS in
+  MSTest (all five forms) and PASSES in xUnit's default; `DoesNotContain` flips the other way. A
+  converted suite stays green precisely because the weakened assertion still passes, so nothing
+  showed it. Now every such form goes to an emitted `OrdinalAssert` (or the message helpers, now
+  ordinal): its string overloads compare ordinally, and its generic overloads take collections, so
+  overload resolution binds as MSTest's did — which also settles MSTest 4's `Assert.Contains` being
+  string-or-collection. `IsTrue(s.StartsWith(x))` still maps to xUnit's default, because
+  `string.StartsWith(string)` is itself culture-sensitive. Pinned: the helper test fails if any
+  emitted string helper calls xUnit without a comparison; canaried both halves.
 - Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.

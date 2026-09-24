@@ -54,10 +54,22 @@ public sealed class MstestToXunitTests : IClassFixture<MstestToXunitTests.Run>
         string converted = _run.Converted("Rules.cs");
 
         Assert.Contains("namespace Fixture.Namespace;", helpers, StringComparison.Ordinal);
-        foreach (string member in System.Text.RegularExpressions.Regex.Matches(converted, @"MessageAssert\.(\w+)")
+        foreach (string member in System.Text.RegularExpressions.Regex.Matches(converted, @"(?:MessageAssert|OrdinalAssert)\.(\w+)")
                      .Select(m => m.Groups[1].Value).Distinct())
         {
             Assert.Contains($" {member}", helpers, StringComparison.Ordinal);
+        }
+        Assert.Contains("internal static class OrdinalAssert", helpers, StringComparison.Ordinal);
+
+        // ⛔ MSTest's string assertions are ORDINAL and xUnit's default to the culture, so no emitted
+        // string helper may call xUnit's without a comparison. Measured when this was added:
+        // Contains("coop", "co­op") passes in xUnit's default and fails in MSTest.
+        foreach (string call in (string[])[
+                     "Assert.Contains(expectedSubstring, actualString)", "Assert.DoesNotContain(expectedSubstring, actualString)",
+                     "Assert.StartsWith(expectedStart, actualString)", "Assert.EndsWith(expectedEnd, actualString)"])
+        {
+            Assert.DoesNotContain(call, helpers, StringComparison.Ordinal);
+            Assert.Contains(call.TrimEnd(')') + ", StringComparison.Ordinal)", helpers, StringComparison.Ordinal);
         }
         Assert.Contains("[CollectionDefinition(\"DoNotParallelize\", DisableParallelization = true)]", helpers,
             StringComparison.Ordinal);
