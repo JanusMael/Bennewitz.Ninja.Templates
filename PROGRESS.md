@@ -197,6 +197,10 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
   predicate overloads (xUnit2029/2030); a typeof must use the generic `IsAssignableFrom<T>`
   (xUnit2007, CA2263); former setup methods must not stay public (xUnit1013); and a throw-lambda
   binds to xUnit's obsolete `Throws<T>(Func<Task>)` (CS0619), so it is refused.
+- ⭐ **2026-09-24, OpenForge2k's second project (`AgentForge.Artifacts.Tests`) found one more:**
+  `IsTrue`/`IsFalse(xs.Any(p))` must be `Contains`/`DoesNotContain(xs, p)` (xUnit2012). It is the
+  first form that takes MORE arguments than the original, which crashed the rewrite (no separator to
+  reuse) until the site learned to make one.
 - Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.

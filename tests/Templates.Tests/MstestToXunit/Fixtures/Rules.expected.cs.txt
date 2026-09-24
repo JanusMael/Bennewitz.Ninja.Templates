@@ -108,6 +108,8 @@ public sealed class AssertionRules
         Assert.DoesNotContain(list, x => x > 5);
         Assert.Single(list, x => x == 1);
         Assert.Empty(Array.Empty<int>());
+        Assert.Contains(list, x => x == 1);
+        Assert.DoesNotContain(list, x => x > 5);
 
         Assert.Contains("ell", s);
         MessageAssert.Contains("ell", s, "why");

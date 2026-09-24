@@ -714,6 +714,12 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
             // Each new argument keeps the trivia of the position it lands in; separators are reused.
             var newArgs = specialArgs.Select((e, i) => SyntaxFactory.Argument(e.WithoutTrivia()).WithTriviaFrom(args[Math.Min(i, args.Count - 1)])).ToList();
             var separators = args.GetSeparators().Take(newArgs.Count - 1).ToList();
+            // A form can take MORE arguments than the original (IsTrue(xs.Any(p)) → Contains(xs, p)),
+            // and then there is no separator to reuse.
+            while (separators.Count < newArgs.Count - 1)
+            {
+                separators.Add(SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(SyntaxFactory.Space));
+            }
             return node
                 .WithExpression(access
                     .WithExpression(SyntaxFactory.IdentifierName(specialReceiver).WithTriviaFrom(receiver))
@@ -871,7 +877,8 @@ static class AssertRules
     /// Two-argument equality checks that xUnit's analyzers reject as errors, rewritten to the exactly
     /// equivalent assertion they ask for. Only these, and only without a message:
     /// <c>(null, x)</c> → Null / NotNull (xUnit2003), <c>(true|false, x)</c> → True / False (xUnit2004),
-    /// <c>(0|1, c.Count|c.Length|c.Count())</c> → Empty / Single (xUnit2013).
+    /// <c>(0|1, c.Count|c.Length|c.Count())</c> → Empty / Single (xUnit2013),
+    /// and <c>IsTrue|IsFalse(c.Any(p))</c> → Contains / DoesNotContain (xUnit2012).
     /// </summary>
     public static (string To, TypeSyntax? TypeArgument, ExpressionSyntax[] Args)? AnalyzerForm(
         string family, string method, SeparatedSyntaxList<ArgumentSyntax> args)
@@ -888,6 +895,13 @@ static class AssertRules
             return args.Count == 2
                 ? ("Assert.IsAssignableFrom", typeOf.Type, [args[0].Expression])
                 : ("MessageAssert.IsAssignableFrom", typeOf.Type, [args[0].Expression, args[2].Expression]);
+        }
+
+        // IsTrue(xs.Any(p)) / IsFalse(xs.Any(p)) → Contains / DoesNotContain(xs, p): the boolean form
+        // is xUnit2012, an error. Only without a message, like the equality forms below.
+        if (method is "IsTrue" or "IsFalse" && args.Count == 1 && AnyWithPredicate(args[0].Expression) is var (anySource, anyPredicate))
+        {
+            return (method == "IsTrue" ? "Assert.Contains" : "Assert.DoesNotContain", null, [anySource, anyPredicate]);
         }
 
         if (method is not ("AreEqual" or "AreNotEqual") || args.Count != 2)
@@ -925,6 +939,17 @@ static class AssertRules
         }
         return null;
     }
+
+    /// <summary><c>xs.Any(p)</c> → <c>(xs, p)</c>, for a lambda <c>p</c>.</summary>
+    static (ExpressionSyntax Source, ExpressionSyntax Predicate)? AnyWithPredicate(ExpressionSyntax e) => e switch
+    {
+        InvocationExpressionSyntax
+        {
+            Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Any" } m,
+            ArgumentList.Arguments: [{ Expression: LambdaExpressionSyntax p }],
+        } => (m.Expression, p),
+        _ => null,
+    };
 
     static bool ThrowLambda(ExpressionSyntax e) =>
         e is LambdaExpressionSyntax { ExpressionBody: ThrowExpressionSyntax };
