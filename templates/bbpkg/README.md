@@ -1,8 +1,6 @@
 # PKG_ID
 
-TODO: one paragraph saying what this package does, in the words someone searching nuget.org would
-use. This file is packed into the package, so it is also the description shown on nuget.org.
-
+<!-- bbpkg: one paragraph saying what this package does, in the words someone searching nuget.org would use. This file is packed into the package, so it is also the description shown on nuget.org -->
 ## Install
 
 ```bash
@@ -13,7 +11,8 @@ dotnet add package PKG_ID
 
 See [docs/publishing.md](docs/publishing.md). The short version:
 
-1. Add the `NUGET_USER` secret — your nuget.org **profile name**, not an email.
+1. Add the `NUGET_USER` repository **variable**, not a secret: your nuget.org **profile name**,
+   not an email.
 2. Create **one** trusted-publishing policy whose glob patterns cover every id in
    [`packages.push`](packages.push) and match nothing in [`packages.local`](packages.local).
 3. Run **Release** → *Run workflow* with the version **blank**. That logs in and stops, proving the

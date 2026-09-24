@@ -313,6 +313,18 @@ try
         Path.Combine("src", "Directory.Build.props"),
         Path.Combine("src", GeneratedStem, $"{GeneratedStem}.csproj"),
         Path.Combine("tests", $"{GeneratedStem}.Tests", $"{GeneratedStem}.Tests.csproj"),
+        // The family conventions (docs/repository-conventions.md): what a repository needs beyond
+        // code, which the two repositories generated before this list existed went live without.
+        // repo-conventions.cs checks them in the generated repository's own CI; this makes sure
+        // the template still ships every one.
+        "PROGRESS.md",
+        "AGENTS.md",
+        "CLAUDE.md",
+        Path.Combine(".github", "repository.json"),
+        Path.Combine(".github", "copilot-instructions.md"),
+        Path.Combine("scripts", "repo-conventions.cs"),
+        .. ((string[])["src", "tests", "scripts", "docs", ".github"]).SelectMany(directory =>
+            (string[])[Path.Combine(directory, "AGENTS.md"), Path.Combine(directory, "CLAUDE.md")]),
     ];
 
     string[] absent = [.. required.Where(relative => !File.Exists(Path.Combine(generated, relative)))];

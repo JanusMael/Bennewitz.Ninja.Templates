@@ -1,0 +1,8 @@
+{
+  "description": "",
+  "homepage": "",
+  "topics": ["csharp", "dotnet", "nuget"],
+  "requiredChecks": ["build", "pack"],
+  "content": [],
+  "undocumented": {}
+}
