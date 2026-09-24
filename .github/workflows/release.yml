@@ -100,6 +100,13 @@ jobs:
           echo "::error::and a GitHub Release would be created for a package that never shipped."
           exit 1
 
+      # ⛔ Nothing publishes from a repository missing what the family conventions prescribe. Runs
+      # in the preflight too, so a dispatch with the version blank reports it before a tag does.
+      - name: Refuse to release a repository the conventions reject
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check --release
+
       # PackagingTests reads the project files, the two package lists and BOTH release workflows.
       # There is no build step of its own: the packaging project compiles nothing, so `dotnet test`
       # building this one project is the whole of what there is to compile.

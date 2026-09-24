@@ -1,0 +1,8 @@
+{
+  "description": "Templates for .NET NuGet packages that publish through NuGet.org Trusted Publishing (OIDC) — no long-lived API key. Carries CI, a release workflow with a credential preflight, and the packaging guard that keeps a local-only package off nuget.org. Ships as Bennewitz.Ninja.Templates; scaffolds with dotnet new bbpkg.",
+  "homepage": "",
+  "topics": ["csharp", "dotnet", "nuget", "dotnet-new", "template", "trusted-publishing", "github-actions"],
+  "requiredChecks": ["verify", "conventions"],
+  "content": ["templates/bbpkg"],
+  "undocumented": {}
+}

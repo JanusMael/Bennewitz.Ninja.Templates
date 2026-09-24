@@ -452,10 +452,13 @@ static class Documentation
                 continue;
             }
 
+            // A marker is a line of its own, which is how the template writes every one. Matching
+            // anywhere in a line would also match prose that explains the marker syntax, such as the
+            // conventions document itself.
             string[] lines = (tree.Read(path) ?? "").Split('\n');
             for (int i = 0; i < lines.Length; i++)
             {
-                if (lines[i].Contains(Marker, StringComparison.Ordinal))
+                if (lines[i].TrimStart().StartsWith(Marker, StringComparison.Ordinal))
                 {
                     findings.Add(Finding.Fail("docs", $"{path}:{i + 1} still carries a template marker: {lines[i].Trim()}"));
                 }

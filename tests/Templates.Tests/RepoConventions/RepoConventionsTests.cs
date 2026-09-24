@@ -157,6 +157,17 @@ public sealed class RepoConventionsTests
     }
 
     [Fact]
+    public void Prose_that_mentions_the_marker_syntax_is_not_a_marker()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["src/AGENTS.md"] = "# src\n\nReplace every `<!-- bbpkg: … -->` marker before the first release.\n";
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+    }
+
+    [Fact]
     public void A_pointer_file_that_says_anything_else_fails()
     {
         Fixture fixture = Conforming();

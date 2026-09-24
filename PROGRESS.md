@@ -423,7 +423,7 @@ green, in both repositories.
 | 2 · What `GITHUB_TOKEN` can read | **done** | Measured by a throwaway workflow on a deleted branch, `permissions: contents: read`, which is this repository's default. See below |
 | 3 · `docs/repository-conventions.md` + template documents + `verify-release` tree check | **done** | The template ships `AGENTS.md` and a `CLAUDE.md` pointer at the root and in `src/`, `tests/`, `scripts/`, `docs/` and `.github/`, plus `PROGRESS.md`, `.github/copilot-instructions.md` and `.github/repository.json`. `verify-release` requires all 16, failed naming `tests\CLAUDE.md` with only that file removed, and passes with all present. A generated repository's `check` reports only the empty description and 8 markers, nothing structural |
 | 4 · CI job + release preflight in the template's workflows | **done** | Shipped `ci.yml` gains a `conventions` job (`contents: read`), and `release.yml` runs `check --release` before login and push, in the preflight dispatch too. `conventions` joins the template's `requiredChecks`. 4 tests in `ConventionsWorkflowTests`; 5 planted defects, all caught. The two `NUGET_USER secret` comments in the shipped `release.yml` now say variable |
-| 5 · Adopt it all in this repository, then `apply` | next | The first ruleset anywhere: its CI run answers whether the token reads a ruleset's rules |
+| 5 · Adopt it all in this repository, then `apply` | **in progress** | Adopted locally: `AGENTS.md` and a pointer at the root and in all six top-level directories, `.github/repository.json`, the `conventions` CI job and the release preflight, with `ConventionsWorkflowTests` covering both repositories' workflows. `check --admin` now reports only the 12 live-settings findings `apply` exists to fix. **`apply` waits for the maintainer's go-ahead**: it changes live GitHub settings. The first ruleset anywhere, so its CI run also answers whether the token reads a ruleset's rules |
 | 6–10 | not started | |
 
 **What a workflow's read-only `GITHUB_TOKEN` reads** (2026-09-24):
@@ -463,6 +463,18 @@ converts to CRLF, so a strict byte comparison would report every Windows copy as
 against a hard-coded `always` instead of against the baseline `apply` writes, so the two could have
 drifted apart silently. The expected bypass is now derived from the baseline, like every other
 facet, and the planted `pull_request` mode fails the conforming test.
+
+⛔ **The marker check matched prose about markers.** It looked for `<!-- bbpkg:` anywhere in a
+line, so this repository's own check failed on `docs/repository-conventions.md`,
+`templates/AGENTS.md` and `plans/00003`, where the syntax appears in backticks. A marker is now a
+line that begins with it, which is how the template writes every one. Found by adopting the
+convention here, before any other repository ran it.
+
+⚠ **An agent never sees a marker in documentation its tool loaded automatically.** Working inside
+`templates/bbpkg/`, this session's tool loaded the template's own `CLAUDE.md` and, through it,
+`AGENTS.md` as instructions for this repository, with the HTML-comment markers stripped out. So a
+marker can only be found by reading the file or by running `check`, and `templates/AGENTS.md` now
+says that the documents beneath it describe a generated repository.
 
 ⚠ **A file-based app compiles trimmed.** A `JsonArray` built from a collection expression, or passed
 a `JsonObject` to `Add`, binds to the generic `Add<T>` and fails the build with `IL2026`/`IL3050`.
