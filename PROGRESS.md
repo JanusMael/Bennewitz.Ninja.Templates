@@ -293,7 +293,8 @@ of it blocking:
    `Build.targets`, so a `GenerateAutoVersionedAssemblyInfo` set in a `.csproj` now takes effect.
    Verified by the 18 tests and a passing `verify-release`. ⚠ **Not yet released**: repositories
    generated from `2026.3.923` still get `.914`, so the next template release carries it. Nothing
-   else under `templates/` has changed since `.923`.
+   else under `templates/` has changed since `.923` except that `IsContinuousIntegration` is gone
+   from both `Directory.Build.props` files: `.916` no longer reads it, and nothing else did.
 
 ⛔ **This entry used to reserve `plans/00002` for `Bennewitz.Ninja.DiffView`, and that was wrong
 twice over.** DiffView stopped being the interesting case when its ThemeAudit tool moved to
