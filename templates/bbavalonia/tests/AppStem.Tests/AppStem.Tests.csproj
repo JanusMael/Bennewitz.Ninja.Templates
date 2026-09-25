@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <!-- The app itself, so the tests drive its real App, windows and view models, and scan its
+         compiled assembly. It is an executable; referencing it copies AppStem.dll here. -->
+    <ProjectReference Include="../../src/AppStem/AppStem.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Plain Avalonia.Headless with HeadlessUnitTestSession, as AppServices and ScopedEditors run
+         theirs; not Avalonia.Headless.XUnit, whose xunit line lags the family's. -->
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="Bennewitz.Ninja.XamlQuality" />
+    <PackageReference Include="Bennewitz.Ninja.AssemblyQuality" />
+  </ItemGroup>
+</Project>

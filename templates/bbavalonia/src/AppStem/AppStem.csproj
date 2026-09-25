@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- An app is run, not referenced: it releases as binaries on GitHub Releases, never as a package. -->
+    <IsPackable>false</IsPackable>
+    <AssemblyName>AppStem</AssemblyName>
+    <!-- Every binding is compiled against its x:DataType. A reflection binding is exactly what a
+         trimmed publish breaks without a word, so it is opt-in per binding, never the default. -->
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <!--
+    The release is self-contained, single-file and trimmed, one binary per runtime identifier. The
+    runtime identifier and self-containment come from the publish command (see release.yml), so a
+    plain build and the test project that references this one stay framework-dependent.
+
+    ⭐ PublishTrimmed also turns the trim analyser on for every BUILD, so this app's own code is held
+    to trim safety on each push, with warnings as errors. What the analyser cannot see is compiled
+    XAML and the dependencies; ILLink sees those at publish, and CI's `trim` job holds its warnings
+    to trim-warnings.txt beside this file.
+  -->
+  <PropertyGroup>
+    <PublishTrimmed>true</PublishTrimmed>
+    <!-- Only assemblies that declare themselves trimmable are trimmed; the rest ship whole. Avalonia
+         and this family's packages are marked, which is where the size comes from. -->
+    <TrimMode>partial</TrimMode>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- One warning per site rather than one per assembly, so the baseline names each one. -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <!-- ⛔ ILLink's warnings are held to trim-warnings.txt by scripts/check-trim-warnings.cs, in both
+         directions, rather than failing the publish. As errors, any third-party warning would stop
+         every release until someone suppressed it, and a suppression hides the next one too. The
+         compiler's warnings stay errors: TreatWarningsAsErrors is untouched. -->
+    <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Semi.Avalonia" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Bennewitz.Ninja.AppServices.Avalonia" />
+  </ItemGroup>
+</Project>

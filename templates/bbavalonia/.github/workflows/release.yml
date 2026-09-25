@@ -1,0 +1,158 @@
+name: Release
+
+# Triggered by a version tag (v2026.3.920), or dispatched by hand with the version.
+#
+# An app is run, not referenced: a release is one self-contained, trimmed, single-file binary per
+# runtime identifier, attached to a GitHub Release. Nothing is pushed to nuget.org. A release can
+# be deleted and re-cut, unlike a package version, but the tag is what users see, so every gate
+# runs before the release is created.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 2026.3.920. The tag v<version> is created on the release.'
+        required: true
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # The version comes from the TAG, not from a file, so the binary and the tag agree by
+      # construction rather than by someone remembering to bump both.
+      - name: Resolve version and tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ⛔ Nothing is released from a repository missing what the family conventions prescribe: its
+      # documents, a replaced marker, a description. A setting that has merely drifted does not stop
+      # a release; CI's `conventions` job reports that.
+      - name: Refuse to release a repository the conventions reject
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check --release
+
+      - name: Build
+        run: dotnet build AppStem.slnx -c Release --nologo -warnaserror -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Test
+        run: dotnet test --solution AppStem.slnx --no-build -c Release
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        # Every runtime identifier publishes from Linux: none of them compiles native code, so no
+        # runner of that platform is needed. Measured when this template was made: the same seven
+        # ILLink warnings on all six.
+        rid: [ win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64 ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Publish ${{ matrix.rid }}
+        shell: bash
+        run: >
+          set -o pipefail;
+          dotnet publish src/AppStem/AppStem.csproj -c Release -r ${{ matrix.rid }} --self-contained
+          --nologo -p:Version=${{ needs.verify.outputs.version }} -o publish/${{ matrix.rid }}
+          | tee publish-${{ matrix.rid }}.log
+
+      # The same baseline CI's `trim` job holds linux-x64 to, for every binary that ships.
+      - name: Compare warnings with the baseline
+        run: dotnet run --file scripts/check-trim-warnings.cs -- publish-${{ matrix.rid }}.log src/AppStem/trim-warnings.txt
+
+      # ⚠ Only the executable is archived. On Windows the publish folder also holds the native
+      # libraries' .pdb files, around 100 MB that no user needs; the libraries themselves are inside
+      # the single file.
+      - name: Archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="AppStem-${{ needs.verify.outputs.version }}-${{ matrix.rid }}"
+          cd "publish/${{ matrix.rid }}"
+          if [[ "${{ matrix.rid }}" == win-* ]]; then
+            zip -9 "../../${name}.zip" AppStem.exe
+          else
+            chmod +x AppStem
+            tar -czf "../../${name}.tar.gz" AppStem
+          fi
+
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.rid }}
+          path: |
+            AppStem-*.zip
+            AppStem-*.tar.gz
+          if-no-files-found: error
+
+  release:
+    needs: [ verify, publish ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      # One asset per runtime identifier, named, never globbed: a missing one fails here rather than
+      # shipping a release without that platform, and nothing unnamed is attached.
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${{ needs.verify.outputs.version }}"
+          assets=()
+          for rid in win-x64 win-arm64; do assets+=("artifacts/AppStem-${version}-${rid}.zip"); done
+          for rid in linux-x64 linux-arm64 osx-x64 osx-arm64; do assets+=("artifacts/AppStem-${version}-${rid}.tar.gz"); done
+          ls -l "${assets[@]}"
+          gh release create "${{ needs.verify.outputs.tag }}" --title "AppStem ${version}" --generate-notes \
+            --target "${{ github.sha }}" "${assets[@]}"

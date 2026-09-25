@@ -1,0 +1,40 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Versioning">
+    <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.916" />
+  </ItemGroup>
+
+  <ItemGroup Label="Avalonia">
+    <!-- ⚠ Every Avalonia package moves together, Avalonia.Headless included. With transitive pinning
+         on, one left behind is a restore error (NU1109) rather than a quiet mismatch. -->
+    <PackageVersion Include="Avalonia" Version="12.1.3" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.3" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.3" />
+    <PackageVersion Include="Avalonia.Headless" Version="12.1.3" />
+    <PackageVersion Include="Semi.Avalonia" Version="12.1.0.1" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup Label="Family">
+    <!-- Logging (Serilog, a rolling file per hour, the Avalonia log bridge) and the fatal-error
+         dialog. Bennewitz.Ninja.AppServices.Logging comes with it. -->
+    <PackageVersion Include="Bennewitz.Ninja.AppServices.Avalonia" Version="2026.3.924" />
+    <!-- The markup and assembly rules, run as tests. -->
+    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.924" />
+    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.922" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <!-- xunit.v3 on Microsoft.Testing.Platform — see global.json. The VSTest bridge packages are
+         deliberately absent; TrxReport is what gives CI its .trx files. -->
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <!-- ⚠ Same Microsoft.Testing.Platform line as xunit.v3 3.2.2 (1.9.1). A NEWER TrxReport pins
+         the platform above what xunit's bundled MSBuild extension can load, and the failure reads
+         as an unrelated loader error. -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
+  </ItemGroup>
+</Project>

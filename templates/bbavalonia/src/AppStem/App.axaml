@@ -1,0 +1,11 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:semi="https://irihi.tech/semi"
+             x:Class="Bennewitz.Ninja.AppStem.App"
+             RequestedThemeVariant="Default">
+  <Application.Styles>
+    <!-- Semi.Avalonia, the family's theme. The locale is fixed rather than read from the culture, so
+         the theme's own strings do not change language under a test or a screenshot. -->
+    <semi:SemiTheme Locale="en-US" />
+  </Application.Styles>
+</Application>

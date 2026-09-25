@@ -787,3 +787,45 @@ where `packages.push` names an id**; `csharp` and `dotnet` stay required everywh
 failed the conventions on `"topics" lacks "nuget"` although it publishes no package, and every app,
 site or API would have. `repo-conventions.cs` changes with `docs/repository-conventions.md`, and
 every family repository takes the new copy after it merges.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · Wait for `00004`'s script | **done** | `00004` step 5 was done on 2026-09-24 |
+| 2 · `bbavalonia` from ClaudeForge | **done, on `feat/bbavalonia`** | Generated from the PACKED template as `Notebook`: builds with warnings as errors, 14 of 14 tests pass, `check --offline` fails only on the empty description and the markers, a trimmed publish for linux-x64 matches the 7-warning baseline, and a trimmed single-file win-x64 binary run with `--smoke` exits 0 in about 2 s. All six runtime identifiers publish from one Windows machine with the same 7 warnings, all in `Avalonia.DesignerSupport`. 9 planted defects, each caught: an unnamed button (XQ1002) or Expander (XQ1001), the Semi theme removed, the name box unbound, the view model's trim dropped, the app made packable, a defaulted `CancellationToken` (AQ1001), and the baseline changed in each direction |
+| 3–6 | not started | `bbweb` next |
+
+### Drift from `plans/00005`
+
+**The plan's premise about ClaudeForge's tests is wrong: they are xUnit v3, not MSTest.** Decision 4
+contrasts the two; it changes nothing, since the template follows AppServices and ScopedEditors,
+which run headless on xUnit v3 through `HeadlessUnitTestSession` exactly as ClaudeForge does.
+
+**ClaudeForge holds no trim-warning baseline.** It gates on zero warnings through warnings as
+errors. Decision 5 asks for a baseline "as ScopedEditors' `trimcheck/` does", so the template follows
+ScopedEditors: `ILLinkTreatWarningsAsErrors` off, the compiler's warnings still errors, and
+`scripts/check-trim-warnings.cs` comparing the set in both directions, in CI's `trim` job and for
+every platform in the release. The baseline is the app's own publish, not a separate `trimcheck/`
+project, since an app's publish is the thing that ships.
+
+**ClaudeForge takes Semi through ScopedEditors' theme bundle**, not a `SemiTheme` of its own, and
+references a Fluent theme it never uses. The template references `Semi.Avalonia` directly, with its
+locale fixed to `en-US`, and nothing else.
+
+**ClaudeForge names controls with `AutomationProperties.Name` only.** Decision 4 asks for every
+interactive control "named for automation"; the template sets `AutomationId` as well, and its window
+test finds each control by it.
+
+**`bbavalonia` has no pack job and no `assert-packages.cs`.** Decision 2 asks for the two-list guard
+with an empty `packages.push`; the guard that runs on every commit, `PackagingTests`, is there and
+allows zero packable projects. The pack job's `assert-packages.cs` fails on a pack that produces
+nothing, by design, so an app cannot run it. Adding a library brings both over, as the generated
+`AGENTS.md` says.
+
+**`--smoke` is not in the plan.** Step 2's "runs and exits cleanly" needs a GUI app to exit on its
+own; `--smoke` opens the main window and exits 0 once it has opened.
+
+**The generated documents reuse the `<!-- bbpkg:` marker.** The conventions check knows one marker;
+a marker per template would change the script in every family repository for a name.
+
+**Only the executable is archived for release.** A win-x64 publish also leaves the native
+libraries' `.pdb` files beside it, about 100 MB, which ClaudeForge strips with a target of its own.
