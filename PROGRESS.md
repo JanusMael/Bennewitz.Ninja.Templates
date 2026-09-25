@@ -817,7 +817,7 @@ consumer sees), and DiffView on #2 (`e5f1203`).
 |---|---|---|
 | 1 · Wait for `00004`'s script | **done** | `00004` step 5 was done on 2026-09-24 |
 | 2 · `bbavalonia` from ClaudeForge | **done**, merged in #6 as `fb6961a`, `f5f7871`, `4e63eca`, admin-merged green by the maintainer's word | Generated from the PACKED template as `Notebook`: builds with warnings as errors, 14 of 14 tests pass, `check --offline` fails only on the empty description and the markers, a trimmed publish for linux-x64 matches the 7-warning baseline, and a trimmed single-file win-x64 binary run with `--smoke` exits 0 in about 2 s. All six runtime identifiers publish from one Windows machine with the same 7 warnings, all in `Avalonia.DesignerSupport`. 9 planted defects, each caught: an unnamed button (XQ1002) or Expander (XQ1001), the Semi theme removed, the name box unbound, the view model's trim dropped, the app made packable, a defaulted `CancellationToken` (AQ1001), and the baseline changed in each direction |
-| 3 · `bbweb` from bleedink.com and FileServer | **done, on `feat/bbweb`**, except the container build, which no engine here could run | Generated from the PACKED template as `Gallery`, both variants: build with warnings as errors, 10 of 10 tests without `--blazor` and 13 of 13 with it, `check --offline` failing only on the description and the markers. A self-contained single-file win-x64 publish with `-p:Version=2026.3.920` serves `/healthz` (`ok`), `/version` (`2026.3.920`, its build stamp, the commit), the home page (with the counter prerendered when `--blazor`), the stylesheet and a 404. 9 planted defects, each caught: `/healthz` changed, `/version` reading the informational version, the exception handler removed, static assets unmapped, status pages not re-executed, the site packable, and with `--blazor` the hub unmapped, the circuit script dropped and the component rendered static |
+| 3 · `bbweb` from bleedink.com and FileServer | **done, on `feat/bbweb`** | Generated from the PACKED template as `Gallery`, both variants: build with warnings as errors, 10 of 10 tests without `--blazor` and 13 of 13 with it, `check --offline` failing only on the description and the markers. A self-contained single-file win-x64 publish with `-p:Version=2026.3.920` serves `/healthz` (`ok`), `/version` (`2026.3.920`, its build stamp, the commit), the home page (with the counter prerendered when `--blazor`), the stylesheet and a 404. The container image of each variant, built on Docker 29.8.0 as CI's `container` job builds it, serves `/healthz`, the home page and `/version` (`1.0.0`, the build stamp, the commit passed in) and runs as uid 1654, `app`. 9 planted defects, each caught: `/healthz` changed, `/version` reading the informational version, the exception handler removed, static assets unmapped, status pages not re-executed, the site packable, and with `--blazor` the hub unmapped, the circuit script dropped and the component rendered static |
 | 4–6 | not started | `bbapi` next |
 
 ### Drift from `plans/00005`
@@ -884,9 +884,10 @@ CPU-capped pool, `/diag`, `web.config`, ReadyToRun for cold starts after idle sh
 publish checks for in-process hosting. Added, since IIS no longer terminates TLS in front of it:
 forwarded headers, trusting loopback proxies only.
 
-**The container image has not been built.** Docker Desktop's engine was not running and WSL has
-none, so the `Dockerfile` and CI's `container` job are unexercised until a generated repository runs
-its CI. The image leaves out FileServer's `HEALTHCHECK`, which needs curl installed in the runtime
+**The container image was proven locally, not by a generated repository's CI.** Docker Desktop's
+engine was first down and WSL has none; the maintainer brought it up, and both variants' images
+built and served, as the step row says. CI's `container` job itself first runs in a generated
+repository. The image leaves out FileServer's `HEALTHCHECK`, which needs curl installed in the runtime
 image and passed only because `curl -f` follows a redirect as success; CI requests `/healthz` from
 outside instead.
 
