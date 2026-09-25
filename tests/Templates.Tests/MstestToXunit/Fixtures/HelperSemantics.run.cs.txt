@@ -1,0 +1,48 @@
+#!/usr/bin/env dotnet
+#:package xunit.v3.assert@{XUNIT_VERSION}
+#:package xunit.v3.extensibility.core@{XUNIT_VERSION}
+#:include Helpers.cs
+
+// Runs the EMITTED helpers against the assertion each one replaces, and exits with the number of
+// disagreements. Each original is `Assert.IsTrue|IsFalse(x.Contains(y))`, whose verdict is x's own
+// Contains; the converted form is the OrdinalAssert call the rules emit for it.
+
+using Fixture.Namespace;
+
+var ignoreCase = StringComparer.OrdinalIgnoreCase;
+var keys = new Dictionary<string, int>(ignoreCase) { ["a"] = 1 }.Keys;
+var set = new HashSet<string>(ignoreCase) { "a" };
+var list = new List<string> { "a" };
+
+int disagreements = 0;
+
+// A dictionary's Keys are not a set, so xUnit compares them by the default equality.
+Check("IsTrue(keys.Contains(\"A\"))", keys.Contains("A"), () => OrdinalAssert.Contains("A", keys));
+Check("IsFalse(keys.Contains(\"A\"))", !keys.Contains("A"), () => OrdinalAssert.DoesNotContain("A", keys));
+Check("IsTrue(set.Contains(\"A\"))", set.Contains("A"), () => OrdinalAssert.Contains("A", set));
+Check("IsFalse(set.Contains(\"A\"))", !set.Contains("A"), () => OrdinalAssert.DoesNotContain("A", set));
+Check("IsTrue(list.Contains(\"A\"))", list.Contains("A"), () => OrdinalAssert.Contains("A", list));
+Check("IsFalse(list.Contains(\"A\"))", !list.Contains("A"), () => OrdinalAssert.DoesNotContain("A", list));
+Check("IsTrue(list.Contains(\"a\"))", list.Contains("a"), () => OrdinalAssert.Contains("a", list));
+Check("IsFalse(list.Contains(\"a\"))", !list.Contains("a"), () => OrdinalAssert.DoesNotContain("a", list));
+
+return disagreements;
+
+void Check(string original, bool originalPasses, Action converted)
+{
+    bool convertedPasses;
+    try
+    {
+        converted();
+        convertedPasses = true;
+    }
+    catch (Xunit.Sdk.XunitException)
+    {
+        convertedPasses = false;
+    }
+    if (originalPasses != convertedPasses)
+    {
+        disagreements++;
+        Console.WriteLine($"DISAGREE {original}: original {(originalPasses ? "passes" : "fails")}, converted {(convertedPasses ? "passes" : "fails")}");
+    }
+}

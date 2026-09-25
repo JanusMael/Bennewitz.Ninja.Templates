@@ -221,13 +221,24 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
   string-or-collection. `IsTrue(s.StartsWith(x))` still maps to xUnit's default, because
   `string.StartsWith(string)` is itself culture-sensitive. Pinned: the helper test fails if any
   emitted string helper calls xUnit without a comparison; canaried both halves.
-- ⚠ **Open, found in review of #1 (merged 2026-09-24):** `IsFalse(x.Contains(y))` →
-  `OrdinalAssert.DoesNotContain(y, x)` is WEAKER when `x` is a set with a custom comparer. The
-  helper takes `IEnumerable<T>`, so xUnit compares with the default comparer, not the set's: a
-  `HashSet(StringComparer.OrdinalIgnoreCase)` holding `"a"` fails `IsFalse(set.Contains("A"))` in
-  MSTest and passes after conversion. Before #1 that call stayed an exact `Assert.False(…)`. The
-  `IsTrue` direction turns red instead. Fix forward with the owning session: the generic
-  `OrdinalAssert` overloads assert through an `ISet<T>`/`IReadOnlySet<T>`'s own `Contains`.
+- ✅ **Found in review of #1, fixed forward:** `IsFalse(x.Contains(y))` →
+  `OrdinalAssert.DoesNotContain(y, x)` was WEAKER when `x` brings its own comparer and is not a
+  set. ⚠ The review's example was a set, and **a set was never affected**: measured on
+  xunit.v3.assert 3.2.2, xUnit asks any `ISet<T>` for itself even through `IEnumerable<T>`
+  (`HashSet`, `SortedSet`, `FrozenSet`, `ImmutableHashSet`, all case-insensitive, agree with
+  MSTest both ways). A dictionary's `Keys` is the case: case-insensitive keys holding `"a"` fail
+  `IsFalse(keys.Contains("A"))` in MSTest and passed after conversion. The generic `OrdinalAssert`
+  overloads now decide by the collection's own `Contains`, as `x.Contains(y)` and MSTest 4's
+  `Assert.Contains` both do. ⭐ The fixture tests compare TEXT and could not see this;
+  `The_emitted_collection_helpers_decide_as_the_original_Contains_did` RUNS the emitted helpers
+  against each original, and canaried red on exactly the two `Keys` lines with the old helper.
+- ⚠ **Open, same family, not fixed:** `MessageAssert.Contains<T>`/`DoesNotContain<T>` are shared by
+  two MSTest forms that disagree on a comparer-carrying `ICollection`. Measured on MSTest 4.3.3:
+  `Assert.DoesNotContain(y, keys, msg)` asks the collection (fails for `"A"`), while
+  `CollectionAssert.DoesNotContain(keys, y, msg)` uses the default equality (passes). One member
+  cannot keep both meanings, so the two forms need separate helpers. The message-less
+  `CollectionAssert.Contains` → `Assert.Contains` has the mirror gap for a `SortedSet` with a
+  comparer (MSTest's default equality, xUnit's set lookup).
 - Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.

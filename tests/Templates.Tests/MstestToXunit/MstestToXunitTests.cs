@@ -75,6 +75,50 @@ public sealed class MstestToXunitTests : IClassFixture<MstestToXunitTests.Run>
             StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A converted assertion must decide as its original did, which the text of the rules cannot
+    /// show. This RUNS the emitted helpers against each <c>IsTrue|IsFalse(x.Contains(y))</c> they
+    /// replace, over collections that bring their own comparer.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ Measured on xunit.v3.assert 3.2.2: xUnit asks a set for itself but compares a dictionary's
+    /// <c>Keys</c> by the default equality, so <c>IsFalse(keys.Contains("A"))</c> over
+    /// case-insensitive keys holding <c>"a"</c> converted to a <c>DoesNotContain</c> that passed
+    /// where the original failed. Canaried: with the pre-fix helper this test fails on exactly those
+    /// two lines.
+    /// </remarks>
+    [Fact]
+    public void The_emitted_collection_helpers_decide_as_the_original_Contains_did()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "mstest-to-xunit-semantics-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Helpers.cs"), _run.Helpers);
+            File.WriteAllText(Path.Combine(directory, "run.cs"),
+                Fixture("HelperSemantics.run.cs.txt").Replace("{XUNIT_VERSION}", XunitVersion(), StringComparison.Ordinal));
+
+            (int exitCode, string output) = Run.Dotnet(directory, "run", "--file", "run.cs");
+
+            Assert.True(exitCode == 0, output);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    /// <summary>The repository's pinned xunit.v3; its assert and core packages ship at the same version.</summary>
+    private static string XunitVersion()
+    {
+        var props = System.Xml.Linq.XDocument.Load(Path.Combine(Run.RepoRoot(), "Directory.Packages.props"));
+        string? version = props.Descendants("PackageVersion")
+            .SingleOrDefault(p => (string?)p.Attribute("Include") == "xunit.v3")
+            ?.Attribute("Version")?.Value;
+        Assert.False(string.IsNullOrEmpty(version), "Directory.Packages.props pins no xunit.v3 version");
+        return version;
+    }
+
     private static IEnumerable<string> Lines(string text) =>
         Normalize(text).Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.Trim());
 
@@ -131,11 +175,14 @@ public sealed class MstestToXunitTests : IClassFixture<MstestToXunitTests.Run>
         private static string FixtureDirectory() =>
             Path.Combine(RepoRoot(), "tests", "Templates.Tests", "MstestToXunit", "Fixtures");
 
-        private static (int ExitCode, string Output) Tool(params string[] arguments)
+        // `--file` because the repository root holds a .csproj (see scripts/verify-release.cs).
+        private static (int ExitCode, string Output) Tool(params string[] arguments) =>
+            Dotnet(RepoRoot(), ["run", "--file", Path.Combine("scripts", "mstest-to-xunit.cs"), "--", .. arguments]);
+
+        public static (int ExitCode, string Output) Dotnet(string workingDirectory, params string[] arguments)
         {
-            // `--file` because the repository root holds a .csproj (see scripts/verify-release.cs).
-            ProcessStartInfo start = new("dotnet") { WorkingDirectory = RepoRoot(), RedirectStandardOutput = true, RedirectStandardError = true };
-            foreach (string argument in (string[])["run", "--file", Path.Combine("scripts", "mstest-to-xunit.cs"), "--", .. arguments])
+            ProcessStartInfo start = new("dotnet") { WorkingDirectory = workingDirectory, RedirectStandardOutput = true, RedirectStandardError = true };
+            foreach (string argument in arguments)
             {
                 start.ArgumentList.Add(argument);
             }
