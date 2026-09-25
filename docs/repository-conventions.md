@@ -55,6 +55,20 @@ counts: all three go stale without anything noticing.
 `PROGRESS.md` is the one document that is about time rather than structure. It is updated in the
 same change as the work, and what has stopped changing moves out of it.
 
+### Shared lessons
+
+Some knowledge has one home in the family. Every repository sends what it learns there instead of
+keeping a copy, because two copies of a lesson drift and the reader cannot tell which is current.
+
+| Topic | The one living copy | How to send to it |
+|---|---|---|
+| Avalonia foot-guns: symptom, cause and fix | `docs/avalonia-gotchas.md` in [JanusMael/Bennewitz.Ninja.XamlQuality](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality) | A message to the XamlQuality session, with the versions and the measurement or source behind it; an issue in that repository when no session is running |
+| Making a desktop UI an agent can drive and verify | `docs/ai-drivable-ui.md` in the same repository | The same |
+
+XamlQuality checks each claim before it lands and replies with the outcome. Each repository's root
+`AGENTS.md` states the rule, and the template's root `AGENTS.md` ships it to every new repository.
+`check` cannot enforce prose, so this is a prescription, not a check.
+
 ## Settings
 
 The baseline lives in `Baseline` inside `scripts/repo-conventions.cs`, not in each repository, so

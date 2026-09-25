@@ -64,4 +64,11 @@ one of the two is done.
 
 **Releasing:** `docs/publishing.md`.
 
+**Avalonia and drivable-UI lessons go to XamlQuality.** `docs/avalonia-gotchas.md` and
+`docs/ai-drivable-ui.md` in
+[JanusMael/Bennewitz.Ninja.XamlQuality](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality)
+are the one living copy of each. Send a new finding or a correction to the XamlQuality session by
+message, with the versions and the measurement or source behind it, or open an issue there when no
+session is running. Keep no copy here.
+
 **Every change:** update `PROGRESS.md` in the same commit. Commits are Conventional Commits.

@@ -470,6 +470,13 @@ and `verify-release --published 2026.3.924` installed it from nuget.org, generat
 asserted the tree, and built, tested and packed it. It also carries AutoVersioning `2026.3.916` and
 drops `IsContinuousIntegration`.
 
+**Decided 2026-09-24, on XamlQuality's request:** Avalonia and drivable-UI lessons go to
+XamlQuality, whose `docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` are the one living copy
+of each. Family-wide, by the maintainer's choice: `docs/repository-conventions.md` gains "Shared
+lessons", and this repository's and the template's root `AGENTS.md` state the rule. It reaches
+generated repositories with the next template release after `2026.3.924`; existing family
+repositories carry it only once their own sessions add it.
+
 **Decided 2026-09-24** (maintainer, through `choices`):
 1. Step 9 proceeds for FileServer and AutoVersioning.
 2. DiffView goes to its own session, which owns its red `main` and DiffView#2. No DiffView session runs on this machine, so it has not been told yet.
