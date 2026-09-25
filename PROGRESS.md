@@ -9,20 +9,10 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-25, after `125ee8b` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00005`](plans/00005-app-templates.md) step 5**: `verify-release` generates every
-   template, `bbweb` in both variants, from the packed package, and fails when any one does not build
-   and pass its tests. Steps 2–4 are merged: `bbavalonia` (#6), `bbweb` (#7), `bbapi` (#8). Fold in
-   what the scratch scripts proved by hand: tree, placeholders, build, test, `check --offline`; the
-   native and container runs stay in each generated repository's CI.
-   ⛔ **Isolate it in its own template hive** (`--debug:custom-hive <temp dir>` on every `dotnet new`).
-   `verify-release` uninstalls `Bennewitz.Ninja.Templates` before and after its run, and so did this
-   session's scratch scripts: on this machine the global registration was emptied at 13:49 on
-   2026-09-25 and `dotnet new list bb` finds nothing. Reinstalling it
-   (`dotnet new install Bennewitz.Ninja.Templates::2026.3.925`) is the maintainer's call, still open.
-   In the same change, `templates/bbpkg/src/Directory.Build.props` stops citing
-   `PackageMetadataTests`, which does not exist; the test is `TrimmableTests`.
-   Consider in step 5 too: a conventions rule that a release never globs `*.nupkg`, which the
-   FileServer audit showed the check cannot see today.
+1. **[`plans/00005`](plans/00005-app-templates.md) step 5 is on branch
+   `feat/verify-release-all-templates`**: `verify-release` generates all five cases in a private
+   template hive and passed locally; merge it when CI is green. The global registration was
+   reinstalled by the maintainer (`2026.3.925`, 17:14 on 2026-09-25) and the new gate leaves it alone.
 2. `plans/00005` step 6: the package README and `docs/repository-conventions.md` describe the four
    templates, and a release. It also ships `bbavalonia`'s version fix (`e6b7930`).
 3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
@@ -32,7 +22,9 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
    IDs**: AQ1001–AQ1004 become `BNAQ1001`–`BNAQ1004` (AssemblyQuality `0deb5c3`) and XQ1001–XQ1005
    become `BNXQ…` (XamlQuality#29). 20 mentions in 5 files under `templates/bbavalonia`; renaming
    before the packages would name IDs they do not report. Both sessions asked to be told the version.
-5. **A candidate for a later plan: an analyzer template.** Bennewitz.Ninja.CodeQuality 2026.3.925
+5. **A conventions rule that a release never globs `*.nupkg`**, which the FileServer audit showed the
+   check cannot see today. Not yet decided; it changes the script in every family repository.
+6. **A candidate for a later plan: an analyzer template.** Bennewitz.Ninja.CodeQuality 2026.3.925
    shipped from `bbpkg`; the whole difference an analyzer needed is `git diff e457b5d v2026.3.925` in
    JanusMael/Bennewitz.Ninja.CodeQuality.
 
@@ -840,7 +832,8 @@ consumer sees), and DiffView on #2 (`e5f1203`).
 | 2 · `bbavalonia` from ClaudeForge | **done**, merged in #6 as `fb6961a`, `f5f7871`, `4e63eca`, admin-merged green by the maintainer's word | Generated from the PACKED template as `Notebook`: builds with warnings as errors, 14 of 14 tests pass, `check --offline` fails only on the empty description and the markers, a trimmed publish for linux-x64 matches the 7-warning baseline, and a trimmed single-file win-x64 binary run with `--smoke` exits 0 in about 2 s. All six runtime identifiers publish from one Windows machine with the same 7 warnings, all in `Avalonia.DesignerSupport`. 9 planted defects, each caught: an unnamed button (XQ1002) or Expander (XQ1001), the Semi theme removed, the name box unbound, the view model's trim dropped, the app made packable, a defaulted `CancellationToken` (AQ1001), and the baseline changed in each direction |
 | 3 · `bbweb` from bleedink.com and FileServer | **done**, merged in #7 | Generated from the PACKED template as `Gallery`, both variants: build with warnings as errors, 10 of 10 tests without `--blazor` and 13 of 13 with it, `check --offline` failing only on the description and the markers. A self-contained single-file win-x64 publish with `-p:Version=2026.3.920` serves `/healthz` (`ok`), `/version` (`2026.3.920`, its build stamp, the commit), the home page (with the counter prerendered when `--blazor`), the stylesheet and a 404. The container image of each variant, built on Docker 29.8.0 as CI's `container` job builds it, serves `/healthz`, the home page and `/version` (`1.0.0`, the build stamp, the commit passed in) and runs as uid 1654, `app`. 9 planted defects, each caught: `/healthz` changed, `/version` reading the informational version, the exception handler removed, static assets unmapped, status pages not re-executed, the site packable, and with `--blazor` the hub unmapped, the circuit script dropped and the component rendered static |
 | 4 · `bbapi` from `bbweb` | **done**, merged in #8 | Generated from the PACKED template as `Catalog`: builds with warnings as errors and the AOT analyser, 11 of 11 tests pass, `check --offline` fails only on the description and the markers. A native linux-x64 build, compiled in the SDK's AOT image, runs in a 35.3 MB chiseled image as `app` and answers `/healthz`, `/version`, a greeting and the OpenAPI document. A native win-x64 build, 11.8 MB, answers the same in about 0.75 s from process start, at 23.5 MB working set, with 400 and 404 as problem details. 9 planted defects, each caught, the last, a type missing from the JSON context, by the tests and by the native container |
-| 5–6 | not started | `verify-release` covers the four templates next |
+| 5 · `verify-release` covers every template | **done** on `feat/verify-release-all-templates`, not yet merged | Five cases, each generated from the packed package into a template hive of the run's own: `bbpkg` (12 tests, packed and guarded), `bbavalonia` (15), `bbweb` (10), `bbweb --blazor` and `bbapi`, each building with warnings as errors, passing its tests and `check --offline` with only the description and 8 markers. The package must hold exactly the templates on disk, and those exactly the script's cases. 3 planted defects, each caught and naming only its own case: a type error in `Counter.razor` (only `bbweb --blazor` fails; the plain variant excludes it), `bbapi`'s `Dockerfile` deleted, and a fifth template with no case. The global registration's timestamp is unchanged by the run |
+| 6 | not started | The package README and `docs/repository-conventions.md`, and a release |
 
 ### Drift from `plans/00005`
 
@@ -934,6 +927,17 @@ GitHub's Windows runners carry it.
 
 **`bbapi`'s image is chiseled**: no shell, so CI reads the image's configured user rather than
 running `id` in the container, and no ICU, so the project sets `InvariantGlobalization`.
+
+**`verify-release` publishes no app.** Decision 9 has it publish one runtime identifier of each;
+step 5 builds, tests and checks every generated repository and stops there. `bbapi`'s native publish
+needs the platform's C toolchain (on Windows, MSVC found through `vswhere.exe`), which the gate would
+then need on every machine that runs it, and each generated repository's own CI already runs the
+trimmed publish against its baseline, the container build and the native matrix.
+
+⛔ **`verify-release` emptied the maintainer's global template registration.** It uninstalled
+`Bennewitz.Ninja.Templates` before and after every run, and so did the step 2–4 scratch scripts; on
+2026-09-25 `dotnet new list bb` found nothing until the maintainer reinstalled `2026.3.925`. Step 5
+installs into `--debug:custom-hive` under the run's scratch directory and uninstalls nothing.
 
 
 ⛔ **The first push of step 2 failed this repository's own `conventions` job.** `repository.json`

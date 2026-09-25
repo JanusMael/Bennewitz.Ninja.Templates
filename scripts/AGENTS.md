@@ -6,7 +6,7 @@ this repository's `Directory.Build.props`, so warnings are errors, and compiled 
 
 | Script | What it does | Tested by |
 |---|---|---|
-| `verify-release.cs` | The release gate: pack, install from the `.nupkg`, generate, assert the tree, then build, test and pack the generated repository. `--published <version>` installs from nuget.org instead | CI's `verify` job runs it on every push |
+| `verify-release.cs` | The release gate: pack, install from the `.nupkg` into a template hive of its own, then generate every template, `bbweb` in both variants, and for each assert the tree, build, test and check the conventions offline; `bbpkg`'s is also packed and guarded. `--published <version>` installs from nuget.org instead. It never touches the global template registration | CI's `verify` job runs it on every push |
 | `assert-packages.cs` | The packed-versus-declared guard, run by this repository's release | `PackagingTests` covers the workflow that calls it |
 | `repo-conventions.cs` | Checks and applies the family's repository conventions. **A copy**: the canonical file is `templates/bbpkg/scripts/repo-conventions.cs` | `RepoConventionsTests` |
 | `mstest-to-xunit.cs` | Converts an MSTest suite to xUnit v3 by syntax tree, listing what it refuses to guess | `MstestToXunitTests` |
