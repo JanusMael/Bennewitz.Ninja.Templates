@@ -1,0 +1,23 @@
+using Xunit;
+
+public sealed class TokenCases
+{
+    [Fact]
+    public async Task Calls()
+    {
+        string path = Path.GetTempFileName();
+        await File.WriteAllTextAsync(path, "x", TestContext.Current.CancellationToken);             // the token is the next parameter
+        string text = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);     // the same, one argument
+        await Service.RunAsync(path, ct: TestContext.Current.CancellationToken);                        // an optional parameter comes first: named
+        await Service.RunAsync(path, progress: null, ct: TestContext.Current.CancellationToken);        // already named: the token is named too
+        await Task.WhenAny(Task.Delay(TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken));  // a call passed as an argument
+        File.Delete(path);
+        Assert.Equal("x", text);
+    }
+}
+
+public static class Service
+{
+    public static Task RunAsync(string path, IProgress<int>? progress = null, CancellationToken ct = default) =>
+        Task.CompletedTask;
+}
