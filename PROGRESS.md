@@ -9,11 +9,11 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-24, HEAD `63b7595` on `main`.*
 
 **Next, in order:**
-1. **Start [`plans/00004`](plans/00004-standard-build-properties.md) step 1**, approved 2026-09-24
-   (`6616e4b`): delete `IsContinuousIntegration` from the root props of AppServices, ScopedEditors,
-   XamlQuality, AssemblyQuality and FileServer and raise their AutoVersioning pin `.914` → `.916`,
-   direct to `main`; DiffView the same from `.819`, by pull request. Verify with a restore and
-   `dotnet msbuild -getProperty:IsContinuousIntegration` evaluating empty. Then step 2, measure.
+1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 2, measure**: restore and
+   evaluate decision 4's properties for every project in the eight family repositories, with
+   `GITHUB_ACTIONS=true` set, as CI has it; record the table below, and bring anything a conforming
+   repository misses to the maintainer before step 3 enforces it. Step 1 is done, apart from
+   DiffView#3, which waits on DiffView's red `main`.
 2. [`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`), starts after
    `00004` step 5. The maintainer chose Semi.Avalonia for `bbavalonia`, a `--blazor` parameter off by
    default for `bbweb`, and `bbapi` last, from `bbweb`. Good examples: ClaudeForge, chisel,
@@ -22,10 +22,10 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
    2026-09-25 09:00 CDT and reports to this session. It ships the shared-lessons rule in the
    template's `AGENTS.md`. Check its report.
 
-**Waiting on others:** DiffView belongs to its own session, on another machine. Its #1 and #2 were
-red on `main`'s `ReferenceAuditTests.The_committed_report_equals_a_fresh_run`, and at handoff GitHub
-shows both as `BEHIND`, so check `main` again. The mstest-to-xunit open item (`MessageAssert`'s
-shared `Contains`/`DoesNotContain` forms) belongs to the OpenForge2k session.
+**Waiting on others:** DiffView belongs to its own session, on another machine. Its `main` is red on
+`ReferenceAuditTests.The_committed_report_equals_a_fresh_run`, which blocks every pull request there:
+#1 (its own), #2 (the conventions) and #3 (`00004` step 1). The mstest-to-xunit `Contains` item was
+fixed by the OpenForge2k session in `56c08ac`.
 
 **Locked decisions** (the maintainer's; do not reopen):
 - Every family repository meets `docs/repository-conventions.md`: the settings baseline lives in the
@@ -632,3 +632,32 @@ says that the documents beneath it describe a generated repository.
 ⚠ **A file-based app compiles trimmed.** A `JsonArray` built from a collection expression, or passed
 a `JsonObject` to `Add`, binds to the generic `Add<T>` and fails the build with `IL2026`/`IL3050`.
 The script builds its arrays through the constructor.
+
+## `plans/00004` — standard build properties
+
+[`plans/00004`](plans/00004-standard-build-properties.md), approved 2026-09-24 (`6616e4b`) and frozen.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done except DiffView** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
+| 2 · Measure the baseline across the family | next | |
+| 3–8 | not started | |
+
+### Drift from `plans/00004`
+
+**FileServer pinned AutoVersioning `2026.2.522`, not `2026.3.914`.** The plan's table and step 1 say
+`.914`; the pin was in two csproj files, since FileServer has no `Directory.Packages.props`. A survey
+script that errored on FileServer printed the previous repository's value. Both files now pin
+`2026.3.916`, and FileServer's build, 159 tests and sample build passed on it.
+
+⛔ **Verifying the removal locally would have proved nothing without `GITHUB_ACTIONS=true`.** The
+property is `$(GITHUB_ACTIONS)`, empty on a developer machine, so it evaluates empty whether or not
+anything sets it. Each repository was first evaluated untouched with the variable set, and gave
+`'true'`; only then did "empty after the change" mean something. Step 2's measurement and step 3's
+check must set it the same way, or neither can fail on this property.
+
+**DiffView's local run has 33 failing tests, identical with and without the change**, compared
+test by test on the same worktree: rendering snapshots on this machine and the theme-audit report
+test that also fails its CI. None is caused by step 1. DiffView#3 merges when its `main` is green,
+which is DiffView's session's work. Its build also fetches reference checkouts during the build
+(`scripts/fetch-reference.cs`), which failed once in a fresh worktree and succeeded when run directly.
