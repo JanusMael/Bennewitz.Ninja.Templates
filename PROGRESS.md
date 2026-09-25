@@ -777,3 +777,13 @@ test by test on the same worktree: rendering snapshots on this machine and the t
 test that also fails its CI. None is caused by step 1. DiffView#3 merges when its `main` is green,
 which is DiffView's session's work. Its build also fetches reference checkouts during the build
 (`scripts/fetch-reference.cs`), which failed once in a fresh worktree and succeeded when run directly.
+
+## `plans/00005` — app templates
+
+[`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`) and frozen.
+
+**Decided 2026-09-25** (maintainer, asked during step 2): **the `nuget` topic is required only
+where `packages.push` names an id**; `csharp` and `dotnet` stay required everywhere. A generated app
+failed the conventions on `"topics" lacks "nuget"` although it publishes no package, and every app,
+site or API would have. `repo-conventions.cs` changes with `docs/repository-conventions.md`, and
+every family repository takes the new copy after it merges.
