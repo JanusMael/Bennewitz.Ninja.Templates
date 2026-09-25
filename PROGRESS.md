@@ -6,19 +6,21 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Written 2026-09-25, after `4e63eca` on `main`.*
+*Replaced, never appended, at each handoff. Written 2026-09-25, after `c358a8b` on `main`.*
 
 **Next, in order:**
-1. ~~Release `2026.3.925`~~ **done** 2026-09-25, tag `v2026.3.925` at `f743d42`, verified from the
-   feed; `dotnet new list` shows both `bbpkg` and `bbavalonia` from the published package. See the
-   release record under `plans/00003`.
-2. **[`plans/00005`](plans/00005-app-templates.md) step 3**: `bbweb`, extracted from bleedink.com and
-   FileServer, with the `--blazor` parameter off by default. Step 2 is merged. ⚠ `bbweb` is Razor:
-   `00004` step 7 found a Razor library's clean trim analysis proves nothing, and `bbweb` is not
-   trimmed (decision 6). A new template needs its folder added to `content` in
-   `.github/repository.json`; `TemplateCopiesTests` fails until it is.
+1. **[`plans/00005`](plans/00005-app-templates.md) step 4**: `bbapi`, from `bbweb`: minimal APIs
+   with the request delegate generator, OpenAPI, a health endpoint, and `PublishAot`. Steps 2 and 3
+   are merged (#6, #7). A new template needs its folder in `content` in `.github/repository.json`,
+   and reads its version from the `PublicVersion` metadata, never `AssemblyInformationalVersion`.
+2. `plans/00005` step 5: `verify-release` generates every template, `bbweb` in both variants.
+   Then step 6: the package README and `docs/repository-conventions.md` describe them, and a release.
+   The next release also carries `bbavalonia`'s version fix (`e6b7930`).
 3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's pull
    requests merge and its own CI runs the check green.
+4. To tell their owners, found in step 3: bleedink.com's `/version` reads
+   `AssemblyInformationalVersion`, so it answers "Built with ♥"; FileServer's release passes
+   `-p:ReadyToRun=true`, which is not the SDK's `PublishReadyToRun`.
 
 **Waiting on others:** DiffView belongs to its own session, on another machine; merging there is
 left to the maintainer or that session, in this order.
