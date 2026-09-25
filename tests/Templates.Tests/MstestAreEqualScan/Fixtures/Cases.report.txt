@@ -1,0 +1,6 @@
+NEEDS A LOOK Cases.cs:17:9: COLLECTION-REF AreEqual bound=System.Collections.Generic.List<int>? expected=System.Collections.Generic.List<int> actual=System.Collections.Generic.List<int>
+NEEDS A LOOK Cases.cs:18:9: COLLECTION-REF AreEqual bound=int[]? expected=int[] actual=int[]
+NEEDS A LOOK Cases.cs:19:9: COLLECTION-EQ AreEqual bound=System.Collections.Immutable.ImmutableArray<int> expected=System.Collections.Immutable.ImmutableArray<int> actual=System.Collections.Immutable.ImmutableArray<int>
+NEEDS A LOOK Cases.cs:20:9: COLLECTION-REF AreEqual bound=System.Text.Json.Nodes.JsonArray? expected=System.Text.Json.Nodes.JsonArray actual=System.Text.Json.Nodes.JsonArray
+NEEDS A LOOK Cases.cs:21:9: COLLECTION-REF AreEqual bound=object? expected=System.Collections.Generic.List<int> actual=System.Collections.Generic.List<int>
+NEEDS A LOOK Cases.cs:22:9: OPAQUE AreEqual bound=object? expected=object actual=object?

@@ -278,6 +278,17 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
 - Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.
+- ✅ **`scripts/mstest-areequal-scan.cs`, its companion (2026-09-25):** the one weakening no syntax
+  rule can see. MSTest's `AreEqual` compares by `Equals`, so a collection without an override is
+  compared by REFERENCE, and xUnit's `Equal` compares elements. The script builds a Roslyn analyzer
+  and injects it into the target's build through `CustomAfterMicrosoftCommonTargets`, then lists
+  every collection-typed or wholly opaque `AreEqual` (exit 2), or says none (exit 0), or says it
+  could not conclude (exit 3: a failed build, or no site seen). First real run, OpenForge2k's MSTest
+  tree: **2,935 sites, none to look at** — corroborated by MSTest 4.3.3's own MSTEST0065, which
+  flags statically-typed collection `AreEqual` and raised nothing there. ⓘ On that MSTest a plain
+  build already finds the static cases; the scan adds the opaque ones, older MSTest versions, and
+  one report per solution. Tests: `MstestAreEqualScanTests`, over a warnings-as-errors fixture;
+  canaried — ignoring `Equals` overrides fails exactly the classification test.
 
 ## `docs/windows-defender-dev-exclusions.md` — outside the plans
 
