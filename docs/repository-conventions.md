@@ -196,7 +196,9 @@ What generation does is marked ✅; the rest is yours.
 3. Add the `conventions` job to CI and the preflight step to the release workflow, as the template's
    workflows have them.
 4. Write the documents. A directory that holds nothing written by hand, such as committed build
-   output, goes in `undocumented` with its reason.
+   output, goes in `undocumented` with its reason. The root `AGENTS.md` carries the
+   [shared lessons](#shared-lessons) rule, as the template's does; `check` cannot see whether it
+   is there.
 5. Run `apply`, then `check --admin`.
 6. Once the `conventions` job is green, add it to `requiredChecks` and run `apply` again. Required
    while red, it would block every pull request in the meantime.
