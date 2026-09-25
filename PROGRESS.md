@@ -6,26 +6,28 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Written 2026-09-24, HEAD `63b7595` on `main`.*
+*Replaced, never appended, at each handoff. Written 2026-09-24, after `a8bd8de` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 6**: each family repository, one
-   commit each, takes the new script copy and the property fixes; DiffView by pull request.
-   Step 2's decisions land here: FileServer migrates to central versions and its tests gain
-   AutoVersioning; AutoVersioning fixes its gaps and exempts only its use of itself; DiffView packs
-   its README. Steps 1–5 are done.
-2. [`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`), starts after
-   `00004` step 5. The maintainer chose Semi.Avalonia for `bbavalonia`, a `--blazor` parameter off by
-   default for `bbweb`, and `bbapi` last, from `bbweb`. Good examples: ClaudeForge, chisel,
-   bleedink.com, FileServer, dotnet-autopsy, ObexNet; GraphViz.Studio is a spike, not one.
+1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 7**: trimming, one repository at
+   a time, easiest first. XamlQuality's library and FileServer's library need `IsTrimmable` and
+   `EnableTrimAnalyzer`; DiffView's two libraries need an ILLink pass, by pull request. Then step 8,
+   the record. Steps 1–5 are done; step 6 is done except DiffView's merges.
+2. [`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`), may start: its
+   precondition, `00004` step 5, is done. The maintainer chose Semi.Avalonia for `bbavalonia`, a
+   `--blazor` parameter off by default for `bbweb`, and `bbapi` last, from `bbweb`. Good examples:
+   ClaudeForge, chisel, bleedink.com, FileServer, dotnet-autopsy, ObexNet; GraphViz.Studio is a
+   spike, not one.
 3. **Release `2026.3.925`**: the scheduled task `release-templates-2026-3-925` runs once at
-   2026-09-25 09:00 CDT and reports to this session. It ships the shared-lessons rule in the
-   template's `AGENTS.md`. Check its report.
+   2026-09-25 09:00 CDT and reports to this session. It ships everything on `main`, including the
+   property check and the template's required trimming. Check its report.
 
-**Waiting on others:** DiffView belongs to its own session, on another machine. Its `main` is red on
-`ReferenceAuditTests.The_committed_report_equals_a_fresh_run`, which blocks every pull request there:
-#1 (its own), #2 (the conventions) and #3 (`00004` step 1). The mstest-to-xunit `Contains` item was
-fixed by the OpenForge2k session in `56c08ac`.
+**Waiting on others:** DiffView belongs to its own session, on another machine. Its `main` is green
+again. [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3) (`00004` steps 1
+and 6) is green and ready to merge; merging it is left to the maintainer or DiffView's session.
+[DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) (the conventions, and the
+new script copy) stays red on its `conventions` job until DiffView writes its `AGENTS.md` set,
+`CLAUDE.md` pointers and `.github/repository.json`, which `00003` handed to that session.
 
 **Locked decisions** (the maintainer's; do not reopen):
 - Every family repository meets `docs/repository-conventions.md`: the settings baseline lives in the
@@ -34,6 +36,7 @@ fixed by the OpenForge2k session in `56c08ac`.
   security updates on; one script copy per repository, drift-checked from here.
 - Avalonia and drivable-UI lessons go to XamlQuality, family-wide.
 - Enforce the standard `Directory.Build.props`; trimming is a goal that may roll out slowly.
+- A library or tool packs a README under any name.
 - Work only from a git worktree under this session's scratch directory, never in the shared checkout
   `C:\c\cl\Bennewitz.Ninja.Templates`, which other sessions use. Push with
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push …`.
@@ -639,12 +642,12 @@ The script builds its arrays through the constructor.
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done except DiffView** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
+| 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done except DiffView's merge** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
 | 2 · Measure the baseline across the family | **done** | See the measurement below. Three repositories missed parts of the baseline, and the maintainer decided each |
 | 3 · The property check in `repo-conventions.cs` | **done** | Restore, evaluation with `GITHUB_ACTIONS=true`, roles (with *other* for non-packable libraries), the baseline, package rules for libraries and tools, `props` exemptions with reasons and a note for a stale one, the trimming stage, `--offline`; documented in `docs/repository-conventions.md`. 15 tests in `PropsTests` over three real repositories built in a temp directory; 8 planted defects, each caught, each also compiled and run to prove the catch was not a build failure. Against real repositories before any test: AppServices conforms, AutoVersioning shows step 2's gaps |
 | 4 · The template requires trimming; `verify-release` runs `check --offline` | **done** | The template's `repository.json` requires trimming; `ConventionsWorkflowTests.The_template_requires_trimming` pins it. `verify-release` gains step 9: the generated repository's OWN script copy, `check --offline`, with a guard that the properties were evaluated at all, allowing only the empty description and the markers. Passes as shipped (8 markers). Planted in the template: dropping `Nullable` or `IsTrimmable` was caught earlier, by the generated build and its `TrimmableTests`; re-adding `IsContinuousIntegration` and changing `AssemblyCompany`, which build and test cleanly, were each caught by step 9 alone |
 | 5 · This repository adopts the new script | **done** | Done by step 3: `scripts/repo-conventions.cs` is the new script, and this repository's CI ran the property check green on `caa8c03`, the packaging project as role *template* |
-| 6 · Each family repository adopts the script, with step 2's decisions | next | |
+| 6 · Each family repository adopts the script, with step 2's decisions | **done except DiffView's merges** | Direct to `main`, the script copy first and then `a8bd8de`'s again: AppServices `ef0f573` `cf30a9b`, ScopedEditors `c0c331c` `a01aa2a`, XamlQuality `de4a4b0` `006745b`, AssemblyQuality `d147dba` `b9711a3`. FileServer `f10c674` (central package management, its tests gain AutoVersioning; version-neutral, build, tests and sample build passed), `762cdd9` (both Dockerfiles copy `Directory.Packages.props` before the restore), `514fec0`. AutoVersioning `f093331` (a root `Directory.Build.props` and central versions; only its use of itself exempted, with the reason), `2631253`. CI is green on every job of every final commit, and `check --repo` from here reports no FAIL and no drift for all six. DiffView: the script copy is on [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2); [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3), with `main` merged in, builds cleanly and has no property FAIL, only the two trimming notes |
 | 7–8 | not started | |
 
 **Step 2's measurement, 2026-09-24.** Every project in the eight repositories' solutions (or, with
@@ -692,6 +695,21 @@ Found in step 6 when a pack showed both. **Decided 2026-09-24** (maintainer): th
 library or tool packs a README under any name, since its purpose is that nuget.org shows one;
 `dotnet pack` already fails with `NU5039` when the named file is missing. `PropsTests` pins both
 sides, and a planted defect in the rule was caught.
+
+**Decision 3 is moot for DiffView: it has no project left without a README.** Its `ThemeAudit` tool,
+the one packable project that packed none, moved to XamlQuality in DiffView#1, merged by DiffView's
+session. There, as `XamlQuality.ThemeAudit`, it evaluates `PackageReadmeFile` to `README.md`, and
+XamlQuality's `check --offline` at `006745b` reports no property FAIL. DiffView gets no README change.
+
+**DiffView#3 conflicted with the move, and was brought up to date by a merge, not a rebase.** Both
+touched the Tooling group in `Directory.Packages.props`. The resolution keeps `main`'s entries with
+AutoVersioning at `2026.3.916` and drops `System.CommandLine`, which only `ThemeAudit` used
+(`603896c`). A force-push of rebased branches was refused by this session's permission check, so both
+DiffView pull requests carry a merge commit from `main` instead.
+
+**FileServer's `Dockerfile.bundle` has the restore fix but no build proves it.** CI builds only the
+main `Dockerfile`, which failed with `NU1015` until `762cdd9`; the bundle's Dockerfile got the same
+line, unbuilt, since Docker's engine was not running on this machine.
 
 
 ⛔ **The plan's premise about AutoVersioning is false, and it came from this session.** `00004`'s
