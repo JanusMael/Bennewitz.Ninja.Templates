@@ -683,6 +683,17 @@ baseline's role without the package properties.
 
 ### Drift from `plans/00004`
 
+⛔ **Step 2 misreported DiffView's READMEs, and decision 5's rule changes because of it.** The
+measurement flagged `PackageReadmeFile` on all three of DiffView's packable projects, and this was
+reported as "no README". In fact `DiffView.Avalonia` and `DiffView.Core` deliberately pack
+`docs/hosting-diffview.md`, a hosting guide, as their README; the rule compared the value with
+`README.md` literally, so a different name read as a miss. Only the `ThemeAudit` tool packs none.
+Found in step 6 when a pack showed both. **Decided 2026-09-24** (maintainer): the rule is that a
+library or tool packs a README under any name, since its purpose is that nuget.org shows one;
+`dotnet pack` already fails with `NU5039` when the named file is missing. `PropsTests` pins both
+sides, and a planted defect in the rule was caught.
+
+
 ⛔ **The plan's premise about AutoVersioning is false, and it came from this session.** `00004`'s
 "What the family looks like today" says AutoVersioning's package `Build.props` in `2026.3.819` and
 `2026.3.914` sets `IsContinuousIntegration`, and decision 10 builds on it. It does not: the line is

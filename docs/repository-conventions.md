@@ -152,7 +152,7 @@ order matters: an xUnit v3 test project is a non-packable executable.
 | `Authors` | | set |
 | `PackageLicenseExpression` | | `MIT` |
 | `RepositoryUrl` | | names this repository |
-| `PackageReadmeFile` | | `README.md` |
+| `PackageReadmeFile` | | set, so nuget.org shows a README; any name, and `dotnet pack` itself fails (`NU5039`) when the named file is not packed |
 | `DebugType` | | `embedded` in Release |
 
 **Trimming** is a stage. A library without `IsTrimmable` and `EnableTrimAnalyzer` is a NOTE until

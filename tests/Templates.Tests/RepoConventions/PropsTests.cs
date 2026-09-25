@@ -38,7 +38,7 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     [Fact]
     public void A_conforming_repository_has_no_property_finding()
     {
-        Assert.Contains("NOTE props: 4 projects evaluated after a restore", _runs.Conforming, StringComparison.Ordinal);
+        Assert.Contains("NOTE props: 5 projects evaluated after a restore", _runs.Conforming, StringComparison.Ordinal);
         Assert.DoesNotContain(Lines(_runs.Conforming), l => l.StartsWith("FAIL props", StringComparison.Ordinal));
     }
 
@@ -68,7 +68,12 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
 
     [Fact]
     public void A_library_without_its_packed_readme_is_caught() =>
-        Assert.Contains("FAIL props: NoReadme (library): PackageReadmeFile is \"\"", _runs.Defective, StringComparison.Ordinal);
+        Assert.Contains("FAIL props: NoReadme (library): sets no PackageReadmeFile", _runs.Defective, StringComparison.Ordinal);
+
+    /// <remarks>DiffView's libraries pack a hosting guide as their README; any name will do.</remarks>
+    [Fact]
+    public void A_readme_under_another_name_is_a_readme() =>
+        Assert.DoesNotContain(Lines(_runs.Conforming), l => l.StartsWith("FAIL props: OtherReadme", StringComparison.Ordinal));
 
     [Fact]
     public void An_untrimmable_library_is_a_note_until_trimming_is_required()
@@ -108,7 +113,7 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     /// <summary>The three runs, each over its own repository, shared by every test in the class.</summary>
     public sealed class Runs
     {
-        private static readonly string[] Conforming_ = ["Good", "GoodTests", "GoodApp", "GoodTool"];
+        private static readonly string[] Conforming_ = ["Good", "GoodTests", "GoodApp", "GoodTool", "OtherReadme"];
         private static readonly string[] Broken = ["Override", "CiProperty", "OldAutoVersioning", "NoReadme", "NotTrimmable"];
 
         public Runs()
@@ -224,6 +229,7 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
             "OldAutoVersioning" => Sdk("<IsPackable>true</IsPackable>",
                 "<ItemGroup><PackageReference Update=\"Bennewitz.Ninja.AutoVersioning\" VersionOverride=\"2026.3.914\" /></ItemGroup>"),
             "NoReadme" => Sdk("<IsPackable>true</IsPackable><PackageReadmeFile></PackageReadmeFile>"),
+            "OtherReadme" => Sdk("<IsPackable>true</IsPackable><PackageReadmeFile>hosting-guide.md</PackageReadmeFile>"),
             "NotTrimmable" => Sdk("<IsPackable>true</IsPackable><IsTrimmable>false</IsTrimmable>"),
             _ => Sdk("<IsPackable>true</IsPackable>"),
         };
