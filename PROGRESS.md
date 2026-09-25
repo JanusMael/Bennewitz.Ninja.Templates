@@ -15,8 +15,22 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
    The scratch scripts that proved each template by hand are the checks to fold in: tree,
    placeholders, build, test, `check --offline`; the native and container runs stay in each
    generated repository's CI.
+   ⛔ **Isolate it in its own template hive** (`--debug:custom-hive <temp dir>` on every `dotnet new`).
+   Today `verify-release` uninstalls `Bennewitz.Ninja.Templates` before and after its run, and so did
+   this session's scratch verification scripts, so a machine with the published template installed
+   ends with none: on this one the registration was emptied at 13:49 on 2026-09-25, during step 4's
+   runs, and `dotnet new list bb` finds nothing since. Reported by the CodeQuality session, which
+   measured that the custom hive leaves the global registration untouched. In the same change,
+   `templates/bbpkg/src/Directory.Build.props` stops citing `PackageMetadataTests`, which no
+   generated repository has; its test is `TrimmableTests`.
 2. `plans/00005` step 6: the package README and `docs/repository-conventions.md` describe the four
    templates, and a release.
+   **A candidate for a later plan, not `00005`: an analyzer template.** Bennewitz.Ninja.CodeQuality
+   2026.3.925 shipped from `bbpkg`, and the whole difference an analyzer package needed is
+   `git diff e457b5d v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality: netstandard2.0, packing
+   into `analyzers/dotnet/cs`, `SuppressDependenciesWhenPacking`, trimming off (NETSDK1212), release
+   tracking, a pinned Roslyn for both CSharp and Workspaces, and role-aware packaging tests.
+   `repo-conventions.cs` needed no change. Relayed by the CodeQuality session, 2026-09-25.
    The next release also carries `bbavalonia`'s version fix (`e6b7930`).
 3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's pull
    requests merge and its own CI runs the check green.
