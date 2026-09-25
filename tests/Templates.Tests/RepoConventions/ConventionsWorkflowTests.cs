@@ -78,6 +78,19 @@ public sealed class ConventionsWorkflowTests
     }
 
     /// <summary>
+    /// A generated repository requires trimming from its first commit (plans/00004 step 4). It costs
+    /// nothing there, because the template's src/Directory.Build.props already marks every shipped
+    /// assembly trimmable; this keeps it from quietly ceasing to be required.
+    /// </summary>
+    [Fact]
+    public void The_template_requires_trimming()
+    {
+        JsonNode config = JsonNode.Parse(File.ReadAllText(Path.Combine(RepoRoot(), ShippedRepositoryJson)))!;
+
+        Assert.Equal("required", config["trimming"]?.GetValue<string>());
+    }
+
+    /// <summary>
     /// Job ids: keys two spaces in under <c>jobs:</c>, and only there. Keys under <c>on:</c>, such as
     /// <c>push</c>, sit at the same indent and are not jobs.
     /// </summary>

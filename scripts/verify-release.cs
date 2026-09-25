@@ -475,6 +475,54 @@ try
 
     Console.WriteLine("  " + LastNonEmptyLines(assertLog, 1));
 
+    // ── 9 · The family conventions, as its own CI will check them ───────────────────────────
+    // ⭐ The generated repository's OWN copy of repo-conventions.cs, so this also proves the shipped
+    // script compiles under a generated repository's warnings-as-errors. --offline, because the
+    // repository does not exist on GitHub.
+    //
+    // A freshly generated repository is SUPPOSED to fail: its description is empty and its documents
+    // carry markers until a person replaces them. Anything else that fails, a build property above
+    // all, is the template's defect, not the generated repository's.
+    Step("Check the generated repository's conventions, offline");
+
+    if (!Git(["init", "-q"], generated, out string gitLog))
+    {
+        return Fail("git init failed in the generated repository: " + gitLog);
+    }
+
+    Dotnet(["run", "--file", Path.Combine("scripts", "repo-conventions.cs"), "--",
+        "check", "--offline", "--root", generated, "--repo", $"{originOwner}/Bennewitz.Ninja.{GeneratedStem}"], generated, out string conventionsLog);
+
+    string[] conventionLines =
+    [
+        .. conventionsLog.Split('\n')
+            .Select(line => line.Trim())
+            .Select(line => line.StartsWith("::error::", StringComparison.Ordinal) ? line["::error::".Length..] : line),
+    ];
+
+    // ⛔ Evidence that the check ran at all: a script that failed to compile prints no FAIL line
+    // either, and would otherwise pass this step.
+    if (!conventionLines.Any(line => line.StartsWith("NOTE props:", StringComparison.Ordinal) && line.Contains("projects evaluated", StringComparison.Ordinal)))
+    {
+        return Fail("The conventions check never evaluated the generated repository's projects:" + Environment.NewLine + conventionsLog);
+    }
+
+    string[] unexpected =
+    [
+        .. conventionLines.Where(line => line.StartsWith("FAIL ", StringComparison.Ordinal)
+            && !line.StartsWith("FAIL repository.json: \"description\" is empty", StringComparison.Ordinal)
+            && !(line.StartsWith("FAIL docs:", StringComparison.Ordinal) && line.Contains("still carries a template marker", StringComparison.Ordinal))),
+    ];
+
+    if (unexpected.Length > 0)
+    {
+        return Fail("The generated repository fails the conventions for reasons that are the template's, not its own:"
+            + Environment.NewLine + string.Join(Environment.NewLine, unexpected));
+    }
+
+    int markers = conventionLines.Count(line => line.Contains("still carries a template marker", StringComparison.Ordinal));
+    Console.WriteLine($"  only the intended gaps: the empty description and {markers} markers; every project's properties conform");
+
     Console.WriteLine();
     Console.WriteLine(publishedVersion is null
         ? "verify-release: PASS — packed, installed from the .nupkg, generated, and the generated repository builds, tests and packs."

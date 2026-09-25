@@ -9,10 +9,11 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-24, HEAD `63b7595` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 4**: the template's
-   `repository.json` gains `"trimming": "required"`, and `verify-release` runs `check --offline` on
-   the generated repository, expecting only the markers and the empty description. Steps 1–3 are
-   done; step 2's three decisions are carried out in step 6.
+1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 6**: each family repository, one
+   commit each, takes the new script copy and the property fixes; DiffView by pull request.
+   Step 2's decisions land here: FileServer migrates to central versions and its tests gain
+   AutoVersioning; AutoVersioning fixes its gaps and exempts only its use of itself; DiffView packs
+   its README. Steps 1–5 are done.
 2. [`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`), starts after
    `00004` step 5. The maintainer chose Semi.Avalonia for `bbavalonia`, a `--blazor` parameter off by
    default for `bbweb`, and `bbapi` last, from `bbweb`. Good examples: ClaudeForge, chisel,
@@ -641,8 +642,10 @@ The script builds its arrays through the constructor.
 | 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done except DiffView** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
 | 2 · Measure the baseline across the family | **done** | See the measurement below. Three repositories missed parts of the baseline, and the maintainer decided each |
 | 3 · The property check in `repo-conventions.cs` | **done** | Restore, evaluation with `GITHUB_ACTIONS=true`, roles (with *other* for non-packable libraries), the baseline, package rules for libraries and tools, `props` exemptions with reasons and a note for a stale one, the trimming stage, `--offline`; documented in `docs/repository-conventions.md`. 15 tests in `PropsTests` over three real repositories built in a temp directory; 8 planted defects, each caught, each also compiled and run to prove the catch was not a build failure. Against real repositories before any test: AppServices conforms, AutoVersioning shows step 2's gaps |
-| 4 · The template requires trimming; `verify-release` runs `check --offline` | next | |
-| 5–8 | not started | |
+| 4 · The template requires trimming; `verify-release` runs `check --offline` | **done** | The template's `repository.json` requires trimming; `ConventionsWorkflowTests.The_template_requires_trimming` pins it. `verify-release` gains step 9: the generated repository's OWN script copy, `check --offline`, with a guard that the properties were evaluated at all, allowing only the empty description and the markers. Passes as shipped (8 markers). Planted in the template: dropping `Nullable` or `IsTrimmable` was caught earlier, by the generated build and its `TrimmableTests`; re-adding `IsContinuousIntegration` and changing `AssemblyCompany`, which build and test cleanly, were each caught by step 9 alone |
+| 5 · This repository adopts the new script | **done** | Done by step 3: `scripts/repo-conventions.cs` is the new script, and this repository's CI ran the property check green on `caa8c03`, the packaging project as role *template* |
+| 6 · Each family repository adopts the script, with step 2's decisions | next | |
+| 7–8 | not started | |
 
 **Step 2's measurement, 2026-09-24.** Every project in the eight repositories' solutions (or, with
 none, every csproj outside `templates/`), from each `origin/main`, restored and evaluated in Release

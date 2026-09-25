@@ -4,5 +4,6 @@
   "topics": ["csharp", "dotnet", "nuget"],
   "requiredChecks": ["build", "pack", "conventions"],
   "content": [],
-  "undocumented": {}
+  "undocumented": {},
+  "trimming": "required"
 }
