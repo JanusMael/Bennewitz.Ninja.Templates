@@ -1,0 +1,22 @@
+# Normalize line endings to LF in the repository; tools that need CRLF get it on checkout.
+* text=auto eol=lf
+
+*.cs      text
+*.cshtml  text
+*.razor   text
+*.css     text
+*.js      text
+*.csproj  text
+*.props   text
+*.targets text
+*.slnx    text
+*.json    text
+*.md      text
+*.yml     text
+Dockerfile text eol=lf
+*.sh      text eol=lf
+*.ps1     text eol=crlf
+
+*.ico     binary
+*.png     binary
+*.woff2   binary
