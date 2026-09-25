@@ -1,7 +1,7 @@
 #!/usr/bin/env dotnet
 // Pre-publication gate for the template package itself: pack it, install it FROM THE PACKED
-// .nupkg, generate a repository from EVERY template it ships, and assert each generated tree — all
-// before anything is published.
+// .nupkg, generate a repository from EVERY template it ships, assert each generated tree, and
+// publish each app for this machine, running the web ones — all before anything is published.
 //
 // ⛔ Every check here asserts CONTENT, never an exit code. A template package whose content was
 // flattened still installs, still lists, and still "generates" — emitting the extracted nupkg
@@ -114,7 +114,7 @@ Case[] cases =
             // every assembly unmarked, so a tree check is the earliest place it can fail loudly.
             Path.Combine("src", "Directory.Build.props"),
         ],
-        Forbidden: []),
+        Forbidden: [], Publish: PublishKind.None),
     new("bbavalonia", "bbavalonia", "Notebook", [], Packs: false,
         Required:
         [
@@ -124,17 +124,27 @@ Case[] cases =
             Path.Combine("scripts", "check-trim-warnings.cs"),
             Path.Combine("src", "{0}", "trim-warnings.txt"),
         ],
-        Forbidden: []),
+        Forbidden: [], Publish: PublishKind.Trimmed),
     new("bbweb", "bbweb", "Gallery", [], Packs: false,
         Required: [.. common, .. app, .. container],
-        Forbidden: blazorOnly),
+        Forbidden: blazorOnly, Publish: PublishKind.SingleFile),
     new("bbweb --blazor", "bbweb", "Gallery", ["--blazor"], Packs: false,
         Required: [.. common, .. app, .. container, .. blazorOnly],
-        Forbidden: []),
+        Forbidden: [], Publish: PublishKind.SingleFile),
     new("bbapi", "bbapi", "Catalog", [], Packs: false,
         Required: [.. common, .. app, .. container],
-        Forbidden: []),
+        Forbidden: [], Publish: PublishKind.Native),
 ];
+
+// ⭐ Each app is published for the machine running this, the way its own release publishes that
+// runtime identifier, and a web app is then started and asked for /healthz and /version. A
+// template whose generated repository builds and tests clean can still fail to publish: a trim
+// warning the baseline does not hold, a native compile, a single-file site missing its wwwroot.
+string hostRid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
+
+// Passed to every publish and read back from /version, so a site that reports anything but the
+// version it was published with (the "Built with ♥" defect) fails here.
+const string PublishedVersion = "2026.3.999";
 
 // No placeholder may survive, in a path or in a file: every template's stem, matched regardless of
 // case because the engine also substitutes the lowercase form (docker tags), and the symbols' tokens.
@@ -419,8 +429,8 @@ try
     }
 
     Console.WriteLine(publishedVersion is null
-        ? $"verify-release: PASS — packed, installed from the .nupkg, and all {cases.Length} generated repositories ({string.Join(", ", cases.Select(entry => entry.Label))}) build and pass their tests."
-        : $"verify-release: PASS — {PackageId} {publishedVersion} installed FROM NUGET.ORG, and all {cases.Length} generated repositories ({string.Join(", ", cases.Select(entry => entry.Label))}) build and pass their tests.");
+        ? $"verify-release: PASS — packed, installed from the .nupkg, and all {cases.Length} generated repositories ({string.Join(", ", cases.Select(entry => entry.Label))}) build and pass their tests; every app publishes for {hostRid}."
+        : $"verify-release: PASS — {PackageId} {publishedVersion} installed FROM NUGET.ORG, and all {cases.Length} generated repositories ({string.Join(", ", cases.Select(entry => entry.Label))}) build and pass their tests; every app publishes for {hostRid}.");
 
     return 0;
 }
@@ -670,7 +680,161 @@ string? Verify(Case entry)
     int markers = conventionLines.Count(line => line.Contains("still carries a template marker", StringComparison.Ordinal));
     Console.WriteLine($"  only the intended gaps: the empty description and {markers} markers; every project's properties conform");
 
-    return null;
+    return entry.Publish == PublishKind.None ? null : Publish(entry, generated);
+}
+
+// Publishes one generated app for this machine's runtime identifier, with the arguments its own
+// release passes, and proves what came out. Returns why it failed, or null.
+string? Publish(Case entry, string generated)
+{
+    string stem = entry.Stem;
+    string project = Path.Combine("src", stem, $"{stem}.csproj");
+    string output = Path.Combine(generated, "publish", hostRid);
+
+    Step(entry.Publish switch
+    {
+        PublishKind.Trimmed => $"Publish trimmed for {hostRid}, against the warning baseline",
+        PublishKind.SingleFile => $"Publish single-file for {hostRid}, then run it",
+        _ => $"Publish natively for {hostRid}, then run it",
+    });
+
+    string[] kind = entry.Publish switch
+    {
+        PublishKind.Trimmed => ["--self-contained"],
+        PublishKind.SingleFile => ["--self-contained", "-p:PublishSingleFile=true", "-p:IncludeNativeLibrariesForSelfExtract=true"],
+        // PublishAot is the project's own.
+        _ => [],
+    };
+
+    // ⚠ On Windows the AOT compiler finds MSVC through vswhere.exe, by its full path, taking the
+    // newest Visual Studio or Build Tools with the C++ tools, and then runs that install's
+    // VsDevCmd.bat, which changes into the Installer folder and calls `vswhere.exe` BY NAME. Where
+    // NoDefaultCurrentDirectoryInExePath is set, as agent shells set it, cmd does not search the
+    // current folder and the publish fails with "'vswhere.exe' is not recognized". So the folder goes
+    // on PATH for this one child process.
+    Dictionary<string, string> environment = [];
+
+    if (entry.Publish == PublishKind.Native && OperatingSystem.IsWindows())
+    {
+        string installer = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Microsoft Visual Studio", "Installer");
+
+        environment["PATH"] = installer + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
+    }
+
+    if (!Dotnet(["publish", project, "-c", "Release", "-r", hostRid, "--nologo", .. kind,
+        $"-p:Version={PublishedVersion}", "-p:CommitSha=0000000", "-o", output], generated, out string publishLog, environment))
+    {
+        return $"The {hostRid} publish fails:" + Environment.NewLine + publishLog;
+    }
+
+    if (entry.Publish == PublishKind.Trimmed)
+    {
+        // The script CI runs, on the log CI would give it: the warnings must equal the baseline,
+        // in both directions.
+        string logPath = Path.Combine(generated, "trim-publish.log");
+        File.WriteAllText(logPath, publishLog);
+
+        if (!Dotnet(["run", "--file", Path.Combine("scripts", "check-trim-warnings.cs"), "--", logPath,
+            Path.Combine("src", stem, "trim-warnings.txt")], generated, out string trimLog))
+        {
+            return "The trimmed publish's warnings differ from the baseline:" + Environment.NewLine + trimLog;
+        }
+
+        Console.WriteLine("  " + LastNonEmptyLines(trimLog, 1));
+        return null;
+    }
+
+    string executable = Path.Combine(output, OperatingSystem.IsWindows() ? stem + ".exe" : stem);
+
+    if (!File.Exists(executable))
+    {
+        return $"The publish reported success but left no executable at '{executable}'.";
+    }
+
+    return Serve(executable, output);
+}
+
+// Starts a published web app on a free loopback port, from its own folder as a deployment runs it,
+// and checks /healthz answers "ok" and /version names the version it was published with.
+static string? Serve(string executable, string folder)
+{
+    int port;
+
+    using (System.Net.Sockets.TcpListener probe = new(System.Net.IPAddress.Loopback, 0))
+    {
+        probe.Start();
+        port = ((System.Net.IPEndPoint)probe.LocalEndpoint).Port;
+    }
+
+    string root = $"http://127.0.0.1:{port}";
+
+    ProcessStartInfo startInfo = new()
+    {
+        FileName = executable,
+        WorkingDirectory = folder,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+    };
+
+    startInfo.Environment["ASPNETCORE_URLS"] = root;
+
+    StringBuilder captured = new();
+    using Process process = new() { StartInfo = startInfo };
+    process.OutputDataReceived += (_, e) => { if (e.Data is not null) { lock (captured) { captured.AppendLine(e.Data); } } };
+    process.ErrorDataReceived += (_, e) => { if (e.Data is not null) { lock (captured) { captured.AppendLine(e.Data); } } };
+
+    Stopwatch clock = Stopwatch.StartNew();
+    process.Start();
+    process.BeginOutputReadLine();
+    process.BeginErrorReadLine();
+
+    try
+    {
+        using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(5) };
+        string? health = null;
+
+        while (health is null && clock.Elapsed < TimeSpan.FromSeconds(60) && !process.HasExited)
+        {
+            try
+            {
+                using HttpResponseMessage response = client.GetAsync(root + "/healthz").GetAwaiter().GetResult();
+                health = $"{(int)response.StatusCode} {response.Content.ReadAsStringAsync().GetAwaiter().GetResult().Trim()}";
+            }
+            catch (HttpRequestException)
+            {
+                Thread.Sleep(250);
+            }
+        }
+
+        long answeredAfter = clock.ElapsedMilliseconds;
+
+        if (health != "200 ok")
+        {
+            return $"The published app did not answer /healthz with 200 ok ({health ?? (process.HasExited ? $"it exited with {process.ExitCode}" : "no answer in 60 s")}):"
+                + Environment.NewLine + captured;
+        }
+
+        using HttpResponseMessage versionResponse = client.GetAsync(root + "/version").GetAwaiter().GetResult();
+        string version = versionResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+        if (!versionResponse.IsSuccessStatusCode || !version.Contains(PublishedVersion, StringComparison.Ordinal))
+        {
+            return $"/version answered {(int)versionResponse.StatusCode} '{version.Trim()}', not the published version {PublishedVersion}.";
+        }
+
+        Console.WriteLine($"  {Path.GetFileName(executable)} answered /healthz in {answeredAfter} ms; /version names {PublishedVersion}");
+        return null;
+    }
+    finally
+    {
+        if (!process.HasExited)
+        {
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit();
+        }
+    }
 }
 
 static void Step(string title) => Console.WriteLine($"→ {title}");
@@ -697,7 +861,7 @@ static XDocument? ReadNuspec(ZipArchive archive)
 
 // ArgumentList, never a joined string: a path with a space is the normal case on Windows, and a
 // hand-quoted command line is where that becomes a bug nobody reproduces on their own machine.
-static bool Dotnet(string[] arguments, string workingDirectory, out string log)
+static bool Dotnet(string[] arguments, string workingDirectory, out string log, IReadOnlyDictionary<string, string>? environment = null)
 {
     ProcessStartInfo startInfo = new()
     {
@@ -711,6 +875,11 @@ static bool Dotnet(string[] arguments, string workingDirectory, out string log)
     foreach (string argument in arguments)
     {
         startInfo.ArgumentList.Add(argument);
+    }
+
+    foreach ((string name, string value) in environment ?? new Dictionary<string, string>())
+    {
+        startInfo.Environment[name] = value;
     }
 
     StringBuilder captured = new();
@@ -801,4 +970,8 @@ static int Fail(string message)
 
 // One generated repository: which template, under which stem, with which arguments, and what its
 // tree must and must not hold. `{0}` in a path is the stem.
-record Case(string Label, string Template, string Stem, string[] Arguments, bool Packs, string[] Required, string[] Forbidden);
+record Case(string Label, string Template, string Stem, string[] Arguments, bool Packs, string[] Required, string[] Forbidden, PublishKind Publish);
+
+// How an app's release publishes it: trimmed and held to its warning baseline (bbavalonia),
+// self-contained single-file (bbweb), or compiled natively ahead of time (bbapi).
+enum PublishKind { None, Trimmed, SingleFile, Native }

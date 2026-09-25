@@ -40,8 +40,11 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
   yet passed to its session.
 
 **Environment:** Docker Desktop is running (engine 29.8.0); the maintainer fixed it on 2026-09-25. A
-native Windows publish from this shell needs `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer`
-on `PATH`, where `vswhere.exe` is.
+native Windows publish takes the newest Visual Studio or Build Tools with the C++ tools, now Build
+Tools 2026 (the maintainer added the workload on 2026-09-25). An agent shell sets
+`NoDefaultCurrentDirectoryInExePath=1`, so there it also needs
+`%ProgramFiles(x86)%\Microsoft Visual Studio\Installer` on `PATH`; a normal terminal does not, and
+`verify-release` adds it for its own publish.
 
 **Locked decisions** (the maintainer's; do not reopen):
 - Every family repository meets `docs/repository-conventions.md`: the settings baseline lives in the
@@ -923,17 +926,23 @@ container, which CI's `container` job requests. The documents say what was measu
 identifier builds on a runner of its operating system: `ubuntu-24.04-arm` for linux-arm64, and
 win-arm64 and osx-x64 cross-architecture on `windows-latest` and `macos-latest`. Proven here:
 linux-x64 in Docker and win-x64 natively. On this machine the Windows publish needed the Visual
-Studio Installer folder on `PATH`, since the AOT compiler finds MSVC through `vswhere.exe`;
-GitHub's Windows runners carry it.
+Studio Installer folder on `PATH`: the AOT compiler finds MSVC through `vswhere.exe` by its full
+path, but the install's `VsDevCmd.bat` then calls `vswhere.exe` by name from the Installer folder,
+which fails where `NoDefaultCurrentDirectoryInExePath` is set, as it is in an agent shell. Found in
+step 5; GitHub's Windows runners carry it on `PATH`.
 
 **`bbapi`'s image is chiseled**: no shell, so CI reads the image's configured user rather than
 running `id` in the container, and no ICU, so the project sets `InvariantGlobalization`.
 
-**`verify-release` publishes no app.** Decision 9 has it publish one runtime identifier of each;
-step 5 builds, tests and checks every generated repository and stops there. `bbapi`'s native publish
-needs the platform's C toolchain (on Windows, MSVC found through `vswhere.exe`), which the gate would
-then need on every machine that runs it, and each generated repository's own CI already runs the
-trimmed publish against its baseline, the container build and the native matrix.
+**`verify-release` publishes one runtime identifier of each app: the machine's own**, not a fixed
+one, since native AOT has no cross-OS publish. `bbavalonia` publishes trimmed and is held to its
+warning baseline by its own `check-trim-warnings.cs`; `bbweb` in both variants publishes
+self-contained single-file, and `bbapi` natively, and each is started from its publish folder and
+must answer `/healthz` with `ok` and `/version` with the version passed to the publish. Step 5 first
+merged without it (#9), on the claim that the native toolchain would be needed on every machine;
+this machine had it, and the maintainer asked for decision 9 as written. `bbavalonia` is not run: a
+GUI app needs a display, and its `--smoke` run stays in the manual checks. Measured on win-x64: 7
+trim warnings, as the baseline; the two sites answer in about 0.7 s and the native API in 0.6 s.
 
 ⛔ **`verify-release` emptied the maintainer's global template registration.** It uninstalled
 `Bennewitz.Ninja.Templates` before and after every run, and so did the step 2–4 scratch scripts; on
