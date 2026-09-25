@@ -22,27 +22,27 @@ public sealed class AutomationNameTests
         return context;
     }
 
-    /// <summary>XQ1002: every interactive control carries an automation Name.</summary>
+    /// <summary>BNXQ1002: every interactive control carries an automation Name.</summary>
     [Fact]
-    public void XQ1002_every_interactive_control_is_named()
+    public void BNXQ1002_every_interactive_control_is_named()
     {
         XamlRuleResult result = new InteractiveAutomationNameRule().Analyze(Markup());
 
         // The template's window has two: the name box and Greet. Raise this as the app grows.
-        Assert.True(result.Inspected >= 2, $"XQ1002 inspected {result.Inspected} controls; expected at least 2.");
+        Assert.True(result.Inspected >= 2, $"BNXQ1002 inspected {result.Inspected} controls; expected at least 2.");
         Assert.True(result.Findings.Count == 0, string.Join(Environment.NewLine, result.Findings));
     }
 
     /// <summary>
-    /// XQ1001: every Expander carries an automation Name, which its header does not supply: a
+    /// BNXQ1001: every Expander carries an automation Name, which its header does not supply: a
     /// screen reader announces an unnamed Expander as just "expander".
     /// </summary>
     [Fact]
-    public void XQ1001_every_expander_is_named()
+    public void BNXQ1001_every_expander_is_named()
     {
         XamlRuleResult result = new ExpanderAutomationNameRule().Analyze(Markup());
 
-        Assert.True(result.Inspected > 0, "XQ1001 inspected no Expander, so it proved nothing.");
+        Assert.True(result.Inspected > 0, "BNXQ1001 inspected no Expander, so it proved nothing.");
         Assert.True(result.Findings.Count == 0, string.Join(Environment.NewLine, result.Findings));
     }
 }

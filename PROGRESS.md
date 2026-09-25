@@ -10,19 +10,16 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 **Next, in order:**
 1. **[`plans/00005`](plans/00005-app-templates.md) step 6**: the package README and
-   `docs/repository-conventions.md` describe the four templates, and a release. Step 5 is merged
-   (#9, `f6b8cf4`). The release also ships `bbavalonia`'s version fix (`e6b7930`), AssemblyQuality
-   2026.3.925, and the fail-closed packaging guard once those merge.
+   `docs/repository-conventions.md` describe the four templates, and a release. Step 5 is merged,
+   with every app published (#9 `f6b8cf4`, #12 `dbe38fc`). The release also ships `bbavalonia`'s
+   version fix (`e6b7930`), AssemblyQuality and XamlQuality 2026.3.925 with their BN rule IDs, and
+   the fail-closed packaging guard (#11 `74feb10`).
 2. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. #3 and #5 are merged (`8a6996e`, `ec61a10`), `main` green.
-3. **When `bbavalonia` moves to XamlQuality's next release, rename XQ1001–XQ1005 to `BNXQ…`**
-   (XamlQuality#29): 10 mentions under `templates/bbavalonia`; renaming before the package would
-   name IDs it does not report. The AssemblyQuality half is done: `bbavalonia` pins 2026.3.925 and
-   its tests say BNAQ1001, BNAQ1002 and BNAQ1004.
-4. **A conventions rule that a release never globs `*.nupkg`**, which the FileServer audit showed the
+3. **A conventions rule that a release never globs `*.nupkg`**, which the FileServer audit showed the
    check cannot see today. Not yet decided; it changes the script in every family repository.
-5. **A candidate for a later plan: an analyzer template.** Bennewitz.Ninja.CodeQuality 2026.3.925
+4. **A candidate for a later plan: an analyzer template.** Bennewitz.Ninja.CodeQuality 2026.3.925
    shipped from `bbpkg`; the whole difference an analyzer needed is `git diff e457b5d v2026.3.925` in
    JanusMael/Bennewitz.Ninja.CodeQuality.
 
