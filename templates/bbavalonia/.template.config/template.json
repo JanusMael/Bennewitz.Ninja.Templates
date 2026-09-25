@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/template",
+  "author": "Brian Bennewitz",
+  "classifications": [ "Common", "Desktop", "Avalonia", "App" ],
+  "identity": "Bennewitz.Ninja.Templates.AvaloniaApp",
+  "name": "Bennewitz.Ninja Avalonia desktop app",
+  "shortName": "bbavalonia",
+  "preferNameDirectory": true,
+
+  "//sourceName": [
+    "-n takes the app's name, e.g. -n Notebook, which becomes the assembly and executable name.",
+    "Namespaces carry Bennewitz.Ninja. from Directory.Build.props, as in every family repository."
+  ],
+  "sourceName": "AppStem",
+
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+
+  "symbols": {
+    "RepoOwner": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "GitHub account or organisation the generated repository lives under.",
+      "replaces": "REPO_OWNER",
+      "defaultValue": "REPO_OWNER"
+    },
+    "//RepoName": [
+      "An app's repository is usually named after the app, unprefixed (ClaudeForge), unlike a",
+      "package repository, which carries Bennewitz.Ninja. like its package id. So it defaults to -n."
+    ],
+    "RepoName": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "The GitHub repository's name, when it is not the app's name.",
+      "defaultValue": ""
+    },
+    "RepoNameResolved": {
+      "type": "generated",
+      "generator": "coalesce",
+      "parameters": {
+        "sourceVariableName": "RepoName",
+        "fallbackVariableName": "name"
+      },
+      "replaces": "REPO_NAME"
+    }
+  }
+}

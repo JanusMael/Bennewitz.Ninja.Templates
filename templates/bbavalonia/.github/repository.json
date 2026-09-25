@@ -1,0 +1,9 @@
+{
+  "description": "",
+  "homepage": "",
+  "topics": ["csharp", "dotnet", "avalonia", "desktop-app"],
+  "requiredChecks": ["build", "trim", "conventions"],
+  "content": [],
+  "undocumented": {},
+  "trimming": "required"
+}
