@@ -9,7 +9,7 @@ executable that is never packed.
 |---|---|
 | `AppStem.Tests/MainWindowTests.cs` | The main window driven by `AutomationId` on the headless platform, under the real theme, and its view model without one |
 | `AppStem.Tests/Headless/` | The headless app, which is the real `App`, and the guard on the one-session premise |
-| `AppStem.Tests/Accessibility/` | XamlQuality's XQ1001 and XQ1002 over the app's markup |
+| `AppStem.Tests/Accessibility/` | XamlQuality's BNXQ1001 and BNXQ1002 over the app's markup |
 | `AppStem.Tests/Architecture/` | AssemblyQuality's BNAQ1001, BNAQ1002 (over Serilog) and BNAQ1004 over the compiled app, each asserting it skipped nothing |
 | `AppStem.Tests/Packaging/` | The app is never packed, and any library added later is declared |
 

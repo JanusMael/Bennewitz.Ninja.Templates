@@ -30,7 +30,7 @@ on GitHub Releases. Generated from the `bbavalonia` template in Bennewitz.Ninja.
 |---|---|---|
 | Bindings are compiled: `AvaloniaUseCompiledBindingsByDefault`, and `x:DataType` on every view | A reflection binding works in a debug run and does nothing in the trimmed release, silently | `AppStem.csproj`; the trim analyser in every build |
 | A trimmed publish's ILLink warnings equal `src/AppStem/trim-warnings.txt` | A new trim hazard ships, or ILLink stops analysing Avalonia and nobody notices | CI's `trim` job; the release, for every platform |
-| Every interactive control has an `AutomationId` and an automation `Name` | An agent, a test or a screen reader cannot find or announce it | `AutomationNameTests` (XQ1001, XQ1002) |
+| Every interactive control has an `AutomationId` and an automation `Name` | An agent, a test or a screen reader cannot find or announce it | `AutomationNameTests` (BNXQ1001, BNXQ1002) |
 | The app is not packable, and any packable project is in `packages.push` or `packages.local` | A package nobody chose is published, permanently | `PackagingTests` |
 | The release attaches binaries to a GitHub Release and pushes nothing to nuget.org | An app appears on nuget.org as a package nobody can use | `PackagingTests`; `.github/workflows/release.yml` |
 | Packages resolve from nuget.org only | A second source added later silently starts supplying packages | `NuGet.config`, `packageSourceMapping` |
