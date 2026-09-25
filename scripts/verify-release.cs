@@ -327,6 +327,8 @@ try
         "README.md",
         "Directory.Build.props",
         "Directory.Packages.props",
+        // Carries the PublicVersion default, which the props file evaluates too early to take.
+        "Directory.Build.targets",
         "packages.push",
         "packages.local",
         $"{GeneratedStem}.slnx",

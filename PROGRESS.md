@@ -855,6 +855,24 @@ a marker per template would change the script in every family repository for a n
 **Only the executable is archived for release.** A win-x64 publish also leaves the native
 libraries' `.pdb` files beside it, about 100 MB, which ClaudeForge strips with a target of its own.
 
+⛔ **Every template's local builds recorded no version, and `bbavalonia` shipped showing "Built with
+♥" as its version.** Found in step 3, when `/version` answered `{"version":"Built with ♥"}` and a test
+asserting only "not empty" passed on it. Two defects, one inherited from `bbpkg`:
+- AutoVersioning puts `Built with ♥ <commit>` in `AssemblyInformationalVersion`, by design; the
+  release version is `[AssemblyMetadata("PublicVersion")]`. `bbavalonia`'s About panel read the
+  informational version, and so does bleedink.com's `/version`.
+- `Directory.Build.props` defaulted `PublicVersion` to `$(Version)` before the SDK gives `Version`
+  its default, so it was empty on every local build, though `bbpkg`'s comment said "reads 1.0.0".
+  Measured: `""` from the props file, `1.0.0` from a `Directory.Build.targets`, and `-p:Version=`
+  wins in both. A release, which passes `-p:Version=` globally, was never affected.
+
+All three templates now default `PublicVersion` in `Directory.Build.targets`, on `verify-release`'s
+required list; `bbavalonia` and `bbweb` read the metadata; and each has a test asserting the version's
+SHAPE, which a planted return to the informational version fails. The repositories generated from
+`bbpkg` before this carry the early default, harmless to their packages; bleedink.com's `/version` is
+that site's own to fix.
+
+
 ⛔ **The first push of step 2 failed this repository's own `conventions` job.** `repository.json`
 listed only `templates/bbpkg` as shipped content, so the check read `bbavalonia`'s markers as this
 repository's unfinished documents and evaluated its projects as this repository's. The step's

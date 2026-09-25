@@ -19,10 +19,6 @@
     <AssemblyProduct>AppStem</AssemblyProduct>
     <CopyrightHolder>Brian Bennewitz</CopyrightHolder>
     <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
-    <!-- AutoVersioning records the released version as assembly metadata; it does not set it. The
-         version comes from the release tag as -p:Version=, so this follows it and reads 1.0.0 on a
-         local build, which is what a local build is. -->
-    <PublicVersion Condition="'$(PublicVersion)' == ''">$(Version)</PublicVersion>
   </PropertyGroup>
 
   <!-- Package metadata, for a library added under src/ later. The app itself is never packed, but a

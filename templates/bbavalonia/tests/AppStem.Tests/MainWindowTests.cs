@@ -36,6 +36,16 @@ public sealed class MainWindowTests
         Assert.True(viewModel.GreetCommand.CanExecute(null));
     }
 
+    /// <summary>
+    /// The About panel shows a version shaped like one. Shape, because the obvious attribute,
+    /// <c>AssemblyInformationalVersion</c>, is AutoVersioning's "Built with ♥ …".
+    /// </summary>
+    [Fact]
+    public void The_version_is_the_release_version()
+    {
+        Assert.Matches(@"^\d+\.\d+\.\d+", new MainWindowViewModel().Version);
+    }
+
     [Fact]
     public void Greet_greets_the_trimmed_name()
     {
