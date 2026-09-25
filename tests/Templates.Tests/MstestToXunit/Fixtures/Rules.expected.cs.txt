@@ -152,7 +152,8 @@ public sealed class AssertionRules
 
         Assert.Equal(new[] { 1, 2 }, list);
         MessageAssert.SequenceEqual(new[] { 1, 2 }, list, "why");
-        Assert.Contains(1, list);
+        ElementAssert.Contains(1, list);
+        ElementAssert.DoesNotContain(3, list, "why");
         MessageAssert.DoesNotContain(3, list, "why");
         MessageAssert.SameElements(new[] { 2, 1 }, list);
         Assert.Distinct(list);

@@ -271,13 +271,18 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
   `Assert.Contains` both do. ⭐ The fixture tests compare TEXT and could not see this;
   `The_emitted_collection_helpers_decide_as_the_original_Contains_did` RUNS the emitted helpers
   against each original, and canaried red on exactly the two `Keys` lines with the old helper.
-- ⚠ **Open, same family, not fixed:** `MessageAssert.Contains<T>`/`DoesNotContain<T>` are shared by
-  two MSTest forms that disagree on a comparer-carrying `ICollection`. Measured on MSTest 4.3.3:
-  `Assert.DoesNotContain(y, keys, msg)` asks the collection (fails for `"A"`), while
-  `CollectionAssert.DoesNotContain(keys, y, msg)` uses the default equality (passes). One member
-  cannot keep both meanings, so the two forms need separate helpers. The message-less
-  `CollectionAssert.Contains` → `Assert.Contains` has the mirror gap for a `SortedSet` with a
-  comparer (MSTest's default equality, xUnit's set lookup).
+- ✅ **The same family, fixed 2026-09-25:** MSTest's three collection-membership families disagree,
+  measured on MSTest 4.3.3 — `x.Contains(y)` and `Assert.Contains/DoesNotContain` ask the collection,
+  `CollectionAssert.Contains/DoesNotContain` compares each element by the default equality — and
+  `MessageAssert.Contains<T>` had served both of the last two. Now each family has its own helper:
+  the `Assert.*` message forms ask the collection (through `OrdinalAssert`), and every
+  `CollectionAssert` form goes to a new `ElementAssert`, which hands xUnit a plain iterator so a set
+  cannot answer for itself. ⭐ The semantics test now uses **MSTest as the oracle**: it runs every
+  such MSTest form beside its converted call — 108 pairs over case-insensitive dictionary keys, a
+  `HashSet`, a `SortedSet` and a plain `List` — and requires `checked 108, disagreed 0`. Canaried:
+  with both halves reverted it reports exactly the 10 predicted disagreements (`"A"` over `keys`
+  and `sortedSet`). OpenForge2k's 119 converted sites are all `List<string>`/`string[]`, so none
+  changed verdict.
 - Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.

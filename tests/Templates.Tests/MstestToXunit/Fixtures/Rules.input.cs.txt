@@ -150,6 +150,7 @@ public sealed class AssertionRules
         CollectionAssert.AreEqual(new[] { 1, 2 }, list, "why");
         CollectionAssert.Contains(list, 1);
         CollectionAssert.DoesNotContain(list, 3, "why");
+        Assert.DoesNotContain(3, list, "why");
         CollectionAssert.AreEquivalent(new[] { 2, 1 }, list);
         CollectionAssert.AllItemsAreUnique(list);
         CollectionAssert.AllItemsAreUnique(list, $"why {s}");

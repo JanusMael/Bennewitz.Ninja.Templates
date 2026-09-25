@@ -54,12 +54,13 @@ public sealed class MstestToXunitTests : IClassFixture<MstestToXunitTests.Run>
         string converted = _run.Converted("Rules.cs");
 
         Assert.Contains("namespace Fixture.Namespace;", helpers, StringComparison.Ordinal);
-        foreach (string member in System.Text.RegularExpressions.Regex.Matches(converted, @"(?:MessageAssert|OrdinalAssert)\.(\w+)")
+        foreach (string member in System.Text.RegularExpressions.Regex.Matches(converted, @"(?:MessageAssert|OrdinalAssert|ElementAssert)\.(\w+)")
                      .Select(m => m.Groups[1].Value).Distinct())
         {
             Assert.Contains($" {member}", helpers, StringComparison.Ordinal);
         }
         Assert.Contains("internal static class OrdinalAssert", helpers, StringComparison.Ordinal);
+        Assert.Contains("internal static class ElementAssert", helpers, StringComparison.Ordinal);
 
         // ⛔ MSTest's string assertions are ORDINAL and xUnit's default to the culture, so no emitted
         // string helper may call xUnit's without a comparison. Measured when this was added:
@@ -77,15 +78,17 @@ public sealed class MstestToXunitTests : IClassFixture<MstestToXunitTests.Run>
 
     /// <summary>
     /// A converted assertion must decide as its original did, which the text of the rules cannot
-    /// show. This RUNS the emitted helpers against each <c>IsTrue|IsFalse(x.Contains(y))</c> they
-    /// replace, over collections that bring their own comparer.
+    /// show. This RUNS every MSTest form the rules turn into a collection helper beside the helper
+    /// call emitted for it, over collections that bring their own comparer and one that does not.
+    /// MSTest is the oracle, so no expected verdict is written down by hand.
     /// </summary>
     /// <remarks>
-    /// ⛔ Measured on xunit.v3.assert 3.2.2: xUnit asks a set for itself but compares a dictionary's
-    /// <c>Keys</c> by the default equality, so <c>IsFalse(keys.Contains("A"))</c> over
-    /// case-insensitive keys holding <c>"a"</c> converted to a <c>DoesNotContain</c> that passed
-    /// where the original failed. Canaried: with the pre-fix helper this test fails on exactly those
-    /// two lines.
+    /// ⛔ The three MSTest families disagree, measured on MSTest 4.3.3: <c>x.Contains(y)</c> and
+    /// <c>Assert.Contains</c> ask the collection, so a case-insensitive dictionary's <c>Keys</c>
+    /// contain <c>"A"</c>; <c>CollectionAssert.Contains</c> compares each element by the default
+    /// equality, so a case-insensitive <c>SortedSet</c> does not. xUnit 3.2.2 matches neither: it asks
+    /// a set for itself and compares anything else by the default equality. Canaried: with the helpers
+    /// before this rule, the pairs over <c>keys</c> and <c>sortedSet</c> disagree.
     /// </remarks>
     [Fact]
     public void The_emitted_collection_helpers_decide_as_the_original_Contains_did()
@@ -96,17 +99,26 @@ public sealed class MstestToXunitTests : IClassFixture<MstestToXunitTests.Run>
         {
             File.WriteAllText(Path.Combine(directory, "Helpers.cs"), _run.Helpers);
             File.WriteAllText(Path.Combine(directory, "run.cs"),
-                Fixture("HelperSemantics.run.cs.txt").Replace("{XUNIT_VERSION}", XunitVersion(), StringComparison.Ordinal));
+                Fixture("HelperSemantics.run.cs.txt")
+                    .Replace("{XUNIT_VERSION}", XunitVersion(), StringComparison.Ordinal)
+                    .Replace("{MSTEST_VERSION}", OracleMstestVersion, StringComparison.Ordinal));
 
             (int exitCode, string output) = Run.Dotnet(directory, "run", "--file", "run.cs");
 
-            Assert.True(exitCode == 0, output);
+            // The count, not only the exit code: a runner that checked nothing also exits 0.
+            Assert.True(exitCode == 0 && output.Contains("checked 108, disagreed 0", StringComparison.Ordinal), output);
         }
         finally
         {
             Directory.Delete(directory, recursive: true);
         }
     }
+
+    /// <summary>
+    /// The MSTest the semantics test runs as its oracle. This repository references no MSTest, so it
+    /// is pinned here; 4 is the major the rules convert from.
+    /// </summary>
+    private const string OracleMstestVersion = "4.3.3";
 
     /// <summary>The repository's pinned xunit.v3; its assert and core packages ship at the same version.</summary>
     private static string XunitVersion()
