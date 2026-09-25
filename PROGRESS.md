@@ -6,28 +6,30 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Written 2026-09-24, after `a8bd8de` on `main`.*
+*Replaced, never appended, at each handoff. Written 2026-09-24, after `c81a2ef` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 7**: trimming, one repository at
-   a time, easiest first. XamlQuality's library and FileServer's library need `IsTrimmable` and
-   `EnableTrimAnalyzer`; DiffView's two libraries need an ILLink pass, by pull request. Then step 8,
-   the record. Steps 1–5 are done; step 6 is done except DiffView's merges.
+1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 8**: the record is written below;
+   it closes when DiffView's three pull requests merge and its own CI runs the check green. Steps
+   1–7 are done, DiffView's by pull request.
 2. [`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`), may start: its
    precondition, `00004` step 5, is done. The maintainer chose Semi.Avalonia for `bbavalonia`, a
    `--blazor` parameter off by default for `bbweb`, and `bbapi` last, from `bbweb`. Good examples:
    ClaudeForge, chisel, bleedink.com, FileServer, dotnet-autopsy, ObexNet; GraphViz.Studio is a
-   spike, not one.
+   spike, not one. ⚠ Step 7 found that a Razor library's clean trim analysis proves nothing (see
+   its drift below); `bbweb`'s trimming decision must measure a trimmed publish, not a build.
 3. **Release `2026.3.925`**: the scheduled task `release-templates-2026-3-925` runs once at
    2026-09-25 09:00 CDT and reports to this session. It ships everything on `main`, including the
    property check and the template's required trimming. Check its report.
 
-**Waiting on others:** DiffView belongs to its own session, on another machine. Its `main` is green
-again. [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3) (`00004` steps 1
-and 6) is green and ready to merge; merging it is left to the maintainer or DiffView's session.
-[DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) (the conventions, and the
-new script copy) stays red on its `conventions` job until DiffView writes its `AGENTS.md` set,
-`CLAUDE.md` pointers and `.github/repository.json`, which `00003` handed to that session.
+**Waiting on others:** DiffView belongs to its own session, on another machine; merging there is
+left to the maintainer or that session, in this order.
+[DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3) (`00004` steps 1 and 6)
+is green. [DiffView#5](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/5) (step 7) marks
+both libraries trimmable. [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2)
+(the conventions, the new script copy, and trimming required) stays red on its `conventions` job
+until DiffView writes its `AGENTS.md` set and `CLAUDE.md` pointers, which `00003` handed to that
+session.
 
 **Locked decisions** (the maintainer's; do not reopen):
 - Every family repository meets `docs/repository-conventions.md`: the settings baseline lives in the
@@ -40,6 +42,8 @@ new script copy) stays red on its `conventions` job until DiffView writes its `A
 - Work only from a git worktree under this session's scratch directory, never in the shared checkout
   `C:\c\cl\Bennewitz.Ninja.Templates`, which other sessions use. Push with
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push …`.
+- A change in a family repository updates that repository's `PROGRESS.md` in the same commit, in
+  that file's own format.
 
 ## Status
 
@@ -648,7 +652,8 @@ The script builds its arrays through the constructor.
 | 4 · The template requires trimming; `verify-release` runs `check --offline` | **done** | The template's `repository.json` requires trimming; `ConventionsWorkflowTests.The_template_requires_trimming` pins it. `verify-release` gains step 9: the generated repository's OWN script copy, `check --offline`, with a guard that the properties were evaluated at all, allowing only the empty description and the markers. Passes as shipped (8 markers). Planted in the template: dropping `Nullable` or `IsTrimmable` was caught earlier, by the generated build and its `TrimmableTests`; re-adding `IsContinuousIntegration` and changing `AssemblyCompany`, which build and test cleanly, were each caught by step 9 alone |
 | 5 · This repository adopts the new script | **done** | Done by step 3: `scripts/repo-conventions.cs` is the new script, and this repository's CI ran the property check green on `caa8c03`, the packaging project as role *template* |
 | 6 · Each family repository adopts the script, with step 2's decisions | **done except DiffView's merges** | Direct to `main`, the script copy first and then `a8bd8de`'s again: AppServices `ef0f573` `cf30a9b`, ScopedEditors `c0c331c` `a01aa2a`, XamlQuality `de4a4b0` `006745b`, AssemblyQuality `d147dba` `b9711a3`. FileServer `f10c674` (central package management, its tests gain AutoVersioning; version-neutral, build, tests and sample build passed), `762cdd9` (both Dockerfiles copy `Directory.Packages.props` before the restore), `514fec0`. AutoVersioning `f093331` (a root `Directory.Build.props` and central versions; only its use of itself exempted, with the reason), `2631253`. CI is green on every job of every final commit, and `check --repo` from here reports no FAIL and no drift for all six. DiffView: the script copy is on [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2); [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3), with `main` merged in, builds cleanly and has no property FAIL, only the two trimming notes |
-| 7–8 | not started | |
+| 7 · Trimming, repository by repository | **done; DiffView by pull request** | Required, each proved both ways: the check conforms, and a planted loss of the property fails the check and the repository's mark test. AppServices `8e07ab7` and ScopedEditors `3a20d6a`: already marked, `"trimming": "required"`. AssemblyQuality `e9f63e1`: marked through `IsAotCompatible`, now required, and `TrimmableTests` added. DiffView: both libraries marked in [DiffView#5](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/5), analyzer clean, its existing `TrimMode=link` trim check the ILLink pass, a mark test added; required in [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2). **Stay at the note:** XamlQuality and FileServer, for the reasons below |
+| 8 · The record | **written; closes with DiffView's merges** | Required: Templates, AppServices, ScopedEditors, AssemblyQuality, and DiffView once #2 merges. At the note: XamlQuality's library (22 analyzer findings; 18 of them reflect over the consumer's compiled types, and fixing them honestly means `[RequiresUnreferencedCode]` on the public rule API, which the plan leaves to XamlQuality) and FileServer's library (see the drift below). Not held: AutoVersioning, an analyzer; apps and tools, by decision 8 |
 
 **Step 2's measurement, 2026-09-24.** Every project in the eight repositories' solutions (or, with
 none, every csproj outside `templates/`), from each `origin/main`, restored and evaluated in Release
@@ -685,6 +690,31 @@ baseline's role without the package properties.
    DiffView#3; both merge once DiffView's session makes `main` green.
 
 ### Drift from `plans/00004`
+
+⛔ **FileServer's library is analyzer-clean when marked, and marking it breaks its consumers.** With
+its three `MapGet(string, Delegate)` calls moved to `RequestDelegate` handlers, the trim analyzer and
+an ILLink pass both report nothing in it. But a consumer publishing with `TrimMode=partial` then
+trims the library, keeps each compiled Razor view type without its constructor, and every listing
+and Markdown page answers 500 (`Views_FileServer_Directory does not have a default constructor`):
+measured on a self-contained trimmed publish, against 200s from the same publish unmarked. MVC
+creates views by reflection no analysis sees. An embedded `ILLink.Descriptors.xml` preserving
+`AspNetCoreGeneratedDocument` restored all three pages, but holding that would need a trimmed-publish
+job in FileServer's CI, and the library pulls in MVC, which Microsoft does not support trimming, so
+the mark would buy consumers little. **Not marked**; the experiment was discarded. The same blind
+spot as compiled XAML: a Razor library's trim analysis is a trimmed publish that serves a page, not
+a build.
+
+**Removing `EnableTrimAnalyzer` is not a defect, so it cannot be planted.** The SDK turns the
+analyzer on whenever `IsTrimmable` is true: with the line removed it still evaluates `true`, and the
+first planted defect of that shape survived for that reason. Planting it as `false` is caught.
+
+⛔ **None of the family commits for `plans/00004` updated their repository's `PROGRESS.md`**, 22
+commits across six repositories, although each repository's `AGENTS.md` asks for it in the same
+change. Found in step 7. AppServices `d9f3312`, ScopedEditors `05ed128`, AutoVersioning `59eecc5`
+and FileServer `5d04f8a` record them after the fact, FileServer's with why its library is not marked
+trimmable; AssemblyQuality's step 7 commit records its own. XamlQuality's list takes only what a
+consumer can see, so its commits stay out, and FileServer's `CHANGELOG.md` takes only what a user
+would notice, which none of these is: the Docker break arrived and left between two releases.
 
 ⛔ **Step 2 misreported DiffView's READMEs, and decision 5's rule changes because of it.** The
 measurement flagged `PackageReadmeFile` on all three of DiffView's packable projects, and this was
