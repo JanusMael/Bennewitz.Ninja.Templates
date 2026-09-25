@@ -9,12 +9,14 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-25, after `c358a8b` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00005`](plans/00005-app-templates.md) step 4**: `bbapi`, from `bbweb`: minimal APIs
-   with the request delegate generator, OpenAPI, a health endpoint, and `PublishAot`. Steps 2 and 3
-   are merged (#6, #7). A new template needs its folder in `content` in `.github/repository.json`,
-   and reads its version from the `PublicVersion` metadata, never `AssemblyInformationalVersion`.
-2. `plans/00005` step 5: `verify-release` generates every template, `bbweb` in both variants.
-   Then step 6: the package README and `docs/repository-conventions.md` describe them, and a release.
+1. **[`plans/00005`](plans/00005-app-templates.md) step 5**: `verify-release` generates every
+   template, `bbweb` in both variants, from the packed package, and fails when any one does not
+   build and pass its tests. Steps 2–4 are merged or in review (#6, #7, and `bbapi` on `feat/bbapi`).
+   The scratch scripts that proved each template by hand are the checks to fold in: tree,
+   placeholders, build, test, `check --offline`; the native and container runs stay in each
+   generated repository's CI.
+2. `plans/00005` step 6: the package README and `docs/repository-conventions.md` describe the four
+   templates, and a release.
    The next release also carries `bbavalonia`'s version fix (`e6b7930`).
 3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's pull
    requests merge and its own CI runs the check green.
@@ -829,7 +831,8 @@ consumer sees), and DiffView on #2 (`e5f1203`).
 | 1 · Wait for `00004`'s script | **done** | `00004` step 5 was done on 2026-09-24 |
 | 2 · `bbavalonia` from ClaudeForge | **done**, merged in #6 as `fb6961a`, `f5f7871`, `4e63eca`, admin-merged green by the maintainer's word | Generated from the PACKED template as `Notebook`: builds with warnings as errors, 14 of 14 tests pass, `check --offline` fails only on the empty description and the markers, a trimmed publish for linux-x64 matches the 7-warning baseline, and a trimmed single-file win-x64 binary run with `--smoke` exits 0 in about 2 s. All six runtime identifiers publish from one Windows machine with the same 7 warnings, all in `Avalonia.DesignerSupport`. 9 planted defects, each caught: an unnamed button (XQ1002) or Expander (XQ1001), the Semi theme removed, the name box unbound, the view model's trim dropped, the app made packable, a defaulted `CancellationToken` (AQ1001), and the baseline changed in each direction |
 | 3 · `bbweb` from bleedink.com and FileServer | **done, on `feat/bbweb`** | Generated from the PACKED template as `Gallery`, both variants: build with warnings as errors, 10 of 10 tests without `--blazor` and 13 of 13 with it, `check --offline` failing only on the description and the markers. A self-contained single-file win-x64 publish with `-p:Version=2026.3.920` serves `/healthz` (`ok`), `/version` (`2026.3.920`, its build stamp, the commit), the home page (with the counter prerendered when `--blazor`), the stylesheet and a 404. The container image of each variant, built on Docker 29.8.0 as CI's `container` job builds it, serves `/healthz`, the home page and `/version` (`1.0.0`, the build stamp, the commit passed in) and runs as uid 1654, `app`. 9 planted defects, each caught: `/healthz` changed, `/version` reading the informational version, the exception handler removed, static assets unmapped, status pages not re-executed, the site packable, and with `--blazor` the hub unmapped, the circuit script dropped and the component rendered static |
-| 4–6 | not started | `bbapi` next |
+| 4 · `bbapi` from `bbweb` | **done, on `feat/bbapi`** | Generated from the PACKED template as `Catalog`: builds with warnings as errors and the AOT analyser, 11 of 11 tests pass, `check --offline` fails only on the description and the markers. A native linux-x64 build, compiled in the SDK's AOT image, runs in a 35.3 MB chiseled image as `app` and answers `/healthz`, `/version`, a greeting and the OpenAPI document. A native win-x64 build, 11.8 MB, answers the same in about 0.75 s from process start, at 23.5 MB working set, with 400 and 404 as problem details. 9 planted defects, each caught, the last, a type missing from the JSON context, by the tests and by the native container |
+| 5–6 | not started | `verify-release` covers the four templates next |
 
 ### Drift from `plans/00005`
 
@@ -905,6 +908,24 @@ outside instead.
 **FileServer's release passes `-p:ReadyToRun=true`**, which is not the SDK's property
 (`PublishReadyToRun`), so its binaries are probably not ReadyToRun. FileServer's own to fix; found by
 this step's survey.
+
+⛔ **A type missing from `bbapi`'s JSON context passes the build and every JIT test, and the native
+API answers it with a 500.** Measured: `Greeting` left out of `ApiJson` built clean with warnings
+as errors and the AOT analyser, and all 11 tests passed, because the test host falls back to
+reflection. The first drafts of the generated documents said the analyser "catches most misses";
+it caught none. The test project now sets `JsonSerializerIsReflectionEnabledByDefault` to `false`,
+as the native binary has it: the same defect then fails two tests, and still 500s in the native
+container, which CI's `container` job requests. The documents say what was measured.
+
+**The release's native matrix is unexercised.** Native AOT has no cross-OS publish, so each runtime
+identifier builds on a runner of its operating system: `ubuntu-24.04-arm` for linux-arm64, and
+win-arm64 and osx-x64 cross-architecture on `windows-latest` and `macos-latest`. Proven here:
+linux-x64 in Docker and win-x64 natively. On this machine the Windows publish needed the Visual
+Studio Installer folder on `PATH`, since the AOT compiler finds MSVC through `vswhere.exe`;
+GitHub's Windows runners carry it.
+
+**`bbapi`'s image is chiseled**: no shell, so CI reads the image's configured user rather than
+running `id` in the container, and no ICU, so the project sets `InvariantGlobalization`.
 
 
 ⛔ **The first push of step 2 failed this repository's own `conventions` job.** `repository.json`

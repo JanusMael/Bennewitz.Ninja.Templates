@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- An API is run, not referenced: it releases as binaries and a container image, never as a package. -->
+    <IsPackable>false</IsPackable>
+    <AssemblyName>ApiStem</AssemblyName>
+    <!-- Kestrel serves directly or behind a reverse proxy; IIS is not a target, so no web.config. -->
+    <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+    <!--
+      Compiled ahead of time to one native executable: no JIT, a start measured in milliseconds, and
+      a fraction of the memory. This is why the API has no MVC and no Razor: both reflect over what
+      they render, which native AOT cannot do.
+
+      ⭐ PublishAot also turns on the trim and AOT analysers for every BUILD, so code that would break
+      in the native binary fails the build here, with warnings as errors, not a request in production.
+      Minimal APIs compile through the request delegate generator, and JSON through the source
+      generator in Json.cs: the two things that make an API AOT-safe.
+
+      ⚠ A native build needs the target platform's own linker: no cross-OS publish. The release
+      builds each platform on its own runner, and the container builds linux in the SDK's AOT image.
+    -->
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Development settings stay on the developer's machine. -->
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+</Project>

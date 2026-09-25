@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build ApiStem.slnx -c Release --nologo -warnaserror
+
+      # PublishAot in the project runs the trim and AOT analysers on this build, so code the native
+      # binary would break on fails here. The tests run the API in memory, under the JIT.
+      - name: Test
+        run: dotnet test --solution ApiStem.slnx --no-build -c Release
+
+  # ⭐ The NATIVE API, compiled ahead of time inside the image, built and run on every push, and
+  # pushed nowhere: a registry is a deployment decision this repository makes for itself. This is
+  # the only place the native binary answers a request before a release, so it is where a type
+  # missing from ApiJson, or anything else only AOT breaks, shows up.
+  container:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build the image
+        run: docker build --build-arg COMMIT_SHA=${{ github.sha }} -t apistem:ci .
+
+      - name: Run it and check it serves
+        run: |
+          set -euo pipefail
+          docker run -d --name apistem-ci -p 8080:8080 apistem:ci
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:8080/healthz; then break; fi
+            sleep 1
+          done
+          test "$(curl -sf http://localhost:8080/healthz)" = "ok"
+          curl -sf http://localhost:8080/version
+          curl -sf http://localhost:8080/api/greetings/Ada
+          curl -sf -o /dev/null -w 'openapi %{http_code}\n' http://localhost:8080/openapi/v1.json
+          user="$(docker inspect --format '{{.Config.User}}' apistem:ci)"; echo "user $user"; test -n "$user" && test "$user" != "root" && test "$user" != "0"
+
+      - name: Show the log on failure
+        if: failure()
+        run: docker logs apistem-ci || true
+
+  # The family conventions: documentation at the root and in every top-level directory, the
+  # description, topics, feature toggles and rulesets. See docs/repository-conventions.md in
+  # Bennewitz.Ninja.Templates.
+  #
+  # ⭐ Red on a freshly generated repository, listing every gap, until each one is closed.
+  #
+  # ⚠ The job name is a required check in .github/repository.json. Renaming it means changing that
+  # list and running `repo-conventions apply` in the same change, or every pull request blocks.
+  conventions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Check the repository conventions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check

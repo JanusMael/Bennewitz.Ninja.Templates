@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/template",
+  "author": "Brian Bennewitz",
+  "classifications": [ "Common", "Web", "API", "Kestrel", "AOT" ],
+  "identity": "Bennewitz.Ninja.Templates.WebApi",
+  "name": "Bennewitz.Ninja Kestrel API (native AOT)",
+  "shortName": "bbapi",
+  "preferNameDirectory": true,
+
+  "//sourceName": [
+    "-n takes the API's name, e.g. -n Catalog, which becomes the assembly and executable name.",
+    "Namespaces carry Bennewitz.Ninja. from Directory.Build.props, as in every family repository."
+  ],
+  "sourceName": "ApiStem",
+
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+
+  "symbols": {
+    "RepoOwner": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "GitHub account or organisation the generated repository lives under.",
+      "replaces": "REPO_OWNER",
+      "defaultValue": "REPO_OWNER"
+    },
+    "//RepoName": [
+      "An API's repository is usually named after the API, unprefixed, unlike a package",
+      "repository, which carries Bennewitz.Ninja. like its package id. So it defaults to -n."
+    ],
+    "RepoName": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "The GitHub repository's name, when it is not the API's name.",
+      "defaultValue": ""
+    },
+    "RepoNameResolved": {
+      "type": "generated",
+      "generator": "coalesce",
+      "parameters": {
+        "sourceVariableName": "RepoName",
+        "fallbackVariableName": "name"
+      },
+      "replaces": "REPO_NAME"
+    }
+  }
+}

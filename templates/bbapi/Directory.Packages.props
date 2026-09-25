@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Versioning">
+    <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.916" />
+  </ItemGroup>
+
+  <ItemGroup Label="API">
+    <!-- The OpenAPI document at /openapi/v1.json, generated at build time and AOT-safe. Keep it on
+         the same 10.0 servicing line as the ASP.NET Core runtime. -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <!-- The in-memory host that runs the real Program for the tests. Keep it on the same 10.0
+         servicing line as the ASP.NET Core runtime the SDK in global.json brings. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+    <!-- xunit.v3 on Microsoft.Testing.Platform — see global.json. The VSTest bridge packages are
+         deliberately absent; TrxReport is what gives CI its .trx files. -->
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <!-- ⚠ Same Microsoft.Testing.Platform line as xunit.v3 3.2.2 (1.9.1). A NEWER TrxReport pins
+         the platform above what xunit's bundled MSBuild extension can load, and the failure reads
+         as an unrelated loader error. -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
+  </ItemGroup>
+</Project>

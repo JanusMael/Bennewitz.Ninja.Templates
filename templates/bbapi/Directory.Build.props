@@ -1,0 +1,50 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Absolute repository root for targets that shell out to scripts/. -->
+    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
+    <!-- Namespace convention: Bennewitz.Ninja.<AssemblyName>; assembly names stay unprefixed. -->
+    <RootNamespace>Bennewitz.Ninja.$(MSBuildProjectName)</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Bennewitz.Ninja.AutoVersioning source generator: version stamps computed at build time. -->
+    <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>
+    <AssemblyCompany>Bennewitz.Ninja</AssemblyCompany>
+    <AssemblyProduct>ApiStem</AssemblyProduct>
+    <CopyrightHolder>Brian Bennewitz</CopyrightHolder>
+    <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
+  </PropertyGroup>
+
+  <!-- Package metadata, for a library added under src/ later. The app itself is never packed, but a
+       library is held to these the moment it is packable: repo-conventions checks them. -->
+  <PropertyGroup>
+    <Authors>Brian Bennewitz</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/REPO_OWNER/REPO_NAME</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/REPO_OWNER/REPO_NAME</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <!-- PDB policy: portable in Debug for local source stepping; embedded in Release so the
+       shipped binary carries its own symbols and nothing loose has to travel with it. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bennewitz.Ninja.AutoVersioning"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+</Project>
