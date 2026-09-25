@@ -9,10 +9,9 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-25, after `4e63eca` on `main`.*
 
 **Next, in order:**
-1. **Release `2026.3.925`**: the scheduled task `release-templates-2026-3-925` runs once at
-   2026-09-25 09:00 CDT and reports to this session. It ships everything on `main`, including
-   `bbavalonia`, by the maintainer's decision, and the `nuget`-topic rule. Check its report, and that
-   `dotnet new list` shows both `bbpkg` and `bbavalonia` from the published package.
+1. ~~Release `2026.3.925`~~ **done** 2026-09-25, tag `v2026.3.925` at `f743d42`, verified from the
+   feed; `dotnet new list` shows both `bbpkg` and `bbavalonia` from the published package. See the
+   release record under `plans/00003`.
 2. **[`plans/00005`](plans/00005-app-templates.md) step 3**: `bbweb`, extracted from bleedink.com and
    FileServer, with the `--blazor` parameter off by default. Step 2 is merged. ⚠ `bbweb` is Razor:
    `00004` step 7 found a Razor library's clean trim analysis proves nothing, and `bbweb` is not
@@ -547,6 +546,21 @@ entries, none outside `content/bbpkg/`, among them `scripts/repo-conventions.cs`
 and `verify-release --published 2026.3.924` installed it from nuget.org, generated a repository,
 asserted the tree, and built, tested and packed it. It also carries AutoVersioning `2026.3.916` and
 drops `IsContinuousIntegration`.
+
+✅ **Released as `Bennewitz.Ninja.Templates 2026.3.925`**, 2026-09-25, tag `v2026.3.925` at
+`f743d42`. It carries the shared-lessons rule in the template's root `AGENTS.md` (`4a778c0`), and
+everything else under `templates/` since `v2026.3.924`: `repo-conventions.cs` checking the family's
+build properties (`caa8c03`), generated repositories requiring trimming with `verify-release`
+checking their properties (`8ad9aa8`), a package README under any name (`a8bd8de`), the `nuget`
+topic required only where `packages.push` names an id (`fb6961a`), and, by the maintainer's
+decision, the second template `bbavalonia` (`f5f7871`). The credential preflight passed first.
+Verified from the feed rather than the green run: the nuget.org flat-container lists `2026.3.925`;
+the `.nupkg` downloaded from it carries 89 content entries, 40 under `content/bbpkg/` and 49 under
+`content/bbavalonia/`, none outside the two, each with its `.template.config/template.json`, and
+`content/bbpkg/AGENTS.md` says the lessons go to XamlQuality; `verify-release --published
+2026.3.925` installed it from nuget.org, generated a repository, asserted the tree, and built,
+tested and packed it; and `dotnet new list`, in a clean hive after installing it from nuget.org,
+shows both `bbpkg` and `bbavalonia`.
 
 **Decided 2026-09-24, on XamlQuality's request:** Avalonia and drivable-UI lessons go to
 XamlQuality, whose `docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` are the one living copy
