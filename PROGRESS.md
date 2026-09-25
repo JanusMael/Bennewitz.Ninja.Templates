@@ -640,8 +640,33 @@ The script builds its arrays through the constructor.
 | Step | State | Notes |
 |---|---|---|
 | 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done except DiffView** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
-| 2 · Measure the baseline across the family | next | |
+| 2 · Measure the baseline across the family | **done**; decisions pending | See the measurement below. Three repositories miss parts of the baseline; the maintainer decides each before step 3 enforces it |
 | 3–8 | not started | |
+
+**Step 2's measurement, 2026-09-24.** Every project in the eight repositories' solutions (or, with
+none, every csproj outside `templates/`), from each `origin/main`, restored and evaluated in Release
+with `GITHUB_ACTIONS=true`, against decision 4's baseline and, for libraries and tools, decision 5's
+package properties:
+
+| Repository | Projects that miss something | What they miss |
+|---|---|---|
+| Templates, AppServices, ScopedEditors, XamlQuality, AssemblyQuality | none | — |
+| FileServer | all three | central package management; `Bennewitz.Ninja.FileServer.Tests` also references no AutoVersioning |
+| AutoVersioning | the analyzer and its tests | `ImplicitUsings`, `TreatWarningsAsErrors`, central package management, `AssemblyCompany`, and AutoVersioning applied to itself |
+| DiffView | all seven | AutoVersioning `2026.3.819` and `IsContinuousIntegration`, which DiffView#3 fixes; `PackageReadmeFile` on its three packable projects |
+
+Trimming notes (decision 7): XamlQuality's library, FileServer's library and both DiffView libraries
+are not yet trimmable; AppServices', ScopedEditors' and AssemblyQuality's are.
+
+⚠ **The measurement's first run was wrong everywhere, and was caught as implausible.** It reported
+every project below AutoVersioning `2026.3.916`, this repository included, because under central
+package management a `PackageReference` item carries no version; the version is on the
+`PackageVersion` item. Step 3's check must read it the same way: `VersionOverride`, then the
+reference's own `Version` (FileServer, without central management), then the `PackageVersion` item.
+
+⚠ **Decision 3's roles have a gap:** AssemblyQuality's test fixtures `Absent` and `Orphan` are
+libraries that are neither packable nor tests. They meet the baseline, and step 3 gives them the
+baseline's role without the package properties.
 
 ### Drift from `plans/00004`
 
