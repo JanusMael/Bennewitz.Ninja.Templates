@@ -29,10 +29,13 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 **Waiting on others:**
 - DiffView#2 (the conventions, the script copy, trimming required) stays red on `conventions` until
   DiffView's session writes its `AGENTS.md` set and `CLAUDE.md` pointers.
-- FileServer's session has the audit of 2026-09-25: its release globs `nupkg/*.nupkg`, it has no
-  package lists or packaging guard, tests on xunit v2, no `global.json` or `NuGet.config`, and
-  `-p:ReadyToRun=true` is not `PublishReadyToRun`. `NUGET_USER` is already a variable (`c99c92a`).
-  The order of the fixes is the maintainer's.
+- FileServer reports all 7 findings of the 2026-09-25 audit fixed on its `main`, CI green and the
+  release preflight passing on `e2decd9`: package lists, the packaging guard and named pushes
+  (`89ca5c9`), `PublishReadyToRun` (`32dd506`), `NuGet.config` (`1dcda1b`), xunit.v3 on MTP and
+  `global.json` (`e2decd9`). Reported by its session, not checked here. It found two template gaps,
+  both fixed here: the packaging guard now fails closed in every template, and `NuGet.config` says
+  when a nested config loses `*` (a child mapping under the `nuget.org` key replaces this file's
+  patterns for it; mapping another source merges; measured on SDK 10.0.401).
 - bleedink.com's `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥"; not
   yet passed to its session.
 
