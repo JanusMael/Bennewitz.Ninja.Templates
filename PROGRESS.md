@@ -9,11 +9,14 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-24, HEAD `63b7595` on `main`.*
 
 **Next, in order:**
-1. **Write `plans/00004`**, a draft for the maintainer: enforce the family-standard
-   `Directory.Build.props` through `repo-conventions check`, with trimming as a slower rollout.
-   The same plan, or `00005` beside it, covers three new templates in this package: an Avalonia
-   desktop app, a Kestrel web site, and a Kestrel API. Enforcement must know a repository's kind,
-   because an app's props differ from a library's. Then run `step-back` on each draft.
+1. **Get `plans/00004` and `plans/00005` approved.** Both are drafts in the working copy, not yet
+   committed: `00004-standard-build-properties.md` (enforce the standard build properties on
+   evaluated values, remove `IsContinuousIntegration`, stage trimming) and
+   `00005-app-templates.md` (`bbavalonia`, `bbweb`, `bbapi`, extracted from ClaudeForge,
+   bleedink.com and FileServer). Both have had one `step-back` round and a second read. Settle the
+   maintainer's open decisions, then commit each approved plan on its own before any work on it.
+   The maintainer's good examples are ClaudeForge, chisel, bleedink.com, FileServer, dotnet-autopsy
+   and ObexNet; GraphViz.Studio is a spike and is not one.
 2. **Remove `IsContinuousIntegration`** from the root `Directory.Build.props` of AppServices,
    ScopedEditors, XamlQuality, AssemblyQuality and FileServer (direct to `main`), and DiffView (a pull
    request). Nothing reads it: AutoVersioning `.914` and `.819` set it themselves in their package
