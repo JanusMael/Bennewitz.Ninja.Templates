@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] — SiteStem</title>
+    @*#if (Blazor)
+    <base href="~/" />
+    #endif*@
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header">
+        <a class="site-name" asp-controller="Home" asp-action="Index">SiteStem</a>
+    </header>
+    <main id="main">
+        @RenderBody()
+    </main>
+    @*#if (Blazor)
+    <script src="_framework/blazor.server.js"></script>
+    #endif*@
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

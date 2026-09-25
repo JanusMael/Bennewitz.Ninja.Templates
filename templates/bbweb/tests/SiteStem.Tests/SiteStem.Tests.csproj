@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <!-- The site itself, started in memory by WebApplicationFactory<Program>: the real pipeline,
+         routes and views, with no port and no process. -->
+    <ProjectReference Include="../../src/SiteStem/SiteStem.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/dotnetcli.host",
+  "symbolInfo": {
+    "Blazor": {
+      "longName": "blazor",
+      "shortName": ""
+    }
+  }
+}

@@ -1,0 +1,150 @@
+name: Release
+
+# Triggered by a version tag (v2026.3.920), or dispatched by hand with the version.
+#
+# A site is run, not referenced: a release is one self-contained, single-file server per runtime
+# identifier, attached to a GitHub Release, beside its static assets. Nothing is pushed to nuget.org,
+# and the container image CI builds is pushed nowhere: a registry is this repository's own decision.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 2026.3.920. The tag v<version> is created on the release.'
+        required: true
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # The version comes from the TAG, not from a file, so the binary and the tag agree by
+      # construction rather than by someone remembering to bump both.
+      - name: Resolve version and tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ⛔ Nothing is released from a repository missing what the family conventions prescribe: its
+      # documents, a replaced marker, a description. A setting that has merely drifted does not stop
+      # a release; CI's `conventions` job reports that.
+      - name: Refuse to release a repository the conventions reject
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check --release
+
+      - name: Build
+        run: dotnet build SiteStem.slnx -c Release --nologo -warnaserror -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Test
+        run: dotnet test --solution SiteStem.slnx --no-build -c Release
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        # Every runtime identifier publishes from Linux: none of them compiles native code.
+        rid: [ win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64 ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Publish ${{ matrix.rid }}
+        run: >
+          dotnet publish src/SiteStem/SiteStem.csproj -c Release -r ${{ matrix.rid }} --self-contained
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          --nologo -p:Version=${{ needs.verify.outputs.version }} -p:CommitSha=${{ github.sha }}
+          -o publish/${{ matrix.rid }}
+
+      # ⚠ The whole folder, not only the executable: a single-file site still serves wwwroot/ and
+      # reads its static-asset manifest from beside it. Only the .pdb files are left out.
+      - name: Archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="SiteStem-${{ needs.verify.outputs.version }}-${{ matrix.rid }}"
+          cd "publish/${{ matrix.rid }}"
+          find . -name '*.pdb' -delete
+          if [[ "${{ matrix.rid }}" == win-* ]]; then
+            zip -9 -r "../../${name}.zip" .
+          else
+            chmod +x SiteStem
+            tar -czf "../../${name}.tar.gz" .
+          fi
+
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.rid }}
+          path: |
+            SiteStem-*.zip
+            SiteStem-*.tar.gz
+          if-no-files-found: error
+
+  release:
+    needs: [ verify, publish ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      # One asset per runtime identifier, named, never globbed: a missing one fails here rather than
+      # shipping a release without that platform, and nothing unnamed is attached.
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${{ needs.verify.outputs.version }}"
+          assets=()
+          for rid in win-x64 win-arm64; do assets+=("artifacts/SiteStem-${version}-${rid}.zip"); done
+          for rid in linux-x64 linux-arm64 osx-x64 osx-arm64; do assets+=("artifacts/SiteStem-${version}-${rid}.tar.gz"); done
+          ls -l "${assets[@]}"
+          gh release create "${{ needs.verify.outputs.tag }}" --title "SiteStem ${version}" --generate-notes \
+            --target "${{ github.sha }}" "${assets[@]}"

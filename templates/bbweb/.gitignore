@@ -1,0 +1,8 @@
+bin/
+obj/
+artifacts/
+packages/
+publish/
+*.user
+.vs/
+.idea/

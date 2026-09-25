@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- A site is run, not referenced: it releases as binaries and a container image, never as a package. -->
+    <IsPackable>false</IsPackable>
+    <AssemblyName>SiteStem</AssemblyName>
+    <!-- Kestrel serves directly or behind a reverse proxy; IIS is not a target, so no web.config. -->
+    <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+    <!--
+      Not trimmed, deliberately. MVC and Razor views create what they render by reflection, which no
+      trim analysis sees: a Razor library measured analyser-clean and still answered 500 once trimmed
+      (plans/00004 in Bennewitz.Ninja.Templates). The size a trim would save is not worth that.
+    -->
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Development settings stay on the developer's machine. -->
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+</Project>
