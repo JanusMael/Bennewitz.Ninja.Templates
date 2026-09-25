@@ -6,29 +6,28 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Written 2026-09-24, after `c81a2ef` on `main`.*
+*Replaced, never appended, at each handoff. Written 2026-09-25, after `4e63eca` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 8**: the record is written below;
-   it closes when DiffView's three pull requests merge and its own CI runs the check green. Steps
-   1–7 are done, DiffView's by pull request.
-2. [`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`), may start: its
-   precondition, `00004` step 5, is done. The maintainer chose Semi.Avalonia for `bbavalonia`, a
-   `--blazor` parameter off by default for `bbweb`, and `bbapi` last, from `bbweb`. Good examples:
-   ClaudeForge, chisel, bleedink.com, FileServer, dotnet-autopsy, ObexNet; GraphViz.Studio is a
-   spike, not one. ⚠ Step 7 found that a Razor library's clean trim analysis proves nothing (see
-   its drift below); `bbweb`'s trimming decision must measure a trimmed publish, not a build.
-3. **Release `2026.3.925`**: the scheduled task `release-templates-2026-3-925` runs once at
-   2026-09-25 09:00 CDT and reports to this session. It ships everything on `main`, including the
-   property check and the template's required trimming. Check its report.
+1. **Release `2026.3.925`**: the scheduled task `release-templates-2026-3-925` runs once at
+   2026-09-25 09:00 CDT and reports to this session. It ships everything on `main`, including
+   `bbavalonia`, by the maintainer's decision, and the `nuget`-topic rule. Check its report, and that
+   `dotnet new list` shows both `bbpkg` and `bbavalonia` from the published package.
+2. **[`plans/00005`](plans/00005-app-templates.md) step 3**: `bbweb`, extracted from bleedink.com and
+   FileServer, with the `--blazor` parameter off by default. Step 2 is merged. ⚠ `bbweb` is Razor:
+   `00004` step 7 found a Razor library's clean trim analysis proves nothing, and `bbweb` is not
+   trimmed (decision 6). A new template needs its folder added to `content` in
+   `.github/repository.json`; `TemplateCopiesTests` fails until it is.
+3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's pull
+   requests merge and its own CI runs the check green.
 
 **Waiting on others:** DiffView belongs to its own session, on another machine; merging there is
 left to the maintainer or that session, in this order.
 [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3) (`00004` steps 1 and 6)
 is green. [DiffView#5](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/5) (step 7) marks
 both libraries trimmable. [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2)
-(the conventions, the new script copy, and trimming required) stays red on its `conventions` job
-until DiffView writes its `AGENTS.md` set and `CLAUDE.md` pointers, which `00003` handed to that
+(the conventions, the current script copy, and trimming required) stays red on its `conventions`
+job until DiffView writes its `AGENTS.md` set and `CLAUDE.md` pointers, which `00003` handed to that
 session.
 
 **Locked decisions** (the maintainer's; do not reopen):
@@ -39,11 +38,14 @@ session.
 - Avalonia and drivable-UI lessons go to XamlQuality, family-wide.
 - Enforce the standard `Directory.Build.props`; trimming is a goal that may roll out slowly.
 - A library or tool packs a README under any name.
+- The `nuget` topic is required only where `packages.push` names an id.
 - Work only from a git worktree under this session's scratch directory, never in the shared checkout
   `C:\c\cl\Bennewitz.Ninja.Templates`, which other sessions use. Push with
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push …`.
 - A change in a family repository updates that repository's `PROGRESS.md` in the same commit, in
   that file's own format.
+- Merging a green pull request here uses the admin bypass when the maintainer says so; auto-merge is
+  off by the family baseline.
 
 ## Status
 
@@ -788,10 +790,19 @@ failed the conventions on `"topics" lacks "nuget"` although it publishes no pack
 site or API would have. `repo-conventions.cs` changes with `docs/repository-conventions.md`, and
 every family repository takes the new copy after it merges.
 
+**Decided 2026-09-25** (maintainer): **`2026.3.925` ships `bbavalonia`**, ahead of steps 5 and 6,
+since the merge landed an hour before the scheduled release. `verify-release` covering it and
+the package README describing it follow in a later release.
+
+The family took the new script copy the same morning, each with its `PROGRESS.md` entry:
+AppServices `118dacc`, ScopedEditors `c1a26bd`, AssemblyQuality `bdd4bef`, AutoVersioning
+`ca38307`, FileServer `7205fc5`, XamlQuality `35a94bf` (script only: its list takes what a
+consumer sees), and DiffView on #2 (`e5f1203`).
+
 | Step | State | Notes |
 |---|---|---|
 | 1 · Wait for `00004`'s script | **done** | `00004` step 5 was done on 2026-09-24 |
-| 2 · `bbavalonia` from ClaudeForge | **done, on `feat/bbavalonia`** | Generated from the PACKED template as `Notebook`: builds with warnings as errors, 14 of 14 tests pass, `check --offline` fails only on the empty description and the markers, a trimmed publish for linux-x64 matches the 7-warning baseline, and a trimmed single-file win-x64 binary run with `--smoke` exits 0 in about 2 s. All six runtime identifiers publish from one Windows machine with the same 7 warnings, all in `Avalonia.DesignerSupport`. 9 planted defects, each caught: an unnamed button (XQ1002) or Expander (XQ1001), the Semi theme removed, the name box unbound, the view model's trim dropped, the app made packable, a defaulted `CancellationToken` (AQ1001), and the baseline changed in each direction |
+| 2 · `bbavalonia` from ClaudeForge | **done**, merged in #6 as `fb6961a`, `f5f7871`, `4e63eca`, admin-merged green by the maintainer's word | Generated from the PACKED template as `Notebook`: builds with warnings as errors, 14 of 14 tests pass, `check --offline` fails only on the empty description and the markers, a trimmed publish for linux-x64 matches the 7-warning baseline, and a trimmed single-file win-x64 binary run with `--smoke` exits 0 in about 2 s. All six runtime identifiers publish from one Windows machine with the same 7 warnings, all in `Avalonia.DesignerSupport`. 9 planted defects, each caught: an unnamed button (XQ1002) or Expander (XQ1001), the Semi theme removed, the name box unbound, the view model's trim dropped, the app made packable, a defaulted `CancellationToken` (AQ1001), and the baseline changed in each direction |
 | 3–6 | not started | `bbweb` next |
 
 ### Drift from `plans/00005`
