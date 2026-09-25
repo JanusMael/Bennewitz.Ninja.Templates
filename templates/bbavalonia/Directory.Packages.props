@@ -25,7 +25,7 @@
     <PackageVersion Include="Bennewitz.Ninja.AppServices.Avalonia" Version="2026.3.924" />
     <!-- The markup and assembly rules, run as tests. -->
     <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.924" />
-    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.922" />
+    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.925" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
