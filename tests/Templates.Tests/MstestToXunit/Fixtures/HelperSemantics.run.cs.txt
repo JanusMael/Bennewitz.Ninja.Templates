@@ -1,48 +1,85 @@
 #!/usr/bin/env dotnet
 #:package xunit.v3.assert@{XUNIT_VERSION}
 #:package xunit.v3.extensibility.core@{XUNIT_VERSION}
+#:package MSTest.TestFramework@{MSTEST_VERSION}
 #:include Helpers.cs
 
-// Runs the EMITTED helpers against the assertion each one replaces, and exits with the number of
-// disagreements. Each original is `Assert.IsTrue|IsFalse(x.Contains(y))`, whose verdict is x's own
-// Contains; the converted form is the OrdinalAssert call the rules emit for it.
+// Runs each MSTest assertion the rules convert into a collection helper BESIDE the helper call the
+// rules emit for it, and counts the pairs whose verdicts differ. MSTest itself is the oracle, so no
+// expectation here is reasoned: a pair either agrees or is printed.
 
+// MSTest.TestFramework adds a global using of its namespace under ImplicitUsings, which makes the
+// helpers' `Assert` ambiguous. An alias outranks a type imported through a namespace, so this
+// settles it without turning off the implicit usings the helpers rely on.
+global using Assert = Xunit.Assert;
+
+using System.Collections;
 using Fixture.Namespace;
+using MS = Microsoft.VisualStudio.TestTools.UnitTesting;
 
 var ignoreCase = StringComparer.OrdinalIgnoreCase;
 var keys = new Dictionary<string, int>(ignoreCase) { ["a"] = 1 }.Keys;
-var set = new HashSet<string>(ignoreCase) { "a" };
+var hashSet = new HashSet<string>(ignoreCase) { "a" };
+var sortedSet = new SortedSet<string>(ignoreCase) { "a" };
 var list = new List<string> { "a" };
+string[] items = ["A", "a", "b"];
 
-int disagreements = 0;
+int checks = 0, disagreements = 0;
 
-// A dictionary's Keys are not a set, so xUnit compares them by the default equality.
-Check("IsTrue(keys.Contains(\"A\"))", keys.Contains("A"), () => OrdinalAssert.Contains("A", keys));
-Check("IsFalse(keys.Contains(\"A\"))", !keys.Contains("A"), () => OrdinalAssert.DoesNotContain("A", keys));
-Check("IsTrue(set.Contains(\"A\"))", set.Contains("A"), () => OrdinalAssert.Contains("A", set));
-Check("IsFalse(set.Contains(\"A\"))", !set.Contains("A"), () => OrdinalAssert.DoesNotContain("A", set));
-Check("IsTrue(list.Contains(\"A\"))", list.Contains("A"), () => OrdinalAssert.Contains("A", list));
-Check("IsFalse(list.Contains(\"A\"))", !list.Contains("A"), () => OrdinalAssert.DoesNotContain("A", list));
-Check("IsTrue(list.Contains(\"a\"))", list.Contains("a"), () => OrdinalAssert.Contains("a", list));
-Check("IsFalse(list.Contains(\"a\"))", !list.Contains("a"), () => OrdinalAssert.DoesNotContain("a", list));
+// Collections carrying a comparer, and one that does not. CollectionAssert takes a non-generic
+// ICollection, which a HashSet is not, so it gets no CollectionAssert forms.
+Forms("keys", keys, keys);
+Forms("hashSet", hashSet, null);
+Forms("sortedSet", sortedSet, sortedSet);
+Forms("list", list, list);
 
+Console.WriteLine($"checked {checks}, disagreed {disagreements}");
 return disagreements;
 
-void Check(string original, bool originalPasses, Action converted)
+void Forms(string name, IEnumerable<string> c, ICollection? nonGeneric)
 {
-    bool convertedPasses;
-    try
+    foreach (string y in items)
     {
-        converted();
-        convertedPasses = true;
+        // Assert.IsTrue|IsFalse(x.Contains(y)) → OrdinalAssert.Contains|DoesNotContain(y, x)
+        Check($"IsTrue({name}.Contains(\"{y}\"))", () => MS.Assert.IsTrue(c.Contains(y)), () => OrdinalAssert.Contains(y, c));
+        Check($"IsFalse({name}.Contains(\"{y}\"))", () => MS.Assert.IsFalse(c.Contains(y)), () => OrdinalAssert.DoesNotContain(y, c));
+        // MSTest 4's Assert.Contains|DoesNotContain(y, x[, message])
+        Check($"Assert.Contains(\"{y}\", {name})", () => MS.Assert.Contains(y, c), () => OrdinalAssert.Contains(y, c));
+        Check($"Assert.DoesNotContain(\"{y}\", {name})", () => MS.Assert.DoesNotContain(y, c), () => OrdinalAssert.DoesNotContain(y, c));
+        Check($"Assert.Contains(\"{y}\", {name}, message)", () => MS.Assert.Contains(y, c, "m"), () => MessageAssert.Contains(y, c, "m"));
+        Check($"Assert.DoesNotContain(\"{y}\", {name}, message)", () => MS.Assert.DoesNotContain(y, c, "m"), () => MessageAssert.DoesNotContain(y, c, "m"));
+        if (nonGeneric is null)
+        {
+            continue;
+        }
+        // CollectionAssert.Contains|DoesNotContain(x, y[, message]) → ElementAssert.*(y, x[, message])
+        Check($"CollectionAssert.Contains({name}, \"{y}\")", () => MS.CollectionAssert.Contains(nonGeneric, y), () => ElementAssert.Contains(y, c));
+        Check($"CollectionAssert.DoesNotContain({name}, \"{y}\")", () => MS.CollectionAssert.DoesNotContain(nonGeneric, y), () => ElementAssert.DoesNotContain(y, c));
+        Check($"CollectionAssert.Contains({name}, \"{y}\", message)", () => MS.CollectionAssert.Contains(nonGeneric, y, "m"), () => ElementAssert.Contains(y, c, "m"));
+        Check($"CollectionAssert.DoesNotContain({name}, \"{y}\", message)", () => MS.CollectionAssert.DoesNotContain(nonGeneric, y, "m"), () => ElementAssert.DoesNotContain(y, c, "m"));
     }
-    catch (Xunit.Sdk.XunitException)
-    {
-        convertedPasses = false;
-    }
+}
+
+void Check(string original, Action mstest, Action converted)
+{
+    checks++;
+    bool originalPasses = Passes(mstest), convertedPasses = Passes(converted);
     if (originalPasses != convertedPasses)
     {
         disagreements++;
-        Console.WriteLine($"DISAGREE {original}: original {(originalPasses ? "passes" : "fails")}, converted {(convertedPasses ? "passes" : "fails")}");
+        Console.WriteLine($"DISAGREE {original}: MSTest {(originalPasses ? "passes" : "fails")}, converted {(convertedPasses ? "passes" : "fails")}");
+    }
+}
+
+static bool Passes(Action assertion)
+{
+    try
+    {
+        assertion();
+        return true;
+    }
+    catch (Exception e) when (e is MS.AssertFailedException or Xunit.Sdk.XunitException)
+    {
+        return false;
     }
 }

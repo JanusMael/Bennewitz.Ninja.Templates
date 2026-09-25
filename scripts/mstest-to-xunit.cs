@@ -940,9 +940,9 @@ static class AssertRules
             ("CollectionAssert", "AreEqual", 3) when Kind(2) == Arg.Message => ("MessageAssert.SequenceEqual", Same),
             ("CollectionAssert", "AreNotEqual", 2) => ("Assert.NotEqual", Same),
             ("CollectionAssert", "AreNotEqual", 3) when Kind(2) == Arg.Message => ("MessageAssert.SequenceNotEqual", Same),
-            // (collection, element) — xUnit takes (element, collection)
-            ("CollectionAssert", "Contains" or "DoesNotContain", 2) => ($"Assert.{method}", Swap),
-            ("CollectionAssert", "Contains" or "DoesNotContain", 3) => ($"MessageAssert.{method}", Swap),
+            // (collection, element) — xUnit takes (element, collection). ⛔ ElementAssert, not Assert:
+            // MSTest compares each ELEMENT by the default equality, and xUnit asks a set for itself.
+            ("CollectionAssert", "Contains" or "DoesNotContain", 2 or 3) => ($"ElementAssert.{method}", Swap),
             // Same elements, same multiplicity, any order. xUnit's Equivalent is a structural
             // comparison with different rules, so this goes to a helper that implements MSTest's.
             ("CollectionAssert", "AreEquivalent", 2 or 3) => ("MessageAssert.SameElements", Same),
@@ -1324,8 +1324,10 @@ static class Helpers
             public static void Same(object? expected, object? actual, string message) =>
                 With(message, () => Assert.Same(expected, actual));
 
+            /// <summary>MSTest's Assert.Contains(expected, collection, message): the collection's own Contains decides.</summary>
+            /// <remarks>See <see cref="OrdinalAssert.Contains{T}(T, IEnumerable{T})"/>.</remarks>
             public static void Contains<T>(T expected, IEnumerable<T> collection, string message) =>
-                With(message, () => Assert.Contains(expected, collection));
+                With(message, () => OrdinalAssert.Contains(expected, collection));
 
             /// <remarks>
             /// ⛔ ORDINAL, as every MSTest string assertion is. xUnit's own default is the CURRENT CULTURE,
@@ -1351,8 +1353,9 @@ static class Helpers
             public static void NotSame(object? expected, object? actual, string message) =>
                 With(message, () => Assert.NotSame(expected, actual));
 
+            /// <summary>MSTest's Assert.DoesNotContain(expected, collection, message): the collection's own Contains decides.</summary>
             public static void DoesNotContain<T>(T expected, IEnumerable<T> collection, string message) =>
-                With(message, () => Assert.DoesNotContain(expected, collection));
+                With(message, () => OrdinalAssert.DoesNotContain(expected, collection));
 
             /// <remarks>Ordinal, like every MSTest string assertion; see <see cref="Contains(string, string?, string)"/>.</remarks>
             public static void DoesNotContain(string expectedSubstring, string? actualString, string message) =>
@@ -1545,6 +1548,57 @@ static class Helpers
 
             public static void EndsWith(string? expectedEnd, string? actualString) =>
                 Assert.EndsWith(expectedEnd, actualString, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// MSTest's <c>CollectionAssert.Contains</c>/<c>DoesNotContain</c>: each ELEMENT compared by the
+        /// default equality, whatever comparer the collection carries.
+        /// </summary>
+        /// <remarks>
+        /// ⛔ Not the collection's own <c>Contains</c>, and not xUnit's: xUnit asks a set for itself, so a
+        /// case-insensitive <c>SortedSet</c> holding <c>"a"</c> contains <c>"A"</c> there. Measured on
+        /// MSTest 4.3.3: <c>CollectionAssert.Contains(set, "A")</c> fails. Handing xUnit a plain iterator
+        /// keeps its element-by-element comparison and its diff.
+        /// </remarks>
+        internal static class ElementAssert
+        {
+            public static void Contains<T>(T expected, IEnumerable<T> collection) =>
+                Assert.Contains(expected, Elements(collection));
+
+            public static void Contains<T>(T expected, IEnumerable<T> collection, string message) =>
+                With(message, () => Contains(expected, collection));
+
+            public static void DoesNotContain<T>(T expected, IEnumerable<T> collection) =>
+                Assert.DoesNotContain(expected, Elements(collection));
+
+            public static void DoesNotContain<T>(T expected, IEnumerable<T> collection, string message) =>
+                With(message, () => DoesNotContain(expected, collection));
+
+            private static IEnumerable<T> Elements<T>(IEnumerable<T> collection)
+            {
+                ArgumentNullException.ThrowIfNull(collection);
+                return Iterate(collection);
+
+                static IEnumerable<T> Iterate(IEnumerable<T> items)
+                {
+                    foreach (T item in items)
+                    {
+                        yield return item;
+                    }
+                }
+            }
+
+            private static void With(string message, Action assertion)
+            {
+                try
+                {
+                    assertion();
+                }
+                catch (XunitException failure)
+                {
+                    throw new XunitException(message + Environment.NewLine + failure.Message, failure);
+                }
+            }
         }
 
         /// <summary>
