@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build SiteStem.slnx -c Release --nologo -warnaserror
+
+      # The site runs in memory under WebApplicationFactory: no port, no process.
+      - name: Test
+        run: dotnet test --solution SiteStem.slnx --no-build -c Release
+
+  # ⭐ The container image, built and run on every push, and pushed nowhere: a registry is a
+  # deployment decision this repository makes for itself. The run proves the image starts, serves,
+  # and does not run as root.
+  container:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build the image
+        run: docker build --build-arg COMMIT_SHA=${{ github.sha }} -t sitestem:ci .
+
+      - name: Run it and check it serves
+        run: |
+          set -euo pipefail
+          docker run -d --name sitestem-ci -p 8080:8080 sitestem:ci
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:8080/healthz; then break; fi
+            sleep 1
+          done
+          test "$(curl -sf http://localhost:8080/healthz)" = "ok"
+          curl -sf -o /dev/null -w 'home %{http_code}\n' http://localhost:8080/
+          curl -sf http://localhost:8080/version
+          test "$(docker exec sitestem-ci id -u)" != "0"
+
+      - name: Show the log on failure
+        if: failure()
+        run: docker logs sitestem-ci || true
+
+  # The family conventions: documentation at the root and in every top-level directory, the
+  # description, topics, feature toggles and rulesets. See docs/repository-conventions.md in
+  # Bennewitz.Ninja.Templates.
+  #
+  # ⭐ Red on a freshly generated repository, listing every gap, until each one is closed.
+  #
+  # ⚠ The job name is a required check in .github/repository.json. Renaming it means changing that
+  # list and running `repo-conventions apply` in the same change, or every pull request blocks.
+  conventions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Check the repository conventions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check

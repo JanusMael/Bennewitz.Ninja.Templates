@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/.git
+**/.vs/
+**/*.user
+publish/
+tests/
+.github/
+# The SDK image brings its own SDK, which need not match the local pin; the build must not refuse it.
+global.json

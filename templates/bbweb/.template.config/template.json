@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json.schemastore.org/template",
+  "author": "Brian Bennewitz",
+  "classifications": [ "Common", "Web", "MVC", "Kestrel" ],
+  "identity": "Bennewitz.Ninja.Templates.WebSite",
+  "name": "Bennewitz.Ninja Kestrel web site",
+  "shortName": "bbweb",
+  "preferNameDirectory": true,
+
+  "//sourceName": [
+    "-n takes the site's name, e.g. -n Gallery, which becomes the assembly and executable name.",
+    "Namespaces carry Bennewitz.Ninja. from Directory.Build.props, as in every family repository."
+  ],
+  "sourceName": "SiteStem",
+
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+
+  "symbols": {
+    "RepoOwner": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "GitHub account or organisation the generated repository lives under.",
+      "replaces": "REPO_OWNER",
+      "defaultValue": "REPO_OWNER"
+    },
+    "//RepoName": [
+      "A site's repository is usually named after the site, unprefixed, unlike a package",
+      "repository, which carries Bennewitz.Ninja. like its package id. So it defaults to -n."
+    ],
+    "RepoName": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "The GitHub repository's name, when it is not the site's name.",
+      "defaultValue": ""
+    },
+    "RepoNameResolved": {
+      "type": "generated",
+      "generator": "coalesce",
+      "parameters": {
+        "sourceVariableName": "RepoName",
+        "fallbackVariableName": "name"
+      },
+      "replaces": "REPO_NAME"
+    },
+    "Blazor": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Adds interactive server components embedded in the MVC views, with a test that renders one. Off by default: a render mode and a circuit are more than a site needs on its first day."
+    }
+  },
+
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "(!Blazor)",
+          "exclude": [ "src/SiteStem/Components/**", "tests/SiteStem.Tests/ComponentTests.cs" ]
+        }
+      ]
+    }
+  ]
+}

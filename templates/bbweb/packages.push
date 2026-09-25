@@ -1,0 +1,6 @@
+# Package ids published to nuget.org, one per line. Blank lines and # comments are ignored.
+#
+# Empty, and that is the normal state for a site: a site is run, not referenced, and releases as
+# binaries on GitHub Releases and a container image. The list exists so a library added under src/ later is guarded from
+# its first commit: PackagingTests fails on any packable project that is in neither this file nor
+# packages.local. See AGENTS.md, "Adding a library", for what publishing one takes.

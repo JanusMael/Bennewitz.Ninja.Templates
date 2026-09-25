@@ -1,0 +1,8 @@
+@model StatusPage
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<h1>@Model.Title</h1>
+<p role="alert">@Model.Code</p>
+<p><a asp-controller="Home" asp-action="Index">Home</a></p>

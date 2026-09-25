@@ -3,6 +3,6 @@
   "homepage": "",
   "topics": ["csharp", "dotnet", "nuget", "dotnet-new", "template", "trusted-publishing", "github-actions"],
   "requiredChecks": ["verify", "conventions"],
-  "content": ["templates/bbpkg", "templates/bbavalonia"],
+  "content": ["templates/bbpkg", "templates/bbavalonia", "templates/bbweb"],
   "undocumented": {}
 }

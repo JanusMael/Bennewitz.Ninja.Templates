@@ -1,0 +1,9 @@
+{
+  "description": "",
+  "homepage": "",
+  "topics": ["csharp", "dotnet", "aspnetcore", "kestrel"],
+  "requiredChecks": ["build", "container", "conventions"],
+  "content": [],
+  "undocumented": {},
+  "trimming": "required"
+}

@@ -1,0 +1,12 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<h1>SiteStem</h1>
+
+<p>A site served by Kestrel, from MVC views.</p>
+@*#if (Blazor)
+<component type="typeof(Counter)" render-mode="ServerPrerendered" />
+#endif*@
+
+<p><a href="/version">Version</a></p>

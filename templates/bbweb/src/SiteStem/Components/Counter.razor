@@ -1,0 +1,13 @@
+@* An interactive server component: its state lives on the server, in the circuit, and each click is
+   a round trip over SignalR. Embedded in Views/Home/Index.cshtml. *@
+
+<section class="counter" aria-label="Counter">
+    <p role="status">Clicked @count @(count == 1 ? "time" : "times").</p>
+    <button type="button" @onclick="Increment">Click</button>
+</section>
+
+@code {
+    private int count;
+
+    private void Increment() => count++;
+}
