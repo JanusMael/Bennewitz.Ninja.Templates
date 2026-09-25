@@ -32,7 +32,8 @@ It is also where the family's conventions are prescribed:
 |---|---|---|
 | The packaging project packs `templates/**` with `PackagePath="content/"`: the bare root, with a forward slash | `.template.config/` is flattened away. The package still installs, lists and "generates", emitting the extracted nupkg | `Bennewitz.Ninja.Templates.csproj` comments; `scripts/verify-release.cs` content and tree checks |
 | `NoDefaultExcludes` stays on | NuGet drops dotfiles, so a generated repository arrives without `.gitignore`, `.gitattributes` and `.github/` | `Bennewitz.Ninja.Templates.csproj`; `verify-release` |
-| Every placeholder is substituted: `PkgStem`, `PKG_ID`, `REPO_OWNER` | A generated repository carries a literal placeholder | `verify-release`, placeholder check |
+| Every placeholder is substituted: each template's stem, `PKG_ID`, `REPO_OWNER`, `REPO_NAME` | A generated repository carries a literal placeholder | `verify-release`, placeholder check |
+| Every template has a case in `verify-release` | A template ships without ever being generated, built or tested | `verify-release`, which compares `templates/` and the package against its cases |
 | Every file a generated repository must carry is on `verify-release`'s required list | A file dropped from the template ships nowhere, and nothing fails | `verify-release`, `required` |
 | `templates/bbpkg/scripts/repo-conventions.cs` is the canonical copy; `scripts/repo-conventions.cs` is identical to it | This repository checks itself with a different script than it ships | `repo-conventions check`, drift; this repository's `conventions` job |
 | The release pushes the ids `packages.push` names, never a glob, in both release workflows | A package nobody chose is published, permanently | `PackagingTests` |
@@ -49,8 +50,10 @@ dotnet run --file scripts/repo-conventions.cs -- check
 dotnet run --file scripts/repo-conventions.cs -- check --repo JanusMael/<repository>
 ```
 
-- `verify-release` packs this tree, installs the template from the `.nupkg`, generates a repository,
-  and builds, tests and packs it. Run it before tagging, and with `--published` after releasing.
+- `verify-release` packs this tree, installs it from the `.nupkg` into a template hive of its own,
+  generates a repository from every template, `bbweb` in both variants, and builds and tests each.
+  Run it before tagging, and with `--published` after releasing. It leaves the global template
+  registration alone.
 - Tests run on Microsoft.Testing.Platform (`global.json`), so `dotnet test` rejects VSTest-only
   switches such as `--nologo`.
 
