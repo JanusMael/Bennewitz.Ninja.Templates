@@ -9,11 +9,10 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-24, HEAD `63b7595` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 3**: the property check in
-   `repo-conventions.cs` (restore, evaluate with `GITHUB_ACTIONS=true`, roles, baseline,
-   exemptions, trimming stage, `--offline`), with the version read as step 2 learned. Steps 1 and 2
-   are done; step 2's three decisions (FileServer migrates, AutoVersioning fixes its gaps, DiffView
-   packs its README) are carried out in step 6.
+1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 4**: the template's
+   `repository.json` gains `"trimming": "required"`, and `verify-release` runs `check --offline` on
+   the generated repository, expecting only the markers and the empty description. Steps 1–3 are
+   done; step 2's three decisions are carried out in step 6.
 2. [`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`), starts after
    `00004` step 5. The maintainer chose Semi.Avalonia for `bbavalonia`, a `--blazor` parameter off by
    default for `bbweb`, and `bbapi` last, from `bbweb`. Good examples: ClaudeForge, chisel,
@@ -641,8 +640,9 @@ The script builds its arrays through the constructor.
 |---|---|---|
 | 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done except DiffView** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
 | 2 · Measure the baseline across the family | **done** | See the measurement below. Three repositories missed parts of the baseline, and the maintainer decided each |
-| 3 · The property check in `repo-conventions.cs` | next | |
-| 4–8 | not started | |
+| 3 · The property check in `repo-conventions.cs` | **done** | Restore, evaluation with `GITHUB_ACTIONS=true`, roles (with *other* for non-packable libraries), the baseline, package rules for libraries and tools, `props` exemptions with reasons and a note for a stale one, the trimming stage, `--offline`; documented in `docs/repository-conventions.md`. 15 tests in `PropsTests` over three real repositories built in a temp directory; 8 planted defects, each caught, each also compiled and run to prove the catch was not a build failure. Against real repositories before any test: AppServices conforms, AutoVersioning shows step 2's gaps |
+| 4 · The template requires trimming; `verify-release` runs `check --offline` | next | |
+| 5–8 | not started | |
 
 **Step 2's measurement, 2026-09-24.** Every project in the eight repositories' solutions (or, with
 none, every csproj outside `templates/`), from each `origin/main`, restored and evaluated in Release
@@ -679,6 +679,25 @@ baseline's role without the package properties.
    DiffView#3; both merge once DiffView's session makes `main` green.
 
 ### Drift from `plans/00004`
+
+⛔ **The plan's premise about AutoVersioning is false, and it came from this session.** `00004`'s
+"What the family looks like today" says AutoVersioning's package `Build.props` in `2026.3.819` and
+`2026.3.914` sets `IsContinuousIntegration`, and decision 10 builds on it. It does not: the line is
+inside an XML comment in that file, setup advice for consumers, and a text search matched it. The
+package only declared the property compiler-visible. So each repository's own line was the only
+thing setting it, and step 1's removal alone removed it; the `2026.3.916` pins it added are harmless
+and now required by the baseline. Found in step 3, when a test built on the premise failed.
+
+**Step 3's restore is kept but not proven by a test.** Decision 1's reason was exactly that false
+premise. A restore is still needed in general, since any package's build props could set a
+property the rules read, but no fixture here has such a package, so no test fails without it.
+
+⛔ **A test that asserts only absence passes on a script that never ran.** A planted defect written
+as `if (false)` failed to compile under warnings-as-errors, and
+`A_conforming_repository_has_no_property_finding`, which only asserted no `FAIL props` line, still
+passed. It now requires the "projects evaluated" line too. Each planted defect was then also
+compiled and run on its own, so a catch cannot come from a build failure.
+
 
 **FileServer pinned AutoVersioning `2026.2.522`, not `2026.3.914`.** The plan's table and step 1 say
 `.914`; the pin was in two csproj files, since FileServer has no `Directory.Packages.props`. A survey

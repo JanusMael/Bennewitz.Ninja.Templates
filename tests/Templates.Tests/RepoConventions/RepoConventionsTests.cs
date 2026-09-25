@@ -24,6 +24,7 @@ namespace Templates.Tests.RepoConventions;
 /// file contend for its build output.
 /// </para>
 /// </remarks>
+[Collection("repo-conventions")]
 public sealed class RepoConventionsTests
 {
     [Fact]

@@ -124,6 +124,45 @@ So CI's `check` covers the left column and the documentation, and `check --admin
 maintainer's `gh` login, covers everything. `check --admin` **fails** on anything it could not
 read, because an item that was skipped and an item that passed look identical in a report.
 
+## Build properties
+
+Every project builds with the same standard properties. `check` asks MSBuild what each project in
+the repository's solution actually evaluates to, rather than reading the files, because a property
+can be set, overridden or imported anywhere: a csproj, a nested `Directory.Build.props`, a package.
+
+- It **restores first**, because a package's build props are imported only after a restore.
+- It **evaluates as CI does**, with `GITHUB_ACTIONS=true`. A property set to `$(GITHUB_ACTIONS)` is
+  empty on a developer machine and would otherwise pass there.
+- It needs a checkout, so it runs in CI's `conventions` job and in `check --offline`. `check --repo`
+  reports the properties as out of its reach; `check --release` skips them.
+
+**A project's role** comes from the project itself, taking the first that matches: *template*
+(`PackageType` Template), *analyzer* (`IsRoslynComponent`), *test* (`IsTestProject`), *tool*
+(`PackAsTool`), *library* (packable), *app* (an executable that is not packable), *other*. The
+order matters: an xUnit v3 test project is a non-packable executable.
+
+| Rule | Every project | Libraries and tools |
+|---|---|---|
+| `TargetFramework` | `net10.0` among its targets; an analyzer, `netstandard2.0` | |
+| `Nullable`, `ImplicitUsings` | `enable` | |
+| `TreatWarningsAsErrors`, `ManagePackageVersionsCentrally` | `true` | |
+| `AssemblyCompany` | `Bennewitz.Ninja` | |
+| `AutoVersioning` | references `Bennewitz.Ninja.AutoVersioning` at `2026.3.916` or later, with `GenerateAutoVersionedAssemblyInfo` `true` | |
+| `IsContinuousIntegration` | unset | |
+| `Authors` | | set |
+| `PackageLicenseExpression` | | `MIT` |
+| `RepositoryUrl` | | names this repository |
+| `PackageReadmeFile` | | `README.md` |
+| `DebugType` | | `embedded` in Release |
+
+**Trimming** is a stage. A library without `IsTrimmable` and `EnableTrimAnalyzer` is a NOTE until
+`repository.json` says `"trimming": "required"`, and then it fails. Apps and tools are not held to
+it: a `dotnet tool` runs on the installed framework, and an app's trimming is decided by its kind.
+
+**A rule can be exempted for one project**, under `props` in `repository.json`, with its reason. The
+rule names are the ones in the table above, plus `Trimming`. An exemption the project no longer
+needs is reported, so it is removed rather than left to hide a later regression.
+
 ## `.github/repository.json`
 
 Only what varies from one repository to the next:
@@ -147,6 +186,8 @@ Only what varies from one repository to the next:
 | `requiredChecks` | The check names the `main` ruleset requires: a job's `name:`, or its id when it has none. A matrix job reports one check per combination, such as `Build (ubuntu-latest)` |
 | `content` | Paths whose Markdown is shipped content rather than this repository's own documentation, so a marker inside them is intended. This repository lists `templates/bbpkg` |
 | `undocumented` | Top-level directories exempt from `AGENTS.md`, each mapped to its reason. An empty reason fails |
+| `props` | Per-project exemptions from the [build properties](#build-properties): `{ "<project>": { "<rule>": "<reason>" } }`. An empty reason fails |
+| `trimming` | `"required"` once every library in the repository is trimmable; absent until then |
 
 ## Commands
 
@@ -162,6 +203,7 @@ dotnet run --file scripts/repo-conventions.cs -- apply
 | `check` | CI, on every push and pull request | Documentation, markers, description, topics, homepage, feature toggles, rulesets, required checks |
 | `check --release` | the release workflow | Only what is prescribed: the documents, the markers and a non-empty description. A drifted setting does not stop a publish |
 | `check --admin` | the maintainer | Everything, including the merge options and security toggles; fails on anything unreadable |
+| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the required checks against the workflows, the build properties, and the script copy |
 | `apply --dry-run` | the maintainer | Prints every request `apply` would send |
 | `apply` | the maintainer | Writes the description, homepage, topics, baseline settings, security toggles and both rulesets |
 | `apply --replace-branch-protection` | the maintainer, once | Also deletes classic branch protection, after the `main` ruleset exists |
