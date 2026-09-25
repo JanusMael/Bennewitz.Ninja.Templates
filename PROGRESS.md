@@ -4,6 +4,42 @@ Work state for `Bennewitz.Ninja.Templates`. Plan: [plans/00001-package-template.
 approved 2026-09-20 and frozen — drift from it is recorded here, never edited into it. The same
 holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see its own section.
 
+## Resume
+
+*Replaced, never appended, at each handoff. Written 2026-09-24, HEAD `63b7595` on `main`.*
+
+**Next, in order:**
+1. **Write `plans/00004`**, a draft for the maintainer: enforce the family-standard
+   `Directory.Build.props` through `repo-conventions check`, with trimming as a slower rollout.
+   The same plan, or `00005` beside it, covers three new templates in this package: an Avalonia
+   desktop app, a Kestrel web site, and a Kestrel API. Enforcement must know a repository's kind,
+   because an app's props differ from a library's. Then run `step-back` on each draft.
+2. **Remove `IsContinuousIntegration`** from the root `Directory.Build.props` of AppServices,
+   ScopedEditors, XamlQuality, AssemblyQuality and FileServer (direct to `main`), and DiffView (a pull
+   request). Nothing reads it: AutoVersioning `.914` and `.819` set it themselves in their package
+   `Build.props` and never use it, so the repository line is redundant. It is gone for good only
+   when each repository pins AutoVersioning `2026.3.916` (DiffView pins `.819`, the rest `.914`).
+   Maintainer's direction, 2026-09-24; not yet started.
+3. **Release `2026.3.925`**: the scheduled task `release-templates-2026-3-925` runs once at
+   2026-09-25 09:00 CDT and reports to this session. It ships the shared-lessons rule in the
+   template's `AGENTS.md`. Check its report.
+
+**Waiting on others:** DiffView belongs to its own session, on another machine. Its #1 and #2 were
+red on `main`'s `ReferenceAuditTests.The_committed_report_equals_a_fresh_run`, and at handoff GitHub
+shows both as `BEHIND`, so check `main` again. The mstest-to-xunit open item (`MessageAssert`'s
+shared `Contains`/`DoesNotContain` forms) belongs to the OpenForge2k session.
+
+**Locked decisions** (the maintainer's; do not reopen):
+- Every family repository meets `docs/repository-conventions.md`: the settings baseline lives in the
+  script; `main` is gated by pull requests with 0 approvals and an admin bypass in mode `always`;
+  AI-facing content is in `AGENTS.md` with tool pointers; a `README.md` at the root only; Dependabot
+  security updates on; one script copy per repository, drift-checked from here.
+- Avalonia and drivable-UI lessons go to XamlQuality, family-wide.
+- Enforce the standard `Directory.Build.props`; trimming is a goal that may roll out slowly.
+- Work only from a git worktree under this session's scratch directory, never in the shared checkout
+  `C:\c\cl\Bennewitz.Ninja.Templates`, which other sessions use. Push with
+  `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push …`.
+
 ## Status
 
 | Step | State | Notes |
