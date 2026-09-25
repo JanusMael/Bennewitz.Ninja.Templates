@@ -1,32 +1,45 @@
 # Bennewitz.Ninja.Templates
 
-Templates for .NET projects that publish to nuget.org through **Trusted Publishing (OIDC)** — no
-long-lived API key anywhere. One template today, `bbpkg`, reachable two ways:
+`dotnet new` templates for Bennewitz.Ninja repositories: a NuGet package published through
+**Trusted Publishing (OIDC)**, with no long-lived API key anywhere, and three kinds of app. Every
+repository they generate builds with warnings as errors, passes its own tests, and meets the family's
+[repository conventions](https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/repository-conventions.md) from its first commit.
 
 ```bash
-# GitHub route
-gh repo create Bennewitz.Ninja.Widget --template JanusMael/Bennewitz.Ninja.Templates
-
-# SDK route
 dotnet new install Bennewitz.Ninja.Templates
-dotnet new bbpkg -n Widget --RepoOwner JanusMael
 ```
 
-⭐ The package id is plural because a template package is a **container** — it bundles one or more
-templates. A second one ships inside this same package rather than claiming a new id.
+| Template | Generates | Releases to |
+|---|---|---|
+| `bbpkg` | A class library and its tests, packed and guarded | nuget.org, through trusted publishing |
+| `bbavalonia` | An Avalonia desktop app: MVVM, the Semi theme, named controls and headless UI tests, published trimmed and single-file against a warning baseline | GitHub Releases, one binary per runtime |
+| `bbweb` | A Kestrel web site on MVC views, with `/healthz` and `/version`; `--blazor` adds interactive server components | GitHub Releases, single-file per runtime; a container image built in CI |
+| `bbapi` | A Kestrel API on minimal APIs with OpenAPI, compiled with native AOT | GitHub Releases, native per runtime; a chiseled container image built in CI |
+
+```bash
+dotnet new bbpkg -n Widget --RepoOwner JanusMael
+dotnet new bbavalonia -n Notebook --RepoOwner JanusMael
+dotnet new bbweb -n Gallery --RepoOwner JanusMael --blazor
+dotnet new bbapi -n Catalog --RepoOwner JanusMael
+```
 
 ⚠ **`-n` takes the unprefixed stem.** `-n Widget` produces assembly `Widget` and package id
 `Bennewitz.Ninja.Widget`, which is the convention across these repos. Passing the full id instead
-doubles the prefix in the namespace.
+doubles the prefix in the namespace. An app's repository is named after the app, so the app
+templates default `--RepoName` to `-n`; pass it when the repository is named otherwise.
 
-## What comes with it
+⭐ The package id is plural because a template package is a **container**: every template ships
+inside this one package rather than claiming an id of its own.
+
+## What comes with every template
 
 | | |
 |---|---|
-| `ci.yml` | build, test and the packaging guard on every push |
-| `release.yml` | tag-triggered release, and a **credential preflight** that logs in to NuGet.org and stops |
-| `packages.push` / `packages.local` | what publishes, and what packs but must never reach nuget.org |
-| `docs/publishing.md` | the runbook: policy fields, the version rule, and what to check after |
+| `ci.yml` | build, test and the conventions check on every push; the apps add a trimmed publish or a container build |
+| `release.yml` | tag-triggered release; `bbpkg`'s starts with a **credential preflight** that logs in to NuGet.org and stops |
+| `packages.push` / `packages.local` | what publishes, and what packs but must never reach nuget.org. Empty in an app, so a library added later is guarded from its first commit |
+| `AGENTS.md`, `PROGRESS.md`, `.github/repository.json` | the family's documents and settings, checked by `scripts/repo-conventions.cs` |
+| `docs/publishing.md` or `docs/releasing.md` | the runbook: for `bbpkg` the policy fields, the version rule and what to check after; for an app, the per-runtime release |
 
 ## The two things that cost a real release
 
@@ -45,4 +58,4 @@ classifies it — loudly and early, rather than permanently and late.
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/LICENSE).
