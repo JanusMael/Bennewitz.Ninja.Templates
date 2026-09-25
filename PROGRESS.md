@@ -829,3 +829,10 @@ a marker per template would change the script in every family repository for a n
 
 **Only the executable is archived for release.** A win-x64 publish also leaves the native
 libraries' `.pdb` files beside it, about 100 MB, which ClaudeForge strips with a target of its own.
+
+⛔ **The first push of step 2 failed this repository's own `conventions` job.** `repository.json`
+listed only `templates/bbpkg` as shipped content, so the check read `bbavalonia`'s markers as this
+repository's unfinished documents and evaluated its projects as this repository's. The step's
+verification ran the GENERATED repository's check, never this one's. `templates/bbavalonia` is now
+content, and `TemplateCopiesTests.Every_template_is_declared_shipped_content` fails for the next
+template that is not, which a planted removal confirmed.

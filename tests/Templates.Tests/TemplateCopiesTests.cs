@@ -47,6 +47,31 @@ public sealed class TemplateCopiesTests
             "Copy " + Canonical + " over each: " + string.Join("; ", differing));
     }
 
+    /// <summary>
+    /// Every template folder is shipped content in <c>.github/repository.json</c>. Otherwise this
+    /// repository's own conventions check reads the template's placeholder markers as this
+    /// repository's unfinished documents, and evaluates the template's projects as its own.
+    /// </summary>
+    [Fact]
+    public void Every_template_is_declared_shipped_content()
+    {
+        string root = RepoRoot();
+        System.Text.Json.Nodes.JsonNode config =
+            System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(root, ".github", "repository.json")))!;
+        HashSet<string> content =
+        [
+            .. config["content"]!.AsArray().Select(node => node!.GetValue<string>().TrimEnd('/')),
+        ];
+
+        string[] templates = [.. Directory.GetDirectories(Path.Combine(root, "templates"))
+            .Where(directory => Directory.Exists(Path.Combine(directory, ".template.config")))
+            .Select(directory => "templates/" + Path.GetFileName(directory))];
+
+        Assert.NotEmpty(templates);
+        string[] missing = [.. templates.Where(template => !content.Contains(template))];
+        Assert.True(missing.Length == 0, "Add to \"content\" in .github/repository.json: " + string.Join(", ", missing));
+    }
+
     private static string RepoRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
