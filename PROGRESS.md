@@ -21,6 +21,15 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 4. To tell their owners, found in step 3: bleedink.com's `/version` reads
    `AssemblyInformationalVersion`, so it answers "Built with ♥"; FileServer's release passes
    `-p:ReadyToRun=true`, which is not the SDK's `PublishReadyToRun`.
+5. **When `bbavalonia` moves to AssemblyQuality's and XamlQuality's next releases, rename the rule
+   IDs it names.** The family scheme is BN plus the product's initials, frozen once shipped:
+   AssemblyQuality's AQ1001–AQ1004 are `BNAQ1001`–`BNAQ1004` on its `main` (`0deb5c3`), in a release
+   on hold with no version yet; XamlQuality's XQ IDs become `BNXQ` in
+   JanusMael/Bennewitz.Ninja.XamlQuality#29. 20 mentions across 5 files under `templates/bbavalonia`:
+   test method names, summaries, assertion messages, `AGENTS.md`, `tests/AGENTS.md` and a comment in
+   `MainWindow.axaml`. Nothing keys on an ID, so nothing breaks before then; renaming ahead of the
+   packages would name IDs the pinned versions do not report. Relayed by the AssemblyQuality
+   session, 2026-09-25.
 
 **Waiting on others:** DiffView belongs to its own session, on another machine; merging there is
 left to the maintainer or that session, in this order.
