@@ -9,11 +9,14 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-25, after `125ee8b` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00005`](plans/00005-app-templates.md) step 6**: the package README and
-   `docs/repository-conventions.md` describe the four templates, and a release. Step 5 is merged,
-   with every app published (#9 `f6b8cf4`, #12 `dbe38fc`). The release also ships `bbavalonia`'s
-   version fix (`e6b7930`), AssemblyQuality and XamlQuality 2026.3.925 with their BN rule IDs, and
-   the fail-closed packaging guard (#11 `74feb10`).
+1. **[`plans/00005`](plans/00005-app-templates.md) step 6: release `v2026.3.926`, no earlier than
+   2026-09-26.** The documents are done: the package README and `docs/repository-conventions.md`
+   describe the four templates. `2026.3.925` is already published, and the maintainer kept one
+   release per calendar day on 2026-09-25. The release ships every template, with every app published
+   by `verify-release` (#9 `f6b8cf4`, #12 `dbe38fc`), `bbavalonia`'s version fix (`e6b7930`),
+   AssemblyQuality and XamlQuality 2026.3.925 with their BN rule IDs (#10, #13), and the fail-closed
+   packaging guard (#11 `74feb10`). Then `verify-release --published 2026.3.926`, and
+   `dotnet new list` shows all four.
 2. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. #3 and #5 are merged (`8a6996e`, `ec61a10`), `main` green.
@@ -58,7 +61,12 @@ Tools 2026 (the maintainer added the workload on 2026-09-25). An agent shell set
 - A change in a family repository updates that repository's `PROGRESS.md` in the same commit, in
   that file's own format.
 - Merging a green pull request uses the admin bypass when the maintainer says so; auto-merge is off by
-  the family baseline. On 2026-09-25 the maintainer said "merge all if green".
+  the family baseline. On 2026-09-25 the maintainer said "merge all if green", and that green pull
+  requests in this repository may be admin-merged. The repository allows rebase and squash merges,
+  not merge commits; its pull requests are rebase-merged.
+- One release per calendar day, `YYYY.Q.MMDD`, three parts, family-wide (2026-09-25). No same-day
+  patch: a fourth part already means AutoVersioning's `HHmm`, and a prerelease suffix sorts below
+  the release it would fix.
 
 ## Status
 
@@ -834,7 +842,7 @@ consumer sees), and DiffView on #2 (`e5f1203`).
 | 3 · `bbweb` from bleedink.com and FileServer | **done**, merged in #7 | Generated from the PACKED template as `Gallery`, both variants: build with warnings as errors, 10 of 10 tests without `--blazor` and 13 of 13 with it, `check --offline` failing only on the description and the markers. A self-contained single-file win-x64 publish with `-p:Version=2026.3.920` serves `/healthz` (`ok`), `/version` (`2026.3.920`, its build stamp, the commit), the home page (with the counter prerendered when `--blazor`), the stylesheet and a 404. The container image of each variant, built on Docker 29.8.0 as CI's `container` job builds it, serves `/healthz`, the home page and `/version` (`1.0.0`, the build stamp, the commit passed in) and runs as uid 1654, `app`. 9 planted defects, each caught: `/healthz` changed, `/version` reading the informational version, the exception handler removed, static assets unmapped, status pages not re-executed, the site packable, and with `--blazor` the hub unmapped, the circuit script dropped and the component rendered static |
 | 4 · `bbapi` from `bbweb` | **done**, merged in #8 | Generated from the PACKED template as `Catalog`: builds with warnings as errors and the AOT analyser, 11 of 11 tests pass, `check --offline` fails only on the description and the markers. A native linux-x64 build, compiled in the SDK's AOT image, runs in a 35.3 MB chiseled image as `app` and answers `/healthz`, `/version`, a greeting and the OpenAPI document. A native win-x64 build, 11.8 MB, answers the same in about 0.75 s from process start, at 23.5 MB working set, with 400 and 404 as problem details. 9 planted defects, each caught, the last, a type missing from the JSON context, by the tests and by the native container |
 | 5 · `verify-release` covers every template | **done**, merged in #9 as `f6b8cf4`, admin-merged green by the maintainer's word | Five cases, each generated from the packed package into a template hive of the run's own: `bbpkg` (12 tests, packed and guarded), `bbavalonia` (15), `bbweb` (10), `bbweb --blazor` and `bbapi`, each building with warnings as errors, passing its tests and `check --offline` with only the description and 8 markers. The package must hold exactly the templates on disk, and those exactly the script's cases. 3 planted defects, each caught and naming only its own case: a type error in `Counter.razor` (only `bbweb --blazor` fails; the plain variant excludes it), `bbapi`'s `Dockerfile` deleted, and a fifth template with no case. The global registration's timestamp is unchanged by the run |
-| 6 | not started | The package README and `docs/repository-conventions.md`, and a release |
+| 6 · Document the templates, and release | **documents done**; release waits for 2026-09-26 | The package README, its nuget.org description and tags, and `docs/repository-conventions.md` describe all four templates. The README no longer offers `gh repo create --template`: this repository is the GitHub template, so that copies the packaging project and every template rather than generating a `bbpkg` repository. The release is `v2026.3.926`, since `2026.3.925` is taken and one release per calendar day stands |
 
 ### Drift from `plans/00005`
 

@@ -17,11 +17,13 @@
     <IncludeContentInPack>true</IncludeContentInPack>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <ContentTargetFolders>content</ContentTargetFolders>
-    <PackageTags>template;dotnet-new;nuget;trusted-publishing;scaffold</PackageTags>
+    <PackageTags>template;dotnet-new;nuget;trusted-publishing;scaffold;avalonia;aspnetcore;kestrel;native-aot</PackageTags>
     <Description>
-      A dotnet new template and GitHub template for Bennewitz.Ninja NuGet packages: CI, a release
-      workflow with a credential preflight, the two-list packaging guard that keeps a local-only
-      package off nuget.org, and the publishing runbook.
+      dotnet new templates for Bennewitz.Ninja repositories: bbpkg, a NuGet package published
+      through trusted publishing, with the two-list packaging guard that keeps a local-only package
+      off nuget.org; bbavalonia, an Avalonia desktop app published trimmed; bbweb, a Kestrel web
+      site; and bbapi, a Kestrel API compiled with native AOT. Each generates CI, a release workflow,
+      and the family's conventions.
     </Description>
   </PropertyGroup>
 

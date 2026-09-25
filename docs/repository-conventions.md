@@ -5,7 +5,9 @@ and the release tags, and the same documentation layout. This document is where 
 prescribed. [`scripts/repo-conventions.cs`](../scripts/repo-conventions.cs) is how it is enforced:
 every repository carries a copy, and its CI runs the copy on every push and pull request.
 
-A repository generated with `dotnet new bbpkg` starts with all of it in place. What generation
+A repository generated from any of the family's templates starts with all of it in place: `bbpkg`
+for a NuGet package, `bbavalonia` for an Avalonia desktop app, `bbweb` for a Kestrel web site and
+`bbapi` for a Kestrel API. What generation
 cannot know is left as a marker, and CI stays red until every marker is gone. A repository that was
 not generated from the template adopts the same files by hand; see
 [Bringing an existing repository in](#bringing-an-existing-repository-in).
@@ -216,16 +218,20 @@ binds to the project instead.
 
 What generation does is marked ✅; the rest is yours.
 
-1. ✅ `dotnet new bbpkg -n <Stem> --RepoOwner <owner>` writes every file in the table above.
+1. ✅ `dotnet new <template> -n <Stem> --RepoOwner <owner>`, with `bbpkg`, `bbavalonia`, `bbweb`
+   or `bbapi`, writes every file in the table above. An app template also takes `--RepoName` when
+   the repository is not named after the app, and `bbweb` takes `--blazor`.
 2. Create the GitHub repository and push `main`. CI goes red on the `conventions` job, listing
    every gap. That is expected.
 3. In `.github/repository.json`, write the description and add topics beyond the family's.
 4. Replace every `<!-- bbpkg: … -->` marker: the root `README.md`, `AGENTS.md` and `PROGRESS.md`,
-   and each directory's `AGENTS.md`. Delete an example that does not apply rather than leaving it.
+   and each directory's `AGENTS.md`. Every template uses this one marker. Delete an example that
+   does not apply rather than leaving it.
 5. Run `apply`, then `check --admin`. Both need the maintainer's `gh` login.
 6. Push. The `conventions` job goes green.
-7. Set up trusted publishing: [`docs/publishing.md`](../templates/bbpkg/docs/publishing.md) in
-   the generated repository.
+7. For a package, set up trusted publishing:
+   [`docs/publishing.md`](../templates/bbpkg/docs/publishing.md) in the generated repository. An
+   app releases to GitHub Releases with no credential to set up; its `docs/releasing.md` says how.
 
 ## Bringing an existing repository in
 
