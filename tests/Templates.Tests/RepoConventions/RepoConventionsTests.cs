@@ -267,6 +267,52 @@ public sealed class RepoConventionsTests
     }
 
     [Fact]
+    public void A_repository_that_publishes_needs_the_nuget_topic_in_repository_json()
+    {
+        Fixture fixture = Conforming();
+        fixture.Config["topics"] = new JsonArray("csharp", "dotnet", "fixture");
+
+        Result result = fixture.Run("check");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains(
+            "FAIL repository.json: \"topics\" lacks \"nuget\", which every repository that publishes to nuget.org carries",
+            result.Output,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An app, site or API packs nothing, so it is not a NuGet package and the topic would mislead.
+    /// A <c>packages.push</c> of comments alone, as the app templates ship it, publishes nothing.
+    /// </summary>
+    [Fact]
+    public void A_repository_that_publishes_nothing_needs_no_nuget_topic()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["packages.push"] = "# Empty: an app is run, not referenced.\n\n";
+        fixture.Config["topics"] = new JsonArray("csharp", "dotnet", "fixture");
+        fixture.Api["repo"]!["topics"] = new JsonArray("csharp", "dotnet", "fixture");
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("\"nuget\"", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_repository_that_publishes_nothing_still_needs_the_other_family_topics()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files.Remove("packages.push");
+        fixture.Config["topics"] = new JsonArray("dotnet", "fixture");
+
+        Result result = fixture.Run("check");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL repository.json: \"topics\" lacks \"csharp\", which every family repository carries.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_copy_of_the_script_that_differs_from_the_template_fails()
     {
         Fixture fixture = Conforming();
@@ -359,6 +405,8 @@ public sealed class RepoConventionsTests
         {
             ["README.md"] = "# Fixture\n",
             ["PROGRESS.md"] = "# Progress\n",
+            // Names an id, so this repository publishes to nuget.org and must carry the nuget topic.
+            ["packages.push"] = "# Published ids.\n\nFixture.Widget\n",
             ["AGENTS.md"] = "# Fixture\n\nThe conventions are in docs/repository-conventions.md.\n",
             ["CLAUDE.md"] = "@AGENTS.md\n",
             [".github/AGENTS.md"] = "# .github\n",

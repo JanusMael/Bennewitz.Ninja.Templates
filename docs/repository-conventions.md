@@ -85,7 +85,7 @@ one repository cannot quietly differ from the rest.
 | Wiki, projects, discussions | off | Documentation lives in the repository, where it is versioned with the code |
 | Vulnerability alerts | on | |
 | Dependabot security updates | on | A fix arrives as a pull request, gated like any other |
-| Topics | include `csharp`, `dotnet`, `nuget` | Every family repository publishes .NET packages to nuget.org |
+| Topics | include `csharp` and `dotnet`; and `nuget` when `packages.push` names an id | Every family repository is .NET. Only one that publishes to nuget.org is a NuGet package; an app, site or API that packs nothing is not, and the topic would send people looking for one |
 
 ### Rulesets
 
@@ -182,7 +182,7 @@ Only what varies from one repository to the next:
 |---|---|
 | `description` | The GitHub description. Empty fails `check`, including at release |
 | `homepage` | The GitHub homepage URL, usually empty |
-| `topics` | Must include the three family topics |
+| `topics` | Must include the family topics: `csharp` and `dotnet`, and `nuget` when `packages.push` names an id |
 | `requiredChecks` | The check names the `main` ruleset requires: a job's `name:`, or its id when it has none. A matrix job reports one check per combination, such as `Build (ubuntu-latest)` |
 | `content` | Paths whose Markdown is shipped content rather than this repository's own documentation, so a marker inside them is intended. This repository lists `templates/bbpkg` |
 | `undocumented` | Top-level directories exempt from `AGENTS.md`, each mapped to its reason. An empty reason fails |
@@ -219,7 +219,7 @@ What generation does is marked ✅; the rest is yours.
 1. ✅ `dotnet new bbpkg -n <Stem> --RepoOwner <owner>` writes every file in the table above.
 2. Create the GitHub repository and push `main`. CI goes red on the `conventions` job, listing
    every gap. That is expected.
-3. In `.github/repository.json`, write the description and add topics beyond the family three.
+3. In `.github/repository.json`, write the description and add topics beyond the family's.
 4. Replace every `<!-- bbpkg: … -->` marker: the root `README.md`, `AGENTS.md` and `PROGRESS.md`,
    and each directory's `AGENTS.md`. Delete an example that does not apply rather than leaving it.
 5. Run `apply`, then `check --admin`. Both need the maintainer's `gh` login.
