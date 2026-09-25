@@ -10,6 +10,7 @@ this repository's `Directory.Build.props`, so warnings are errors, and compiled 
 | `assert-packages.cs` | The packed-versus-declared guard, run by this repository's release | `PackagingTests` covers the workflow that calls it |
 | `repo-conventions.cs` | Checks and applies the family's repository conventions. **A copy**: the canonical file is `templates/bbpkg/scripts/repo-conventions.cs` | `RepoConventionsTests` |
 | `mstest-to-xunit.cs` | Converts an MSTest suite to xUnit v3 by syntax tree, listing what it refuses to guess | `MstestToXunitTests` |
+| `xunit1051-fix.cs` | Run AFTER converting, once the suite is on xUnit v3: gives every call xUnit1051 flags `TestContext.Current.CancellationToken`, which `dotnet format` cannot (xUnit's fixer has no Fix All). Exact spans from an injected SARIF log; the compiler picks the parameter name for a named token | `Xunit1051FixTests` |
 | `mstest-areequal-scan.cs` | Run BEFORE converting: finds the `AreEqual` calls a conversion would weaken, which only the compiler can see — a collection MSTest compares by reference and xUnit by elements. Builds an analyzer and injects it into the target's build; no scanned file changes | `MstestAreEqualScanTests` |
 
 ## Rules

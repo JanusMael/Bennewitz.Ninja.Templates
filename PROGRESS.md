@@ -281,6 +281,14 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
 - Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.
+- ✅ **`scripts/xunit1051-fix.cs`, the step after (2026-09-25):** xUnit1051 asks every call that
+  takes a `CancellationToken` to pass the test's, and xUnit's fixer cannot Fix All, so
+  `dotnet format` reports "Unable to fix" and changes nothing. The script injects a per-project
+  SARIF log (exact spans: a call passed as an argument ties with its `ArgumentSyntax`, and a chained
+  call shares its start with the inner one), appends the token by syntax tree, rebuilds, and names
+  each token the compiler rejected — `cancellationToken:`, `ct:`, `token:` in turn, so the compiler
+  picks the name. First run, OpenForge2k: 469 sites, 146 named `ct:`, one line each, build clean.
+  Tests: `Xunit1051FixTests`, over a fixture with one call of each shape.
 - ✅ **`scripts/mstest-areequal-scan.cs`, its companion (2026-09-25):** the one weakening no syntax
   rule can see. MSTest's `AreEqual` compares by `Equals`, so a collection without an override is
   compared by REFERENCE, and xUnit's `Equal` compares elements. The script builds a Roslyn analyzer
