@@ -17,10 +17,15 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _greeting = "Enter a name and choose Greet.";
 
-    /// <summary>The version this build carries, as the release tag set it.</summary>
+    /// <summary>
+    /// The version this build carries, as the release tag set it: AutoVersioning's
+    /// <c>PublicVersion</c>, 1.0.0 on a local build. ⚠ Not <c>AssemblyInformationalVersion</c>, which
+    /// AutoVersioning sets to "Built with ♥ &lt;commit&gt;".
+    /// </summary>
     public string Version { get; } =
         typeof(MainWindowViewModel).Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(attribute => attribute.Key == "PublicVersion")?.Value
         ?? "unknown";
 
     private bool CanGreet() => !string.IsNullOrWhiteSpace(Name);
