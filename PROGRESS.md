@@ -6,55 +6,49 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Written 2026-09-25, after `c358a8b` on `main`.*
+*Replaced, never appended, at each handoff. Written 2026-09-25, after `125ee8b` on `main`.*
 
 **Next, in order:**
 1. **[`plans/00005`](plans/00005-app-templates.md) step 5**: `verify-release` generates every
-   template, `bbweb` in both variants, from the packed package, and fails when any one does not
-   build and pass its tests. Steps 2–4 are merged or in review (#6, #7, and `bbapi` on `feat/bbapi`).
-   The scratch scripts that proved each template by hand are the checks to fold in: tree,
-   placeholders, build, test, `check --offline`; the native and container runs stay in each
-   generated repository's CI.
+   template, `bbweb` in both variants, from the packed package, and fails when any one does not build
+   and pass its tests. Steps 2–4 are merged: `bbavalonia` (#6), `bbweb` (#7), `bbapi` (#8). Fold in
+   what the scratch scripts proved by hand: tree, placeholders, build, test, `check --offline`; the
+   native and container runs stay in each generated repository's CI.
    ⛔ **Isolate it in its own template hive** (`--debug:custom-hive <temp dir>` on every `dotnet new`).
-   Today `verify-release` uninstalls `Bennewitz.Ninja.Templates` before and after its run, and so did
-   this session's scratch verification scripts, so a machine with the published template installed
-   ends with none: on this one the registration was emptied at 13:49 on 2026-09-25, during step 4's
-   runs, and `dotnet new list bb` finds nothing since. Reported by the CodeQuality session, which
-   measured that the custom hive leaves the global registration untouched. In the same change,
-   `templates/bbpkg/src/Directory.Build.props` stops citing `PackageMetadataTests`, which no
-   generated repository has; its test is `TrimmableTests`.
+   `verify-release` uninstalls `Bennewitz.Ninja.Templates` before and after its run, and so did this
+   session's scratch scripts: on this machine the global registration was emptied at 13:49 on
+   2026-09-25 and `dotnet new list bb` finds nothing. Reinstalling it
+   (`dotnet new install Bennewitz.Ninja.Templates::2026.3.925`) is the maintainer's call, still open.
+   In the same change, `templates/bbpkg/src/Directory.Build.props` stops citing
+   `PackageMetadataTests`, which does not exist; the test is `TrimmableTests`.
+   Consider in step 5 too: a conventions rule that a release never globs `*.nupkg`, which the
+   FileServer audit showed the check cannot see today.
 2. `plans/00005` step 6: the package README and `docs/repository-conventions.md` describe the four
-   templates, and a release.
-   **A candidate for a later plan, not `00005`: an analyzer template.** Bennewitz.Ninja.CodeQuality
-   2026.3.925 shipped from `bbpkg`, and the whole difference an analyzer package needed is
-   `git diff e457b5d v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality: netstandard2.0, packing
-   into `analyzers/dotnet/cs`, `SuppressDependenciesWhenPacking`, trimming off (NETSDK1212), release
-   tracking, a pinned Roslyn for both CSharp and Workspaces, and role-aware packaging tests.
-   `repo-conventions.cs` needed no change. Relayed by the CodeQuality session, 2026-09-25.
-   The next release also carries `bbavalonia`'s version fix (`e6b7930`).
-3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's pull
-   requests merge and its own CI runs the check green.
-4. To tell their owners, found in step 3: bleedink.com's `/version` reads
-   `AssemblyInformationalVersion`, so it answers "Built with ♥"; FileServer's release passes
-   `-p:ReadyToRun=true`, which is not the SDK's `PublishReadyToRun`.
-5. **When `bbavalonia` moves to AssemblyQuality's and XamlQuality's next releases, rename the rule
-   IDs it names.** The family scheme is BN plus the product's initials, frozen once shipped:
-   AssemblyQuality's AQ1001–AQ1004 are `BNAQ1001`–`BNAQ1004` on its `main` (`0deb5c3`), in a release
-   on hold with no version yet; XamlQuality's XQ IDs become `BNXQ` in
-   JanusMael/Bennewitz.Ninja.XamlQuality#29. 20 mentions across 5 files under `templates/bbavalonia`:
-   test method names, summaries, assertion messages, `AGENTS.md`, `tests/AGENTS.md` and a comment in
-   `MainWindow.axaml`. Nothing keys on an ID, so nothing breaks before then; renaming ahead of the
-   packages would name IDs the pinned versions do not report. Relayed by the AssemblyQuality
-   session, 2026-09-25.
+   templates, and a release. It also ships `bbavalonia`'s version fix (`e6b7930`).
+3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+   [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
+   runs the check green. #3 and #5 are merged (`8a6996e`, `ec61a10`), `main` green.
+4. **When `bbavalonia` moves to AssemblyQuality's and XamlQuality's next releases, rename its rule
+   IDs**: AQ1001–AQ1004 become `BNAQ1001`–`BNAQ1004` (AssemblyQuality `0deb5c3`) and XQ1001–XQ1005
+   become `BNXQ…` (XamlQuality#29). 20 mentions in 5 files under `templates/bbavalonia`; renaming
+   before the packages would name IDs they do not report. Both sessions asked to be told the version.
+5. **A candidate for a later plan: an analyzer template.** Bennewitz.Ninja.CodeQuality 2026.3.925
+   shipped from `bbpkg`; the whole difference an analyzer needed is `git diff e457b5d v2026.3.925` in
+   JanusMael/Bennewitz.Ninja.CodeQuality.
 
-**Waiting on others:** DiffView belongs to its own session, on another machine; merging there is
-left to the maintainer or that session, in this order.
-[DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3) (`00004` steps 1 and 6)
-is green. [DiffView#5](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/5) (step 7) marks
-both libraries trimmable. [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2)
-(the conventions, the current script copy, and trimming required) stays red on its `conventions`
-job until DiffView writes its `AGENTS.md` set and `CLAUDE.md` pointers, which `00003` handed to that
-session.
+**Waiting on others:**
+- DiffView#2 (the conventions, the script copy, trimming required) stays red on `conventions` until
+  DiffView's session writes its `AGENTS.md` set and `CLAUDE.md` pointers.
+- FileServer's session has the audit of 2026-09-25: its release globs `nupkg/*.nupkg`, it has no
+  package lists or packaging guard, tests on xunit v2, no `global.json` or `NuGet.config`, and
+  `-p:ReadyToRun=true` is not `PublishReadyToRun`. `NUGET_USER` is already a variable (`c99c92a`).
+  The order of the fixes is the maintainer's.
+- bleedink.com's `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥"; not
+  yet passed to its session.
+
+**Environment:** Docker Desktop is running (engine 29.8.0); the maintainer fixed it on 2026-09-25. A
+native Windows publish from this shell needs `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer`
+on `PATH`, where `vswhere.exe` is.
 
 **Locked decisions** (the maintainer's; do not reopen):
 - Every family repository meets `docs/repository-conventions.md`: the settings baseline lives in the
@@ -70,8 +64,8 @@ session.
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push …`.
 - A change in a family repository updates that repository's `PROGRESS.md` in the same commit, in
   that file's own format.
-- Merging a green pull request here uses the admin bypass when the maintainer says so; auto-merge is
-  off by the family baseline.
+- Merging a green pull request uses the admin bypass when the maintainer says so; auto-merge is off by
+  the family baseline. On 2026-09-25 the maintainer said "merge all if green".
 
 ## Status
 
@@ -844,8 +838,8 @@ consumer sees), and DiffView on #2 (`e5f1203`).
 |---|---|---|
 | 1 · Wait for `00004`'s script | **done** | `00004` step 5 was done on 2026-09-24 |
 | 2 · `bbavalonia` from ClaudeForge | **done**, merged in #6 as `fb6961a`, `f5f7871`, `4e63eca`, admin-merged green by the maintainer's word | Generated from the PACKED template as `Notebook`: builds with warnings as errors, 14 of 14 tests pass, `check --offline` fails only on the empty description and the markers, a trimmed publish for linux-x64 matches the 7-warning baseline, and a trimmed single-file win-x64 binary run with `--smoke` exits 0 in about 2 s. All six runtime identifiers publish from one Windows machine with the same 7 warnings, all in `Avalonia.DesignerSupport`. 9 planted defects, each caught: an unnamed button (XQ1002) or Expander (XQ1001), the Semi theme removed, the name box unbound, the view model's trim dropped, the app made packable, a defaulted `CancellationToken` (AQ1001), and the baseline changed in each direction |
-| 3 · `bbweb` from bleedink.com and FileServer | **done, on `feat/bbweb`** | Generated from the PACKED template as `Gallery`, both variants: build with warnings as errors, 10 of 10 tests without `--blazor` and 13 of 13 with it, `check --offline` failing only on the description and the markers. A self-contained single-file win-x64 publish with `-p:Version=2026.3.920` serves `/healthz` (`ok`), `/version` (`2026.3.920`, its build stamp, the commit), the home page (with the counter prerendered when `--blazor`), the stylesheet and a 404. The container image of each variant, built on Docker 29.8.0 as CI's `container` job builds it, serves `/healthz`, the home page and `/version` (`1.0.0`, the build stamp, the commit passed in) and runs as uid 1654, `app`. 9 planted defects, each caught: `/healthz` changed, `/version` reading the informational version, the exception handler removed, static assets unmapped, status pages not re-executed, the site packable, and with `--blazor` the hub unmapped, the circuit script dropped and the component rendered static |
-| 4 · `bbapi` from `bbweb` | **done, on `feat/bbapi`** | Generated from the PACKED template as `Catalog`: builds with warnings as errors and the AOT analyser, 11 of 11 tests pass, `check --offline` fails only on the description and the markers. A native linux-x64 build, compiled in the SDK's AOT image, runs in a 35.3 MB chiseled image as `app` and answers `/healthz`, `/version`, a greeting and the OpenAPI document. A native win-x64 build, 11.8 MB, answers the same in about 0.75 s from process start, at 23.5 MB working set, with 400 and 404 as problem details. 9 planted defects, each caught, the last, a type missing from the JSON context, by the tests and by the native container |
+| 3 · `bbweb` from bleedink.com and FileServer | **done**, merged in #7 | Generated from the PACKED template as `Gallery`, both variants: build with warnings as errors, 10 of 10 tests without `--blazor` and 13 of 13 with it, `check --offline` failing only on the description and the markers. A self-contained single-file win-x64 publish with `-p:Version=2026.3.920` serves `/healthz` (`ok`), `/version` (`2026.3.920`, its build stamp, the commit), the home page (with the counter prerendered when `--blazor`), the stylesheet and a 404. The container image of each variant, built on Docker 29.8.0 as CI's `container` job builds it, serves `/healthz`, the home page and `/version` (`1.0.0`, the build stamp, the commit passed in) and runs as uid 1654, `app`. 9 planted defects, each caught: `/healthz` changed, `/version` reading the informational version, the exception handler removed, static assets unmapped, status pages not re-executed, the site packable, and with `--blazor` the hub unmapped, the circuit script dropped and the component rendered static |
+| 4 · `bbapi` from `bbweb` | **done**, merged in #8 | Generated from the PACKED template as `Catalog`: builds with warnings as errors and the AOT analyser, 11 of 11 tests pass, `check --offline` fails only on the description and the markers. A native linux-x64 build, compiled in the SDK's AOT image, runs in a 35.3 MB chiseled image as `app` and answers `/healthz`, `/version`, a greeting and the OpenAPI document. A native win-x64 build, 11.8 MB, answers the same in about 0.75 s from process start, at 23.5 MB working set, with 400 and 404 as problem details. 9 planted defects, each caught, the last, a type missing from the JSON context, by the tests and by the native container |
 | 5–6 | not started | `verify-release` covers the four templates next |
 
 ### Drift from `plans/00005`
