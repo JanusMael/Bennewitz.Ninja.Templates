@@ -51,7 +51,9 @@ dotnet run --file scripts/repo-conventions.cs -- check --repo JanusMael/<reposit
 ```
 
 - `verify-release` packs this tree, installs it from the `.nupkg` into a template hive of its own,
-  generates a repository from every template, `bbweb` in both variants, and builds and tests each.
+  generates a repository from every template, `bbweb` in both variants, builds and tests each, and
+  publishes each app for this machine. On Windows the native `bbapi` publish needs the C++ tools of
+  Visual Studio or Build Tools; on Linux, `clang` and `zlib1g-dev`, which GitHub's Ubuntu runners carry.
   Run it before tagging, and with `--published` after releasing. It leaves the global template
   registration alone.
 - Tests run on Microsoft.Testing.Platform (`global.json`), so `dotnet test` rejects VSTest-only
