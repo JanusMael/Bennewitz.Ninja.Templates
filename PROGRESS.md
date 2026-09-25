@@ -9,11 +9,11 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-24, HEAD `63b7595` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 2, measure**: restore and
-   evaluate decision 4's properties for every project in the eight family repositories, with
-   `GITHUB_ACTIONS=true` set, as CI has it; record the table below, and bring anything a conforming
-   repository misses to the maintainer before step 3 enforces it. Step 1 is done, apart from
-   DiffView#3, which waits on DiffView's red `main`.
+1. **[`plans/00004`](plans/00004-standard-build-properties.md) step 3**: the property check in
+   `repo-conventions.cs` (restore, evaluate with `GITHUB_ACTIONS=true`, roles, baseline,
+   exemptions, trimming stage, `--offline`), with the version read as step 2 learned. Steps 1 and 2
+   are done; step 2's three decisions (FileServer migrates, AutoVersioning fixes its gaps, DiffView
+   packs its README) are carried out in step 6.
 2. [`plans/00005`](plans/00005-app-templates.md), approved 2026-09-24 (`886f107`), starts after
    `00004` step 5. The maintainer chose Semi.Avalonia for `bbavalonia`, a `--blazor` parameter off by
    default for `bbweb`, and `bbapi` last, from `bbweb`. Good examples: ClaudeForge, chisel,
@@ -640,8 +640,9 @@ The script builds its arrays through the constructor.
 | Step | State | Notes |
 |---|---|---|
 | 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done except DiffView** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
-| 2 · Measure the baseline across the family | **done**; decisions pending | See the measurement below. Three repositories miss parts of the baseline; the maintainer decides each before step 3 enforces it |
-| 3–8 | not started | |
+| 2 · Measure the baseline across the family | **done** | See the measurement below. Three repositories missed parts of the baseline, and the maintainer decided each |
+| 3 · The property check in `repo-conventions.cs` | next | |
+| 4–8 | not started | |
 
 **Step 2's measurement, 2026-09-24.** Every project in the eight repositories' solutions (or, with
 none, every csproj outside `templates/`), from each `origin/main`, restored and evaluated in Release
@@ -667,6 +668,15 @@ reference's own `Version` (FileServer, without central management), then the `Pa
 ⚠ **Decision 3's roles have a gap:** AssemblyQuality's test fixtures `Absent` and `Orphan` are
 libraries that are neither packable nor tests. They meet the baseline, and step 3 gives them the
 baseline's role without the package properties.
+
+**Decided 2026-09-24 on step 2's gaps** (maintainer, through `choices`), carried out in step 6:
+1. **FileServer migrates** to central package management, and its tests gain AutoVersioning, in the
+   commit that adopts the new check; its build and tests prove the migration.
+2. **AutoVersioning fixes its real gaps**: `TreatWarningsAsErrors`, central versions,
+   `AssemblyCompany` and `ImplicitUsings` where they build cleanly. Only "AutoVersioning applied to
+   itself" is exempted, with its reason: a package cannot generate its own build.
+3. **DiffView packs its README** into its three packable projects, by pull request alongside
+   DiffView#3; both merge once DiffView's session makes `main` green.
 
 ### Drift from `plans/00004`
 
