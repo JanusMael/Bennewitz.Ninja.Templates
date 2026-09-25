@@ -221,6 +221,13 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
   string-or-collection. `IsTrue(s.StartsWith(x))` still maps to xUnit's default, because
   `string.StartsWith(string)` is itself culture-sensitive. Pinned: the helper test fails if any
   emitted string helper calls xUnit without a comparison; canaried both halves.
+- ⚠ **Open, found in review of #1 (merged 2026-09-24):** `IsFalse(x.Contains(y))` →
+  `OrdinalAssert.DoesNotContain(y, x)` is WEAKER when `x` is a set with a custom comparer. The
+  helper takes `IEnumerable<T>`, so xUnit compares with the default comparer, not the set's: a
+  `HashSet(StringComparer.OrdinalIgnoreCase)` holding `"a"` fails `IsFalse(set.Contains("A"))` in
+  MSTest and passes after conversion. Before #1 that call stayed an exact `Assert.False(…)`. The
+  `IsTrue` direction turns red instead. Fix forward with the owning session: the generic
+  `OrdinalAssert` overloads assert through an `ISet<T>`/`IReadOnlySet<T>`'s own `Contains`.
 - Tests: `tests/Templates.Tests/MstestToXunit`, over `.cs.txt` fixtures whose output was compiled
   and run with the emitted helpers before it was accepted. Canaried both ways — a corrupted expected
   file and a broken rule each fail exactly one test.
