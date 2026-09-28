@@ -34,6 +34,20 @@ public sealed class AutomationNameTests
     }
 
     /// <summary>
+    /// BNXQ1007: every interactive control declares an explicit AutomationId, the handle a test or an
+    /// agent searches by. <c>x:Name</c> does not count: a renamed field would break every test.
+    /// </summary>
+    [Fact]
+    public void BNXQ1007_every_interactive_control_has_an_automation_id()
+    {
+        XamlRuleResult result = new InteractiveAutomationIdRule().Analyze(Markup());
+
+        // The name box, Greet and the Expander. Raise this as the app grows.
+        Assert.True(result.Inspected >= 3, $"BNXQ1007 inspected {result.Inspected} controls; expected at least 3.");
+        Assert.True(result.Findings.Count == 0, string.Join(Environment.NewLine, result.Findings));
+    }
+
+    /// <summary>
     /// BNXQ1001: every Expander carries an automation Name, which its header does not supply: a
     /// screen reader announces an unnamed Expander as just "expander".
     /// </summary>

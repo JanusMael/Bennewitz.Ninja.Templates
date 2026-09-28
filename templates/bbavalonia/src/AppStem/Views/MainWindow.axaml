@@ -9,7 +9,8 @@
   <!--
     Every interactive control carries an AutomationId, the stable handle a test or an agent finds it
     by, and a Name, what an automation client reads out. XamlQuality's BNXQ1002 fails the tests on an
-    interactive control without a Name, and BNXQ1001 on an Expander without one. See
+    interactive control without a Name, BNXQ1001 on an Expander without one, and BNXQ1007 on an
+    interactive control without an explicit AutomationId; x:Name does not count. See
     docs/ai-drivable-ui.md in Bennewitz.Ninja.XamlQuality.
   -->
   <StackPanel Margin="24" Spacing="12">
