@@ -9,20 +9,31 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-25, after `125ee8b` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00005`](plans/00005-app-templates.md) step 6: release `v2026.3.926`, no earlier than
-   2026-09-26.** The documents are done: the package README and `docs/repository-conventions.md`
-   describe the four templates. `2026.3.925` is already published, and the maintainer kept one
-   release per calendar day on 2026-09-25. The release ships every template, with every app published
-   by `verify-release` (#9 `f6b8cf4`, #12 `dbe38fc`), `bbavalonia`'s version fix (`e6b7930`),
-   AssemblyQuality and XamlQuality 2026.3.925 with their BN rule IDs (#10, #13), and the fail-closed
-   packaging guard (#11 `74feb10`). Then `verify-release --published 2026.3.926`, and
+1. **[`plans/00005`](plans/00005-app-templates.md) step 6: release, on the maintainer's word.** The
+   version is the day it is tagged, `v2026.3.928` if 2026-09-28; `2026.3.925` is the last published.
+   The documents are done (#14 `7df5b3e`): the package README and `docs/repository-conventions.md`
+   describe the four templates. The release ships every template, with every app published by
+   `verify-release` (#9 `f6b8cf4`, #12 `dbe38fc`), `bbavalonia`'s version fix (`e6b7930`),
+   AssemblyQuality 2026.3.928, whose 2026.3.925 threw on a scanned type with a missing base or
+   interface, and XamlQuality 2026.3.925, both with their BN rule IDs (#10, #13), and the fail-closed
+   packaging guard (#11 `74feb10`). Then `verify-release --published <version>`, and
    `dotnet new list` shows all four.
-2. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+2. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: a draft
+   awaiting the maintainer's approval**, requested by AssemblyQuality on the maintainer's decision of
+   2026-09-28. The draft is uncommitted on branch `docs/plan-00006`. Then this repository's
+   conventions change, then AssemblyQuality's BNAQ1005 and BNAQ1006 (its own `plans/00001`, also a
+   draft).
+3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
-   runs the check green. #3 and #5 are merged (`8a6996e`, `ec61a10`), `main` green.
-3. **A conventions rule that a release never globs `*.nupkg`**, which the FileServer audit showed the
+   runs the check green. #3 and #5 are merged (`8a6996e`, `ec61a10`), `main` green. DiffView is no
+   longer watched from this session, by the maintainer's word on 2026-09-28.
+4. **A conventions rule that a release never globs `*.nupkg`**, which the FileServer audit showed the
    check cannot see today. Not yet decided; it changes the script in every family repository.
-4. **A candidate for a later plan: an analyzer template.** Bennewitz.Ninja.CodeQuality 2026.3.925
+5. **Candidates for a later plan: an analyzer template**, and a `bbconsole` template with one
+   entry-point pattern (a `try`/`catch` that logs and returns an exit code) across every app
+   template: `bbavalonia` has it, `bbweb` and `bbapi` do not. Offered to the maintainer on
+   2026-09-28, not yet answered.
+   The analyzer template: Bennewitz.Ninja.CodeQuality 2026.3.925
    shipped from `bbpkg`; the whole difference an analyzer needed is `git diff e457b5d v2026.3.925` in
    JanusMael/Bennewitz.Ninja.CodeQuality.
 
