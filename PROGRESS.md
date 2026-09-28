@@ -18,18 +18,22 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
    interface, and XamlQuality 2026.3.925, both with their BN rule IDs (#10, #13), and the fail-closed
    packaging guard (#11 `74feb10`). Then `verify-release --published <version>`, and
    `dotnet new list` shows all four.
-2. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: a draft
-   awaiting the maintainer's approval**, requested by AssemblyQuality on the maintainer's decision of
-   2026-09-28. The draft is uncommitted on branch `docs/plan-00006`. Then this repository's
-   conventions change, then AssemblyQuality's BNAQ1005 and BNAQ1006 (its own `plans/00001`, also a
-   draft).
-3. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+2. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: approved
+   2026-09-28, step 1 next**: the conventions document and `repo-conventions.cs` in one change. The
+   order agreed with AssemblyQuality: this repository's convention, then its BNAQ1005, then BNAQ1006
+   (its own `plans/00001`). Step 5 waits for BNAQ1005 to ship.
+3. **The trimming enforcement, a plan after `00006`.** Side 1, the repository's own libraries, is
+   this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository restores,
+   XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as a patch
+   against the canonical script once it has confirmed the split with the maintainer in its own
+   session. Whether `"trimming": "required"` stays is for that plan.
+4. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. #3 and #5 are merged (`8a6996e`, `ec61a10`), `main` green. DiffView is no
    longer watched from this session, by the maintainer's word on 2026-09-28.
-4. **A conventions rule that a release never globs `*.nupkg`**, which the FileServer audit showed the
+5. **A conventions rule that a release never globs `*.nupkg`**, which the FileServer audit showed the
    check cannot see today. Not yet decided; it changes the script in every family repository.
-5. **Candidates for a later plan: an analyzer template**, and a `bbconsole` template with one
+6. **Candidates for a later plan: an analyzer template**, and a `bbconsole` template with one
    entry-point pattern (a `try`/`catch` that logs and returns an exit code) across every app
    template: `bbavalonia` has it, `bbweb` and `bbapi` do not. Offered to the maintainer on
    2026-09-28, not yet answered.
@@ -78,6 +82,10 @@ Tools 2026 (the maintainer added the workload on 2026-09-25). An agent shell set
 - One release per calendar day, `YYYY.Q.MMDD`, three parts, family-wide (2026-09-25). No same-day
   patch: a fourth part already means AutoVersioning's `HHmm`, and a prerelease suffix sorts below
   the release it would fix.
+- Trimming is a family policy (2026-09-28, decided with XamlQuality): a repository that trims sets
+  `IsTrimmable` and `EnableTrimAnalyzer` on its libraries, and every family library it depends on,
+  transitively, must be trimmable too; with neither property set, nothing is enforced. The
+  conventions checker enforces both sides; see Next.
 
 ## Status
 
@@ -972,3 +980,25 @@ repository's unfinished documents and evaluated its projects as this repository'
 verification ran the GENERATED repository's check, never this one's. `templates/bbavalonia` is now
 content, and `TemplateCopiesTests.Every_template_is_declared_shipped_content` fails for the next
 template that is not, which a planted removal confirmed.
+
+## `plans/00006` — solution-wide friend grants
+
+[`plans/00006`](plans/00006-solution-friend-grants.md), approved 2026-09-28 (`e19966c`) and frozen.
+Asked for by AssemblyQuality on the maintainer's decision of that day. The draft went through three
+review rounds (two by this session, one by an independent reviewer) and AssemblyQuality's own review
+before approval. The maintainer confirmed directly the decisions first relayed by AssemblyQuality:
+the cross-repository guard runs at the provider's release (decision 9), and a public assembly that
+shares an unprefixed family name receiving its grants is an accepted, documented risk (decision 8).
+The rollout's escape hatch is the per-project opt-out, with no repository-wide switch (decision 10).
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · The convention and the checker, in one change | not started | |
+| 2 · Every template links and ships both files | not started | |
+| 3 · `verify-release` covers the grant list | not started | |
+| 4 · This repository adopts it | not started | |
+| 5 · `bbavalonia` calls BNAQ1005 | waits for AssemblyQuality | |
+
+### Drift from `plans/00006`
+
+None yet.
