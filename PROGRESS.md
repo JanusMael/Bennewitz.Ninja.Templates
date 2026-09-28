@@ -9,14 +9,13 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-25, after `125ee8b` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00005`](plans/00005-app-templates.md) step 6: release, on the maintainer's word.** The
-   version is the day it is tagged, `v2026.3.928` if 2026-09-28; `2026.3.925` is the last published.
-   The documents are done (#14 `7df5b3e`): the package README and `docs/repository-conventions.md`
-   describe the four templates. The release ships every template, with every app published by
+1. **[`plans/00005`](plans/00005-app-templates.md) step 6: release `v2026.3.928`, today**, the
+   maintainer's word on 2026-09-28, once this change merges. `2026.3.925` is the last published. The
+   documents are done (#14 `7df5b3e`). The release ships every template, with every app published by
    `verify-release` (#9 `f6b8cf4`, #12 `dbe38fc`), `bbavalonia`'s version fix (`e6b7930`),
    AssemblyQuality 2026.3.928, whose 2026.3.925 threw on a scanned type with a missing base or
-   interface, and XamlQuality 2026.3.925, both with their BN rule IDs (#10, #13), and the fail-closed
-   packaging guard (#11 `74feb10`). Then `verify-release --published <version>`, and
+   interface, XamlQuality 2026.3.928 with BNXQ1007 enabled, both with their BN rule IDs, and the
+   fail-closed packaging guard (#11 `74feb10`). Then `verify-release --published 2026.3.928`, and
    `dotnet new list` shows all four.
 2. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: approved
    2026-09-28, step 1 next**: the conventions document and `repo-conventions.cs` in one change. The
@@ -35,8 +34,9 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
    check cannot see today. Not yet decided; it changes the script in every family repository.
 6. **Candidates for a later plan: an analyzer template**, and a `bbconsole` template with one
    entry-point pattern (a `try`/`catch` that logs and returns an exit code) across every app
-   template: `bbavalonia` has it, `bbweb` and `bbapi` do not. Offered to the maintainer on
-   2026-09-28, not yet answered.
+   template: `bbavalonia` has it, `bbweb` and `bbapi` do not. The maintainer asked on 2026-09-28
+   for the `bbconsole` plan to be drafted as `plans/00007`, with the choice of a package helper or
+   template text for the wrapper inside it.
    The analyzer template: Bennewitz.Ninja.CodeQuality 2026.3.925
    shipped from `bbpkg`; the whole difference an analyzer needed is `git diff e457b5d v2026.3.925` in
    JanusMael/Bennewitz.Ninja.CodeQuality.
@@ -861,7 +861,7 @@ consumer sees), and DiffView on #2 (`e5f1203`).
 | 3 · `bbweb` from bleedink.com and FileServer | **done**, merged in #7 | Generated from the PACKED template as `Gallery`, both variants: build with warnings as errors, 10 of 10 tests without `--blazor` and 13 of 13 with it, `check --offline` failing only on the description and the markers. A self-contained single-file win-x64 publish with `-p:Version=2026.3.920` serves `/healthz` (`ok`), `/version` (`2026.3.920`, its build stamp, the commit), the home page (with the counter prerendered when `--blazor`), the stylesheet and a 404. The container image of each variant, built on Docker 29.8.0 as CI's `container` job builds it, serves `/healthz`, the home page and `/version` (`1.0.0`, the build stamp, the commit passed in) and runs as uid 1654, `app`. 9 planted defects, each caught: `/healthz` changed, `/version` reading the informational version, the exception handler removed, static assets unmapped, status pages not re-executed, the site packable, and with `--blazor` the hub unmapped, the circuit script dropped and the component rendered static |
 | 4 · `bbapi` from `bbweb` | **done**, merged in #8 | Generated from the PACKED template as `Catalog`: builds with warnings as errors and the AOT analyser, 11 of 11 tests pass, `check --offline` fails only on the description and the markers. A native linux-x64 build, compiled in the SDK's AOT image, runs in a 35.3 MB chiseled image as `app` and answers `/healthz`, `/version`, a greeting and the OpenAPI document. A native win-x64 build, 11.8 MB, answers the same in about 0.75 s from process start, at 23.5 MB working set, with 400 and 404 as problem details. 9 planted defects, each caught, the last, a type missing from the JSON context, by the tests and by the native container |
 | 5 · `verify-release` covers every template | **done**, merged in #9 as `f6b8cf4`, admin-merged green by the maintainer's word | Five cases, each generated from the packed package into a template hive of the run's own: `bbpkg` (12 tests, packed and guarded), `bbavalonia` (15), `bbweb` (10), `bbweb --blazor` and `bbapi`, each building with warnings as errors, passing its tests and `check --offline` with only the description and 8 markers. The package must hold exactly the templates on disk, and those exactly the script's cases. 3 planted defects, each caught and naming only its own case: a type error in `Counter.razor` (only `bbweb --blazor` fails; the plain variant excludes it), `bbapi`'s `Dockerfile` deleted, and a fifth template with no case. The global registration's timestamp is unchanged by the run |
-| 6 · Document the templates, and release | **documents done**; release waits for 2026-09-26 | The package README, its nuget.org description and tags, and `docs/repository-conventions.md` describe all four templates. The README no longer offers `gh repo create --template`: this repository is the GitHub template, so that copies the packaging project and every template rather than generating a `bbpkg` repository. The release is `v2026.3.926`, since `2026.3.925` is taken and one release per calendar day stands |
+| 6 · Document the templates, and release | **documents done**; release `v2026.3.928` on the maintainer's word of 2026-09-28 | On the same day the maintainer had the repository's GitHub template flag turned off (`isTemplate: false`), since that route copied the template factory rather than generating anything; plans/00001's "shipped two ways" is drift, recorded here. The package README, its nuget.org description and tags, and `docs/repository-conventions.md` describe all four templates. The README no longer offers `gh repo create --template`: this repository is the GitHub template, so that copies the packaging project and every template rather than generating a `bbpkg` repository. The release is `v2026.3.926`, since `2026.3.925` is taken and one release per calendar day stands |
 
 ### Drift from `plans/00005`
 
