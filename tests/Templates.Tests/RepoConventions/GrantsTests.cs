@@ -63,6 +63,10 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
         Assert.DoesNotContain(Lines(_runs.Conforming), l => l.Contains("scripts/tool.cs", StringComparison.Ordinal));
 
     [Fact]
+    public void A_grant_s_text_inside_a_compiled_string_literal_is_not_a_grant() =>
+        Assert.DoesNotContain(Lines(_runs.Conforming), l => l.Contains("Sample.cs", StringComparison.Ordinal));
+
+    [Fact]
     public void A_missing_External_file_fails() =>
         Assert.Contains("FAIL grants: AssemblyInfo.InternalsVisibleTo.External.cs is missing", _runs.NoExternal, StringComparison.Ordinal);
 
@@ -238,6 +242,13 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
             {
                 Write(directory, $"src/{project}/{project}.csproj", Csproj(project));
                 Write(directory, $"src/{project}/Code.cs", $"namespace Fixture;\n\ninternal static class {project.Replace('.', '_')}Code\n{{\n}}\n");
+            }
+            if (projects.Contains("Alpha"))
+            {
+                // Compiled, with a grant's text inside a string literal: not a grant. The unanchored
+                // scan took it for one, and failed this repository's own conventions job.
+                Write(directory, "src/Alpha/Sample.cs",
+                    "namespace Fixture;\n\ninternal static class Sample\n{\n    internal const string Text = \"[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\\\"X\\\")]\";\n}\n");
             }
             if (projects.Contains("Source"))
             {
