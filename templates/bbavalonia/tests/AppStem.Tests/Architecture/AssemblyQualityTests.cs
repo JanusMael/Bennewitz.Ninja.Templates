@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
+using Bennewitz.Ninja.AppStem.Tests.Support;
 using Bennewitz.Ninja.AssemblyQuality;
 using Bennewitz.Ninja.AssemblyQuality.Rules;
 
@@ -17,6 +19,36 @@ namespace Bennewitz.Ninja.AppStem.Tests.Architecture;
 public sealed class AssemblyQualityTests
 {
     private static readonly Assembly Shipped = typeof(App).Assembly;
+
+    /// <summary>
+    /// BNAQ1005: every grant compiled into the app names an assembly the repository's two grant files
+    /// allow: the generated list of its own assemblies, and the hand-written External file's names.
+    /// </summary>
+    /// <remarks>
+    /// Read from the compiled assembly, so a grant from anywhere else (a stray attribute, a project
+    /// item, a generator) fails here even when the conventions check cannot see it. BNAQ1005 loads
+    /// nothing, so it never fills Skipped, and that assertion is left out.
+    /// </remarks>
+    [Fact]
+    public void BNAQ1005_every_grant_names_an_allowed_assembly()
+    {
+        string[] allowed =
+        [
+            .. GrantedNames("AssemblyInfo.InternalsVisibleTo.cs"),
+            .. GrantedNames("AssemblyInfo.InternalsVisibleTo.External.cs"),
+        ];
+
+        AssemblyRuleResult result = new FriendGrantRule(allowed).Analyze(AssemblyScanContext.Of(Shipped));
+
+        Assert.True(result.Inspected > 0, "BNAQ1005 inspected no grant, so it proved nothing.");
+        Assert.Empty(result.Findings);
+    }
+
+    /// <summary>The names a grant file grants to, comment lines left out.</summary>
+    private static IEnumerable<string> GrantedNames(string file) =>
+        File.ReadLines(Path.Combine(RepoPaths.Root, file))
+            .Where(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal))
+            .SelectMany(line => Regex.Matches(line, "InternalsVisibleTo\\(\"([^\"]+)\"\\)").Select(m => m.Groups[1].Value));
 
     /// <summary>BNAQ1001: no public method takes a <c>CancellationToken</c> with a default.</summary>
     [Fact]
