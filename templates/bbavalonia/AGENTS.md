@@ -47,6 +47,7 @@ dotnet test --solution AppStem.slnx
 dotnet run --project src/AppStem
 dotnet publish src/AppStem/AppStem.csproj -c Release -r win-x64 --self-contained -o publish/win-x64
 dotnet run --file scripts/repo-conventions.cs -- check
+dotnet run --file scripts/repo-conventions.cs -- grants
 ```
 
 - A published binary run with `--smoke` opens the main window and exits 0: the quickest proof that
@@ -70,6 +71,13 @@ reference it. If so, add its id to `packages.push`, or to `packages.local` with 
 bring over what `bbpkg` generates for publishing: the pack job and `assert-packages.cs`, a
 `Push to NuGet.org` release step, and trusted publishing on nuget.org. `repo-conventions` then holds
 it to the package properties and to trimming.
+
+**Adding, removing or renaming a project:** run `repo-conventions grants`, which rewrites
+`AssemblyInfo.InternalsVisibleTo.cs`: every project grants its internals to every assembly this
+repository builds, so `internal` means solution-internal and what no other assembly may reach is
+`private`. Never declare a grant in a project; grants to another repository go in
+`AssemblyInfo.InternalsVisibleTo.External.cs`, by assembly name. A project that must stay out sets
+`<SolutionFriendGrants>false</SolutionFriendGrants>`. CI fails on a stale list or a stray grant.
 
 **Adding a top-level directory:** give it an `AGENTS.md` and a `CLAUDE.md` containing `@AGENTS.md`,
 or exempt it in `.github/repository.json` under `undocumented`, with the reason. CI fails until

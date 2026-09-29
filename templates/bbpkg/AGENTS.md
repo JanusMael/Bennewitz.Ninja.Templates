@@ -43,6 +43,7 @@ dotnet test --solution PkgStem.slnx
 dotnet pack PkgStem.slnx -c Release --output ./packages/Release
 dotnet run scripts/assert-packages.cs -- ./packages/Release
 dotnet run --file scripts/repo-conventions.cs -- check
+dotnet run --file scripts/repo-conventions.cs -- grants
 ```
 
 - Tests run on Microsoft.Testing.Platform (`global.json`), so `dotnet test` takes `--solution` and
@@ -57,6 +58,13 @@ dotnet run --file scripts/repo-conventions.cs -- check
 3. Widen the trusted-publishing policy's glob on nuget.org to cover a new `packages.push` id; see
    `docs/publishing.md`.
 4. Add it to the package table in `README.md`, and record it in `PROGRESS.md`.
+
+**Adding, removing or renaming a project:** run `repo-conventions grants`, which rewrites
+`AssemblyInfo.InternalsVisibleTo.cs`: every project grants its internals to every assembly this
+repository builds, so `internal` means solution-internal and what no other assembly may reach is
+`private`. Never declare a grant in a project; grants to another repository go in
+`AssemblyInfo.InternalsVisibleTo.External.cs`, by assembly name. A project that must stay out sets
+`<SolutionFriendGrants>false</SolutionFriendGrants>`. CI fails on a stale list or a stray grant.
 
 **Adding a top-level directory:** give it an `AGENTS.md` and a `CLAUDE.md` containing `@AGENTS.md`,
 or exempt it in `.github/repository.json` under `undocumented`, with the reason. CI fails until
