@@ -64,8 +64,11 @@ string[] common =
     "README.md",
     "Directory.Build.props",
     "Directory.Packages.props",
-    // Carries the PublicVersion default, which the props file evaluates too early to take.
+    // Carries the PublicVersion default, which the props file evaluates too early to take, and links
+    // the two friend-grant files into every project (plans/00006).
     "Directory.Build.targets",
+    "AssemblyInfo.InternalsVisibleTo.cs",
+    "AssemblyInfo.InternalsVisibleTo.External.cs",
     "packages.push",
     "packages.local",
     "{0}.slnx",
