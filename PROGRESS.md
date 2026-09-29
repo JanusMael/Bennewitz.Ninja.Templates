@@ -9,14 +9,15 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-25, after `125ee8b` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
-   point for every app: a draft awaiting the maintainer's approval**, uncommitted on branch
-   `docs/plan-00007`. The maintainer chose its entry-point behaviours and that they live in an
-   AppServices helper on 2026-09-28.
-2. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: approved
-   2026-09-28, step 1 next**: the conventions document and `repo-conventions.cs` in one change. The
-   order agreed with AssemblyQuality: this repository's convention, then its BNAQ1005, then BNAQ1006
-   (its own `plans/00001`). Step 5 waits for BNAQ1005 to ship.
+1. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: approved
+   2026-09-28, steps 1–5 in progress** on branch `feat/friend-grants-convention`. Steps 1–4 land in
+   one pull request, since the checker requires what steps 2 and 4 supply (see the plan's drift).
+   Step 5 is unblocked: AssemblyQuality 2026.3.929, with BNAQ1005 and BNAQ1006, is on nuget.org
+   (2026-09-29). BNAQ1005 takes the allowed names explicitly, test assemblies included, and reports
+   Inspected 0 unconfigured; it never fills Skipped.
+2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
+   point for every app: approved 2026-09-29, step 1 sent**: AppServices has the requirement of
+   decision 3. Everything after waits for its helper to ship.
 3. **The trimming enforcement, a plan after `00006`.** Side 1, the repository's own libraries, is
    this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository restores,
    XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as a patch
@@ -993,8 +994,28 @@ The rollout's escape hatch is the per-project opt-out, with no repository-wide s
 | 2 · Every template links and ships both files | not started | |
 | 3 · `verify-release` covers the grant list | not started | |
 | 4 · This repository adopts it | not started | |
-| 5 · `bbavalonia` calls BNAQ1005 | waits for AssemblyQuality | |
+| 5 · `bbavalonia` calls BNAQ1005 | unblocked | AssemblyQuality 2026.3.929 shipped BNAQ1005 on 2026-09-29 |
 
 ### Drift from `plans/00006`
+
+None yet.
+
+## `plans/00007` — a console template, and one entry point for every app
+
+[`plans/00007`](plans/00007-console-template-and-entry-points.md), approved 2026-09-29 (`fc9aa19`) and
+frozen. The maintainer chose its entry-point behaviours and the AppServices helper on 2026-09-28, and
+on 2026-09-29 the exit codes 0/1/2/130 with 2 scoped to `bbconsole`, and a trimmed single-file
+`bbconsole`. An independent review of the first draft found eight problems, all confirmed and fixed
+before approval: among them, that `bbavalonia` has neither the `UnobservedTaskException` hook nor
+stderr, as the draft had claimed, and that the helper must survive `WebApplicationFactory`.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · AppServices ships the helper | requirement sent 2026-09-29 | Waiting on AppServices' own plan and release |
+| 2 · `bbconsole` and its `verify-release` case | waits for step 1 | |
+| 3 · The other app templates call the helper | waits for step 1 | |
+| 4 · Documents, and a release | waits for steps 2 and 3 | |
+
+### Drift from `plans/00007`
 
 None yet.
