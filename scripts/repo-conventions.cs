@@ -1164,9 +1164,11 @@ static class Grants
 
     private const string Regenerate = "dotnet run --file scripts/repo-conventions.cs -- grants";
 
-    // A grant declared in C#, in any spelling the compiler accepts for the attribute.
+    // A grant declared in C#, in any spelling the compiler accepts for the attribute. ⚠ Anchored to the
+    // start of the line, where an assembly attribute stands: unanchored, the text inside a string
+    // literal matched too, and this repository's own GrantsTests failed its conventions job on it.
     private static readonly Regex Declared = new(
-        @"\[\s*assembly\s*:\s*(global::)?(System\.Runtime\.CompilerServices\.)?InternalsVisibleTo(Attribute)?\s*\(",
+        @"^\s*\[\s*assembly\s*:\s*(global::)?(System\.Runtime\.CompilerServices\.)?InternalsVisibleTo(Attribute)?\s*\(",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex Named = new(
