@@ -9,12 +9,11 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Written 2026-09-25, after `125ee8b` on `main`.*
 
 **Next, in order:**
-1. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: approved
-   2026-09-28, steps 1–5 in progress** on branch `feat/friend-grants-convention`. Steps 1–4 land in
-   one pull request, since the checker requires what steps 2 and 4 supply (see the plan's drift).
-   Step 5 is unblocked: AssemblyQuality 2026.3.929, with BNAQ1005 and BNAQ1006, is on nuget.org
-   (2026-09-29). BNAQ1005 takes the allowed names explicitly, test assemblies included, and reports
-   Inspected 0 unconfigured; it never fills Skipped.
+1. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: steps 1–5
+   done**, in one pull request (see the plan's drift). What is left is a release of the templates,
+   and every other family repository adopting it when it next takes the conventions script. Tell
+   AppServices, FileServer and ScopedEditors, which document "grants to tests only", and
+   AssemblyQuality, whose fixtures opt out, once the release is out.
 2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
    point for every app: approved 2026-09-29, step 1 sent**: AppServices has the requirement of
    decision 3. Everything after waits for its helper to ship.
@@ -990,15 +989,27 @@ The rollout's escape hatch is the per-project opt-out, with no repository-wide s
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · The convention and the checker, in one change | not started | |
-| 2 · Every template links and ships both files | not started | |
-| 3 · `verify-release` covers the grant list | not started | |
-| 4 · This repository adopts it | not started | |
-| 5 · `bbavalonia` calls BNAQ1005 | unblocked | AssemblyQuality 2026.3.929 shipped BNAQ1005 on 2026-09-29 |
+| 1 · The convention and the checker, in one change | **done** on `feat/friend-grants-convention` | `docs/repository-conventions.md` gains "Friend grants"; `repo-conventions.cs` gains `grants` and the checks, sharing one restore and evaluation with the property rules (`Projects.Evaluate`), now also run by `check --release`. `GrantsTests`, 17 cases over three real fixture repositories built on the shipped `Directory.Build.targets`: every one of the plan's fixtures, plus `grants` refusing `--repo`. 96 of 96 tests pass |
+| 2 · Every template links and ships both files | **done**, same branch | Each template's `Directory.Build.targets` links both files; each ships them, written by `grants --root templates/<t>` (`<Stem>`, `<Stem>.Tests`); both are on `verify-release`'s required list; each template's `AGENTS.md` names `grants`. Planted in a generated `bbpkg`: an `internal` member called from a planted test compiles and passes (13 of 13); with the library opted out, `CS0122` |
+| 3 · `verify-release` covers the grant list | **done**, same branch | `verify-release` passes, every generated repository's offline check clean of grant findings; a stale list fails its check (`GrantsTests`) |
+| 4 · This repository adopts it | **done**, same branch | A root `Directory.Build.targets`, the two files (`Templates.Tests` alone: the packaging project is a template), and the script copy. `check --offline` here conforms |
+| 5 · `bbavalonia` calls BNAQ1005 | **done**, same branch | AssemblyQuality 2026.3.929; the allowed names are the two grant files' own. A generated `bbavalonia` passes 17 of 17; with a grant to `Nobody.Ships.This` planted in its source, BNAQ1005 fails, and so does its own conventions check |
 
 ### Drift from `plans/00006`
 
-None yet.
+**Steps 1–5 land in one pull request, not one each.** The checker the plan changes in step 1 is the
+canonical copy, and this repository's `conventions` job fails when its own copy differs from it, so
+step 4's copy must land with it; every generated repository runs the new checker inside
+`verify-release`, so step 2's files must too. Step 5 joined once AssemblyQuality 2026.3.929 shipped
+on the same day. Each step is its own commit in that request.
+
+**The open question is settled: a file-based app does import `Directory.Build.targets`**, measured on
+SDK 10.0.401 by a probe that compiled a linked file into `dotnet run --file app.cs`. It sets
+`FileBasedProgram=true`, which the link now excludes, as decision 5 says.
+
+**`check --release` did not evaluate projects before**, so the grant checks brought the evaluation to
+the release preflight, as decision 3 requires; it runs only the grant checks there, not the property
+rules.
 
 ## `plans/00007` — a console template, and one entry point for every app
 
