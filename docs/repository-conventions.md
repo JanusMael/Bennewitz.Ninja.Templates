@@ -25,6 +25,9 @@ not generated from the template adopts the same files by hand; see
 | `scripts/repo-conventions.cs` | `scripts/` | The enforcer, identical to the template's copy | `check --repo`, run from this repository |
 | A `conventions` CI job | `.github/workflows/ci.yml` | Runs `check` on every push and pull request | the `main` ruleset requires it |
 | A preflight step | `.github/workflows/release.yml` | Runs `check --release` before anything is published | the release itself |
+| `AssemblyInfo.InternalsVisibleTo.cs` | root | The generated [friend grants](#friend-grants): every assembly the repository builds | `check` |
+| `AssemblyInfo.InternalsVisibleTo.External.cs` | root | Grants to other repositories, by hand | `check` |
+| The grants link | `Directory.Build.targets` | Links both files into every project | `check` |
 
 A **top-level directory** is any directory at the root that git tracks. `check` reads the list from
 the tree, so a directory added later needs its documents on the day it is added.
@@ -165,6 +168,55 @@ it: a `dotnet tool` runs on the installed framework, and an app's trimming is de
 rule names are the ones in the table above, plus `Trimming`. An exemption the project no longer
 needs is reported, so it is removed rather than left to hide a later regression.
 
+## Friend grants
+
+**Every project grants `InternalsVisibleTo` to every assembly its repository builds**, tests
+included, and grants between product projects are encouraged. `internal` therefore means
+solution-internal: a member no other assembly may reach is `private`. One list that is obviously
+complete replaces per-project grants that were each precise and together unknowable. The rule is
+[plans/00006](../plans/00006-solution-friend-grants.md)'s.
+
+| File | What it is |
+|---|---|
+| `AssemblyInfo.InternalsVisibleTo.cs` | **Generated** by `repo-conventions grants`, at the root: one grant per assembly, from each project's evaluated `AssemblyName`, sorted. Never edited by hand |
+| `AssemblyInfo.InternalsVisibleTo.External.cs` | **Written by hand**, at the root: grants to the maintainer's other repositories. `grants` writes an empty one when there is none, and never touches it after |
+| `Directory.Build.targets` | Links both into every project, never copied: in targets, so a `Compile Remove` in a csproj cannot drop them. Not into a project that opts out, a file-based app under `scripts/` (`FileBasedProgram`), or a template package |
+
+**A name is an assembly name, never a root namespace.** Family assemblies are unprefixed
+(`AppServices`), and a grant to `Bennewitz.Ninja.AppServices` compiles, ships and grants nothing.
+The generated file cannot make that mistake; `check` fails the External file on it.
+
+**A project opts out** with `<SolutionFriendGrants>false</SolutionFriendGrants>` in its csproj,
+where a reader sees it. It then links neither file and may declare grants of its own, and it still
+receives everyone else's: it stays in the generated list. This is also how a repository adopts the
+convention before it has converted every project: a project not yet converted opts out and keeps its
+grants. No other project declares a grant of its own, in any spelling.
+
+**None of this is a security boundary.** A grant matches by assembly name. No family assembly is
+strong-named, and on modern .NET public signing satisfies a keyed grant without the private key, so
+signing would not make one either. Grants name only assemblies the family ships, and public
+consumers get none. A public project that happens to share an unprefixed family name, such as
+`CodeQuality`, would receive its grants; the maintainer accepts that risk. Someone who generates a
+repository from a template gets the same scheme within their own solution, with an empty External
+file, and no family internal is visible to them.
+
+**An internal another repository uses is a promise**: its owner changes it only together with a
+release of the consumer. The guard runs at the provider's release, where AssemblyQuality's BNAQ1006
+loads the published consumers beside the new build; how a provider finds them is a later plan.
+
+`check` fails when:
+
+| Finding | Fix |
+|---|---|
+| `AssemblyInfo.InternalsVisibleTo.cs` is missing, or differs from what `grants` would write (line endings aside) | Run `grants` |
+| `AssemblyInfo.InternalsVisibleTo.External.cs` is missing | Run `grants`, which writes an empty one |
+| The External file names a `Bennewitz.Ninja.` namespace | Name the assembly |
+| A project that has not opted out does not compile both files | Add the link to the root `Directory.Build.targets`, import it from a nearer one that shadows it, or opt the project out |
+| A project that has not opted out declares a grant: an `<InternalsVisibleTo>` item, an `<AssemblyAttribute>` for it, or `[assembly: InternalsVisibleTo]` in a file it compiles | Delete it: the generated file already grants every assembly in the repository, and the External file takes the rest |
+
+These run wherever `check` evaluates the projects: offline, at the token and admin depths, and in
+the release preflight. `check --repo` cannot, reading through the API.
+
 ## `.github/repository.json`
 
 Only what varies from one repository to the next:
@@ -198,14 +250,16 @@ dotnet run --file scripts/repo-conventions.cs -- check
 dotnet run --file scripts/repo-conventions.cs -- check --admin
 dotnet run --file scripts/repo-conventions.cs -- apply --dry-run
 dotnet run --file scripts/repo-conventions.cs -- apply
+dotnet run --file scripts/repo-conventions.cs -- grants
 ```
 
 | Command | Run by | What it does |
 |---|---|---|
 | `check` | CI, on every push and pull request | Documentation, markers, description, topics, homepage, feature toggles, rulesets, required checks |
-| `check --release` | the release workflow | Only what is prescribed: the documents, the markers and a non-empty description. A drifted setting does not stop a publish |
+| `check --release` | the release workflow | Only what is prescribed: the documents, the markers, a non-empty description and the friend grants. A drifted setting does not stop a publish |
 | `check --admin` | the maintainer | Everything, including the merge options and security toggles; fails on anything unreadable |
-| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the required checks against the workflows, the build properties, and the script copy |
+| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the required checks against the workflows, the build properties, the friend grants, and the script copy |
+| `grants` | anyone, after adding, removing or renaming a project | Writes `AssemblyInfo.InternalsVisibleTo.cs` from the projects' assembly names, and an empty External file when there is none. Asks nothing of GitHub |
 | `apply --dry-run` | the maintainer | Prints every request `apply` would send |
 | `apply` | the maintainer | Writes the description, homepage, topics, baseline settings, security toggles and both rulesets |
 | `apply --replace-branch-protection` | the maintainer, once | Also deletes classic branch protection, after the `main` ruleset exists |
@@ -228,7 +282,8 @@ What generation does is marked ✅; the rest is yours.
    and each directory's `AGENTS.md`. Every template uses this one marker. Delete an example that
    does not apply rather than leaving it.
 5. Run `apply`, then `check --admin`. Both need the maintainer's `gh` login.
-6. Push. The `conventions` job goes green.
+6. Push. The `conventions` job goes green. After adding, removing or renaming a project later, run
+   `grants`: the [friend grants](#friend-grants) list must name every assembly.
 7. For a package, set up trusted publishing:
    [`docs/publishing.md`](../templates/bbpkg/docs/publishing.md) in the generated repository. An
    app releases to GitHub Releases with no credential to set up; its `docs/releasing.md` says how.
@@ -247,8 +302,12 @@ What generation does is marked ✅; the rest is yours.
    output, goes in `undocumented` with its reason. The root `AGENTS.md` carries the
    [shared lessons](#shared-lessons) rule, as the template's does; `check` cannot see whether it
    is there.
-5. Run `apply`, then `check --admin`.
-6. Once the `conventions` job is green, add it to `requiredChecks` and run `apply` again. Required
+5. Adopt the [friend grants](#friend-grants): add the link to the root `Directory.Build.targets`,
+   as the template's has, and run `grants`. Delete every grant a project declares of its own; a
+   project not yet converted sets `SolutionFriendGrants` to `false` and keeps its grants for now.
+   A repository that documented "grants to tests only" rewrites that rule in the same change.
+6. Run `apply`, then `check --admin`.
+7. Once the `conventions` job is green, add it to `requiredChecks` and run `apply` again. Required
    while red, it would block every pull request in the meantime.
 
 ## When the convention changes
