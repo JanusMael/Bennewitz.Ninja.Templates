@@ -1022,7 +1022,7 @@ stderr, as the draft had claimed, and that the helper must survive `WebApplicati
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · AppServices ships the helper | requirement sent 2026-09-29 | Waiting on AppServices' own plan and release |
+| 1 · AppServices ships the helper | AppServices' plan approved 2026-09-30, being built | Its PR JanusMael/Bennewitz.Ninja.AppServices#7, then a release on the maintainer's go |
 | 2 · `bbconsole` and its `verify-release` case | waits for step 1 | |
 | 3 · The other app templates call the helper | waits for step 1 | |
 | 4 · Documents, and a release | waits for steps 2 and 3 | |
