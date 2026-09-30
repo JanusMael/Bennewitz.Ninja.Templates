@@ -1029,4 +1029,21 @@ stderr, as the draft had claimed, and that the helper must survive `WebApplicati
 
 ### Drift from `plans/00007`
 
-None yet.
+⛔ **Decision 3's reason and step 3's verification are wrong about `WebApplicationFactory`.** Found
+by AppServices on 2026-09-30 in the .NET 10 sources: `WebApplicationFactory` resolves the entry point
+with `stopApplication: false` (aspnetcore `release/10.0`,
+`src/Mvc/Mvc.Testing/src/WebApplicationFactory.cs:288-292`), so it never throws
+`HostAbortedException`; the entry point runs until the factory is disposed.
+`HostFactoryResolver` throws it only when stopping the application, the default the design-time tools
+take (`dotnet ef`, build-time OpenAPI) (runtime `release/10.0`, `HostFactoryResolver.cs:64`, `:340`).
+So:
+- the helper must still re-throw `HostAbortedException`, but for the design-time tools, not the test
+  host; it matches the type by its short name, as the resolver catches it (`:249`), since the
+  resolver throws a private type of that name when the public one does not load (`:353-364`);
+- step 3's "the existing web tests still pass, which proves `HostAbortedException` is not reported as
+  fatal" cannot fail. What proves it is a resolution that stops the application: a test that listens
+  on the `Microsoft.Extensions.Hosting` diagnostic source and throws the public
+  `HostAbortedException` on its `HostBuilt` event, as the resolver does (`:221`, `:317`, `:336`).
+  `Microsoft.Extensions.HostFactoryResolver.Sources` is not on nuget.org. AppServices' own plan now
+  carries that test; step 3 relies on it, and the existing web tests prove only that the helper does
+  not break the test host.
