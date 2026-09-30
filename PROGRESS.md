@@ -1047,3 +1047,17 @@ So:
   `Microsoft.Extensions.HostFactoryResolver.Sources` is not on nuget.org. AppServices' own plan now
   carries that test; step 3 relies on it, and the existing web tests prove only that the helper does
   not break the test host.
+
+**Decision 1(a) and decision 3 conflict for a crash on another thread.** 1(a) says any unhandled
+exception returns 1; 3 says the helper never calls `Environment.Exit`. An exception on a thread other
+than the one running `Main` terminates the process through the runtime, with the runtime's own exit
+code, and only `Environment.Exit` could turn that into 1. AppServices' approved plan (its
+`plans/00001`, 2026-09-30) keeps decision 3: such a crash is reported as fatal on stderr and the log is
+flushed from the terminating `UnhandledException` hook, but the exit code is the runtime's. An
+exception on the entry point's own thread still returns 1.
+
+**AppServices' helper is approved** (2026-09-30): `Bennewitz.Ninja.AppServices.EntryPoint`, with
+`AppMain.RunConsoleAsync`, `RunHostAsync` and `RunDesktop`, `AppMainOptions` (`Usage`, `FlushLog`,
+`OnFatal`, `OnUnobservedTaskException`), `UsageException`, and `AvaloniaDiagnostics.EntryPointOptions()`
+for `bbavalonia`. `FlushLog` also runs on `ProcessExit` (SIGTERM). Its native AOT measurement is a
+required CI job on linux-x64 and win-x64. Step 1 is done once it is released and verified.
