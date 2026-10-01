@@ -24,7 +24,7 @@ pull request open.*
    AppServices on 2026-09-30 found exactly its 3 real grants and built and tested clean.
 3. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
    point for every app: approved 2026-09-29; steps 2–4 wait for AppServices' helper.** AppServices'
-   own `plans/00001` was approved 2026-09-30 and is being built in JanusMael/Bennewitz.Ninja.AppServices#7:
+   own `plans/00001` was approved 2026-09-30 and is being built in JanusMael/Bennewitz.Ninja.AppServices#8:
    package `Bennewitz.Ninja.AppServices.EntryPoint`, `AppMain.RunConsoleAsync`/`RunHostAsync`/
    `RunDesktop`. AppServices messages when its release is verified. Two drift entries are in the
    plan's section below: `WebApplicationFactory` never throws `HostAbortedException`, and a crash on
@@ -1059,7 +1059,7 @@ stderr, as the draft had claimed, and that the helper must survive `WebApplicati
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · AppServices ships the helper | AppServices' plan approved 2026-09-30, being built | Its PR JanusMael/Bennewitz.Ninja.AppServices#7, then a release on the maintainer's go |
+| 1 · AppServices ships the helper | AppServices' plan approved 2026-09-30, being built | Its PR JanusMael/Bennewitz.Ninja.AppServices#8, then a release on the maintainer's go |
 | 2 · `bbconsole` and its `verify-release` case | waits for step 1 | |
 | 3 · The other app templates call the helper | waits for step 1 | |
 | 4 · Documents, and a release | waits for steps 2 and 3 | |
