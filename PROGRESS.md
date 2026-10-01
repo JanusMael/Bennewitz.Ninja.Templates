@@ -10,10 +10,11 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 **Next, in order:**
 1. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: steps 1–5
-   done**, in one pull request (see the plan's drift). What is left is a release of the templates,
-   and every other family repository adopting it when it next takes the conventions script. Tell
-   AppServices, FileServer and ScopedEditors, which document "grants to tests only", and
-   AssemblyQuality, whose fixtures opt out, once the release is out.
+   done, and the review's fixes** (see the plan's drift). What is left is a release of the templates,
+   on the maintainer's word, and every other family repository adopting it when it next takes the
+   conventions script. Tell AppServices, FileServer and ScopedEditors, which document "grants to tests
+   only", AssemblyQuality, whose fixtures opt out, and TrueCourseCalculator, Geo.Core and GeoHash,
+   whose multi-targeted projects and prefixed assemblies the review exercised, once the release is out.
 2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
    point for every app: approved 2026-09-29, step 1 sent**: AppServices has the requirement of
    decision 3. Everything after waits for its helper to ship.
@@ -989,7 +990,7 @@ The rollout's escape hatch is the per-project opt-out, with no repository-wide s
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · The convention and the checker, in one change | **done** on `feat/friend-grants-convention` | `docs/repository-conventions.md` gains "Friend grants"; `repo-conventions.cs` gains `grants` and the checks, sharing one restore and evaluation with the property rules (`Projects.Evaluate`), now also run by `check --release`. `GrantsTests`, 18 cases over three real fixture repositories built on the shipped `Directory.Build.targets`: every one of the plan's fixtures, plus `grants` refusing `--repo` and a grant's text inside a compiled string literal. 97 of 97 tests pass. ⛔ The pull request's first `conventions` run failed on this repository's own `GrantsTests.cs`: the source scan matched the attribute's text inside string literals. It now matches only at the start of a line, where an assembly attribute stands (`1c3d127`) |
+| 1 · The convention and the checker, in one change | **done** on `feat/friend-grants-convention` | `docs/repository-conventions.md` gains "Friend grants"; `repo-conventions.cs` gains `grants` and the checks, sharing one restore and evaluation with the property rules (`Projects.Evaluate`), now also run by `check --release`. `GrantsTests`, 26 cases since the review's fixes, over three real fixture repositories built on the shipped `Directory.Build.targets`: every one of the plan's fixtures, plus `grants` refusing `--repo`, string literals, the multi-targeted, listed, split and aliased grants, the `False` opt-out and the prefix note. 105 of 105 tests pass. ⛔ The pull request's first `conventions` run failed on this repository's own `GrantsTests.cs`: the source scan matched the attribute's text inside string literals. It now matches only at the start of a line, where an assembly attribute stands (`1c3d127`) |
 | 2 · Every template links and ships both files | **done**, same branch | Each template's `Directory.Build.targets` links both files; each ships them, written by `grants --root templates/<t>` (`<Stem>`, `<Stem>.Tests`); both are on `verify-release`'s required list; each template's `AGENTS.md` names `grants`. Planted in a generated `bbpkg`: an `internal` member called from a planted test compiles and passes (13 of 13); with the library opted out, `CS0122` |
 | 3 · `verify-release` covers the grant list | **done**, same branch | `verify-release` passes, every generated repository's offline check clean of grant findings; a stale list fails its check (`GrantsTests`) |
 | 4 · This repository adopts it | **done**, same branch | A root `Directory.Build.targets`, the two files (`Templates.Tests` alone: the packaging project is a template), and the script copy. `check --offline` here conforms |
@@ -1010,6 +1011,32 @@ SDK 10.0.401 by a probe that compiled a linked file into `dotnet run --file app.
 **`check --release` did not evaluate projects before**, so the grant checks brought the evaluation to
 the release preflight, as decision 3 requires; it runs only the grant checks there, not the property
 rules.
+
+⛔ **A review after the merge (2026-09-30, an independent reviewer and a trial adoption in AppServices)
+found the checker wrong in real repositories, before any release shipped it.** Fixed on
+`fix/friend-grants-review`, each case now a test that fails against the merged checker:
+- **A multi-targeted project's own grants were invisible.** Its outer evaluation holds none of its own
+  Compile items, nor an item conditioned on a framework, so `[assembly: InternalsVisibleTo]` in its
+  source passed. TrueCourseCalculator's `Geo.Core` declares five; the check reported none. Each
+  framework is now evaluated and the items combined; the trial now reports them.
+- **The source scan missed real grants and failed on text.** A grant after another attribute in one
+  section, one split across lines and one through a `using` alias all compiled and went unseen; a raw
+  string whose line begins with the attribute's text failed, as CodeQuality's tests have one. The scan
+  now reads code with comments and every literal stripped, the whole `[assembly: …]` section, aliases
+  included; the CodeQuality trial reports only its real grant.
+- **The opt-out was compared case-sensitively**, unlike MSBuild, so `False` unlinked the files and then
+  failed the check. Now case-insensitive. The link is also limited to C# projects.
+- **Decision 4's premise, "family assemblies are unprefixed", is false** for AutoVersioning, FileServer,
+  Geo.Core, GeoHash and TrueCourseCalculator, so failing every prefixed External name would reject a
+  correct grant to them. **Decided 2026-10-01** (maintainer): a prefixed name is a NOTE, never a
+  failure, and the note shows how to silence it, with the exact line: end the grant's line with
+  `// repo-conventions: assembly name`. A wrong name still fails the consumer's build with `CS0122`.
+- **Duplicate internal types now collide (`CS0436`)**, reproduced with two multi-targeted projects each
+  carrying a `NotNullWhenAttribute` polyfill. The checker cannot see it; the docs now say how to avoid
+  it. The AppServices and TrueCourseCalculator trials built clean under warnings as errors.
+- **Two of the plan's verifications are manual, not automated**: step 2's planted `internal` and its
+  `CS0122` once opted out, and step 5's planted grant failing BNAQ1005. Both were run, as the step rows
+  say; `verify-release` does not repeat them.
 
 ## `plans/00007` — a console template, and one entry point for every app
 
