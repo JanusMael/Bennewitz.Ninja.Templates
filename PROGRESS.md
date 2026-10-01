@@ -12,18 +12,14 @@ day (see `plans/00006`).*
 
 **Next, in order:**
 1. **`2026.3.1001` is out, so tell the family it can adopt the friend grants** on its next sync of the
-   conventions script: AppServices, FileServer and ScopedEditors (each documents "grants to tests
-   only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
+   conventions script: FileServer and ScopedEditors (each documents "grants to tests only"),
+   AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
-   an External file needs the `// repo-conventions: assembly name` marker). A trial in a copy of
-   AppServices on 2026-09-30 found exactly its 3 real grants and built and tested clean.
-2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
-   point for every app: approved 2026-09-29; steps 2–4 wait for AppServices' helper.** AppServices'
-   own `plans/00001` was approved 2026-09-30 and is being built in JanusMael/Bennewitz.Ninja.AppServices#8:
-   package `Bennewitz.Ninja.AppServices.EntryPoint`, `AppMain.RunConsoleAsync`/`RunHostAsync`/
-   `RunDesktop`. AppServices messages when its release is verified. Two drift entries are in the
-   plan's section below: `WebApplicationFactory` never throws `HostAbortedException`, and a crash on
-   another thread keeps the runtime's exit code.
+   an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
+   adopted them (JanusMael/Bennewitz.Ninja.AppServices#9, released in `2026.4.1001`).
+2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md) steps 2 and 3 can start:
+   AppServices' helper is released** as `Bennewitz.Ninja.AppServices.EntryPoint 2026.4.1001` (step 1,
+   see the plan's section below for the API and the drift its templates must know).
 3. **The trimming enforcement, a plan after `00007` is under way.** Side 1, the repository's own
    libraries, is this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository
    restores, XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as
@@ -39,7 +35,6 @@ day (see `plans/00006`).*
    AssemblyQuality reference in `bbpkg`, `bbweb` and `bbapi`, which would let them call BNAQ1005 too.
 
 **Waiting on others:**
-- AppServices: the entry-point helper's release (`plans/00007` step 1).
 - XamlQuality: side 2 of the trimming enforcement.
 - DiffView#2 stays red on `conventions` until DiffView's session writes its `AGENTS.md` set.
 - bleedink.com's `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥"; not
@@ -1065,9 +1060,9 @@ stderr, as the draft had claimed, and that the helper must survive `WebApplicati
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · AppServices ships the helper | AppServices' plan approved 2026-09-30, being built | Its PR JanusMael/Bennewitz.Ninja.AppServices#8, then a release on the maintainer's go |
-| 2 · `bbconsole` and its `verify-release` case | waits for step 1 | |
-| 3 · The other app templates call the helper | waits for step 1 | |
+| 1 · AppServices ships the helper | **done** 2026-10-01 | `2026.4.1001`, tag `v2026.4.1001` at `03ebb64`, built in JanusMael/Bennewitz.Ninja.AppServices#8. Checked here, not taken on report: all five AppServices ids list `2026.4.1001` in the nuget.org flat-container, `.EntryPoint` among them, and the release run and the required `aot-linux` and `aot-windows` jobs are green on `03ebb64`. AppServices reports a warning-free native AOT publish on both, the probe's contract passing 18 of 18 on Linux, including real SIGINT and SIGTERM, and 14 on win-x64 with the 4 signal cases skipped |
+| 2 · `bbconsole` and its `verify-release` case | ready | |
+| 3 · The other app templates call the helper | ready | |
 | 4 · Documents, and a release | waits for steps 2 and 3 | |
 
 ### Drift from `plans/00007`
@@ -1104,3 +1099,19 @@ exception on the entry point's own thread still returns 1.
 `OnFatal`, `OnUnobservedTaskException`), `UsageException`, and `AvaloniaDiagnostics.EntryPointOptions()`
 for `bbavalonia`. `FlushLog` also runs on `ProcessExit` (SIGTERM). Its native AOT measurement is a
 required CI job on linux-x64 and win-x64. Step 1 is done once it is released and verified.
+
+**As released (`2026.4.1001`), the API steps 2 and 3 call**, namespace
+`Bennewitz.Ninja.AppServices.EntryPoint`, referencing nothing but the framework:
+`AppMain.RunConsoleAsync(Assembly, string[], Func<string[], CancellationToken, Task<int>>, AppMainOptions?)`,
+`RunHostAsync(Assembly, string[], Func<string[], Task>, AppMainOptions?)` and
+`RunDesktop(Assembly, string[], Func<string[], int>, AppMainOptions?)`. `bbavalonia` takes
+`AvaloniaDiagnostics.EntryPointOptions()` from `Bennewitz.Ninja.AppServices.Avalonia`
+(namespace `Bennewitz.Ninja.AppServices.AvaloniaUI`). `--version` as the only argument prints
+`[AssemblyMetadata("PublicVersion")]` and exits 0, or 1 if it is missing.
+
+⛔ **SIGTERM is not `ProcessExit` on Linux.** AppServices measured that .NET 10 raises no `ProcessExit`
+on SIGTERM there, so its plan's premise, and this plan's "`FlushLog` also runs on `ProcessExit`
+(SIGTERM)" above, were wrong. As released, a console or desktop run registers a SIGTERM
+`PosixSignalRegistration` that flushes the log and lets the signal end the process (exit code 143); a
+web run relies on its host's own SIGTERM handling. A run flushes once, so an app that handles SIGTERM
+itself, such as a generic host, belongs in `RunHostAsync`, not inside `RunConsoleAsync`.
