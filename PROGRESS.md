@@ -6,57 +6,60 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Written 2026-09-25, after `125ee8b` on `main`.*
+*Replaced, never appended, at each handoff. Written 2026-10-01, after `2c764dd` on `main`, with no
+pull request open.*
 
 **Next, in order:**
-1. **[`plans/00006`](plans/00006-solution-friend-grants.md), solution-wide friend grants: steps 1–5
-   done, and the review's fixes** (see the plan's drift). What is left is a release of the templates,
-   on the maintainer's word, and every other family repository adopting it when it next takes the
-   conventions script. Tell AppServices, FileServer and ScopedEditors, which document "grants to tests
-   only", AssemblyQuality, whose fixtures opt out, and TrueCourseCalculator, Geo.Core and GeoHash,
-   whose multi-targeted projects and prefixed assemblies the review exercised, once the release is out.
-2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
-   point for every app: approved 2026-09-29, step 1 sent**: AppServices has the requirement of
-   decision 3. Everything after waits for its helper to ship.
-3. **The trimming enforcement, a plan after `00006`.** Side 1, the repository's own libraries, is
-   this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository restores,
-   XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as a patch
-   against the canonical script once it has confirmed the split with the maintainer in its own
-   session. Whether `"trimming": "required"` stays is for that plan.
-4. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+1. **Release `Bennewitz.Ninja.Templates`, on the maintainer's word only**, versioned by the day it is
+   tagged (`v2026.3.1001` if 2026-10-01). `2026.3.928` is the last published. It ships what has merged
+   since: the friend grants of [`plans/00006`](plans/00006-solution-friend-grants.md) with the review's
+   fixes (#20, #22), `bbavalonia` on AssemblyQuality 2026.3.929 with BNAQ1005 and on XamlQuality
+   2026.3.928 with BNXQ1007 (#13, #15, #17). Use the `package-release` skill: preflight, tag on `main`,
+   verify from nuget.org with `verify-release --published`.
+2. **After that release, tell the family it can adopt the friend grants** on its next sync of the
+   conventions script: AppServices, FileServer and ScopedEditors (each documents "grants to tests
+   only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
+   TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
+   an External file needs the `// repo-conventions: assembly name` marker). A trial in a copy of
+   AppServices on 2026-09-30 found exactly its 3 real grants and built and tested clean.
+3. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
+   point for every app: approved 2026-09-29; steps 2–4 wait for AppServices' helper.** AppServices'
+   own `plans/00001` was approved 2026-09-30 and is being built in JanusMael/Bennewitz.Ninja.AppServices#7:
+   package `Bennewitz.Ninja.AppServices.EntryPoint`, `AppMain.RunConsoleAsync`/`RunHostAsync`/
+   `RunDesktop`. AppServices messages when its release is verified. Two drift entries are in the
+   plan's section below: `WebApplicationFactory` never throws `HostAbortedException`, and a crash on
+   another thread keeps the runtime's exit code.
+4. **The trimming enforcement, a plan after `00007` is under way.** Side 1, the repository's own
+   libraries, is this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository
+   restores, XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as
+   a patch against the canonical script once it has confirmed the split in its own session. Whether
+   `"trimming": "required"` stays is for that plan.
+5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
-   runs the check green. #3 and #5 are merged (`8a6996e`, `ec61a10`), `main` green. DiffView is no
-   longer watched from this session, by the maintainer's word on 2026-09-28.
-5. **A conventions rule that a release never globs `*.nupkg`**, which the FileServer audit showed the
-   check cannot see today. Not yet decided; it changes the script in every family repository.
-6. **Candidates for a later plan: an analyzer template**, and a `bbconsole` template with one
-   entry-point pattern (a `try`/`catch` that logs and returns an exit code) across every app
-   template: `bbavalonia` has it, `bbweb` and `bbapi` do not. The maintainer asked on 2026-09-28
-   for the `bbconsole` plan to be drafted as `plans/00007`, with the choice of a package helper or
-   template text for the wrapper inside it.
-   The analyzer template: Bennewitz.Ninja.CodeQuality 2026.3.925
-   shipped from `bbpkg`; the whole difference an analyzer needed is `git diff e457b5d v2026.3.925` in
-   JanusMael/Bennewitz.Ninja.CodeQuality.
+   runs the check green. DiffView is not watched from this session (the maintainer's word,
+   2026-09-28).
+6. **Undecided:** a conventions rule that a release never globs `*.nupkg` (the FileServer audit showed
+   the check cannot see it); an analyzer template (`git diff e457b5d v2026.3.925` in
+   JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed); a family
+   AssemblyQuality reference in `bbpkg`, `bbweb` and `bbapi`, which would let them call BNAQ1005 too.
 
 **Waiting on others:**
-- DiffView#2 (the conventions, the script copy, trimming required) stays red on `conventions` until
-  DiffView's session writes its `AGENTS.md` set and `CLAUDE.md` pointers.
-- FileServer reports all 7 findings of the 2026-09-25 audit fixed on its `main`, CI green and the
-  release preflight passing on `e2decd9`: package lists, the packaging guard and named pushes
-  (`89ca5c9`), `PublishReadyToRun` (`32dd506`), `NuGet.config` (`1dcda1b`), xunit.v3 on MTP and
-  `global.json` (`e2decd9`). Reported by its session, not checked here. It found two template gaps,
-  both fixed here: the packaging guard now fails closed in every template, and `NuGet.config` says
-  when a nested config loses `*` (a child mapping under the `nuget.org` key replaces this file's
-  patterns for it; mapping another source merges; measured on SDK 10.0.401).
+- AppServices: the entry-point helper's release (`plans/00007` step 1).
+- XamlQuality: side 2 of the trimming enforcement.
+- DiffView#2 stays red on `conventions` until DiffView's session writes its `AGENTS.md` set.
 - bleedink.com's `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥"; not
   yet passed to its session.
 
-**Environment:** Docker Desktop is running (engine 29.8.0); the maintainer fixed it on 2026-09-25. A
-native Windows publish takes the newest Visual Studio or Build Tools with the C++ tools, now Build
-Tools 2026 (the maintainer added the workload on 2026-09-25). An agent shell sets
-`NoDefaultCurrentDirectoryInExePath=1`, so there it also needs
-`%ProgramFiles(x86)%\Microsoft Visual Studio\Installer` on `PATH`; a normal terminal does not, and
-`verify-release` adds it for its own publish.
+**Peer sessions on this machine** (addresses change when a session restarts; `ListAgents` gives the
+current names): AppServices, AssemblyQuality, XamlQuality, FileServer, AutoVersioning, CodeQuality.
+
+**Environment:** Docker Desktop is running (engine 29.8.0). A native Windows publish takes the newest
+Visual Studio or Build Tools with the C++ tools, now Build Tools 2026. An agent shell sets
+`NoDefaultCurrentDirectoryInExePath=1`, so there `vswhere.exe` must be on `PATH`
+(`%ProgramFiles(x86)%\Microsoft Visual Studio\Installer`); a normal terminal does not need it, and
+`verify-release` adds it for its own publish. A deep scratch path overflows Windows' path limit for
+TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path with
+`core.longpaths=true`.
 
 **Locked decisions** (the maintainer's; do not reopen):
 - Every family repository meets `docs/repository-conventions.md`: the settings baseline lives in the
@@ -72,17 +75,24 @@ Tools 2026 (the maintainer added the workload on 2026-09-25). An agent shell set
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push …`.
 - A change in a family repository updates that repository's `PROGRESS.md` in the same commit, in
   that file's own format.
-- Merging a green pull request uses the admin bypass when the maintainer says so; auto-merge is off by
-  the family baseline. On 2026-09-25 the maintainer said "merge all if green", and that green pull
-  requests in this repository may be admin-merged. The repository allows rebase and squash merges,
-  not merge commits; its pull requests are rebase-merged.
+- Green pull requests in this repository may be admin-merged (the maintainer, 2026-09-25 and since);
+  auto-merge is off by the family baseline. The repository allows rebase and squash merges, not merge
+  commits; its pull requests are rebase-merged.
 - One release per calendar day, `YYYY.Q.MMDD`, three parts, family-wide (2026-09-25). No same-day
   patch: a fourth part already means AutoVersioning's `HHmm`, and a prerelease suffix sorts below
   the release it would fix.
+- A release happens only on the maintainer's explicit word for that release.
 - Trimming is a family policy (2026-09-28, decided with XamlQuality): a repository that trims sets
   `IsTrimmable` and `EnableTrimAnalyzer` on its libraries, and every family library it depends on,
   transitively, must be trimmable too; with neither property set, nothing is enforced. The
-  conventions checker enforces both sides; see Next.
+  conventions checker enforces both sides.
+- Friend grants (`plans/00006`): solution-wide, generated, linked; opt out per project; adoption on
+  next sync with the opt-out as the escape hatch, no repository-wide switch; a prefixed External name
+  is a NOTE silenced by `// repo-conventions: assembly name` (2026-10-01).
+- Entry points (`plans/00007`): exit codes 0/1/2/130 with 2 for `bbconsole` only; `bbconsole` trimmed
+  single-file; the behaviour lives in an AppServices helper.
+- The repository is not a GitHub template (`isTemplate: false`, 2026-09-28); templates ship only
+  through `dotnet new`.
 
 ## Status
 

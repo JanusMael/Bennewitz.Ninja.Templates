@@ -48,7 +48,13 @@ dotnet run --file scripts/verify-release.cs
 dotnet run --file scripts/verify-release.cs -- --published <version>
 dotnet run --file scripts/repo-conventions.cs -- check
 dotnet run --file scripts/repo-conventions.cs -- check --repo JanusMael/<repository>
+dotnet run --file scripts/repo-conventions.cs -- grants
+dotnet run --file scripts/repo-conventions.cs -- grants --root templates/<template>
 ```
+
+- `grants` rewrites `AssemblyInfo.InternalsVisibleTo.cs` from the projects' assembly names. Run it
+  after adding, removing or renaming a project, here or in a template (`--root templates/<template>`,
+  then delete the `obj/` folders the evaluation leaves under `templates/`).
 
 - `verify-release` packs this tree, installs it from the `.nupkg` into a template hive of its own,
   generates a repository from every template, `bbweb` in both variants, builds and tests each, and
