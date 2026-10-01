@@ -40,7 +40,27 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
     /// </remarks>
     [Fact]
     public void Grants_lists_every_assembly_by_its_assembly_name() =>
-        Assert.Equal(["Alpha", "Alpha.Tests", "OptedOut", "Shipped.Name"], _runs.Granted);
+        Assert.Equal(["Alpha", "Alpha.Tests", "OptedOut", "OptedOutCaps", "Shipped.Name"], _runs.Granted);
+
+    /// <remarks>MSBuild compares the link's condition case-insensitively, so the check must too.</remarks>
+    [Fact]
+    public void An_opt_out_spelled_False_is_an_opt_out() =>
+        Assert.DoesNotContain(Lines(_runs.Conforming), l => l.StartsWith("FAIL grants: OptedOutCaps", StringComparison.Ordinal));
+
+    /// <remarks>A raw string whose line begins with a grant's text, as CodeQuality's tests have one.</remarks>
+    [Fact]
+    public void A_raw_string_that_starts_a_line_with_a_grant_s_text_is_not_a_grant() =>
+        Assert.DoesNotContain(Lines(_runs.Conforming), l => l.Contains("RawString.cs", StringComparison.Ordinal));
+
+    /// <remarks>
+    /// ⛔ A multi-targeted project's outer evaluation holds none of its own Compile items, nor an item
+    /// conditioned on a framework: both grants passed unseen until each framework was evaluated.
+    /// </remarks>
+    [Theory]
+    [InlineData("FAIL grants: Multi: src/Multi/Grant.cs declares [assembly: InternalsVisibleTo]")]
+    [InlineData("FAIL grants: Multi declares its own grant to \"PerFramework\" in an <InternalsVisibleTo> item")]
+    public void A_multi_targeted_project_s_own_grant_fails(string finding) =>
+        Assert.Contains(finding, _runs.Defective, StringComparison.Ordinal);
 
     [Fact]
     public void Grants_writes_an_empty_External_file_when_there_is_none() =>
@@ -82,9 +102,21 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
     public void A_project_added_without_regenerating_fails() =>
         Assert.Contains("FAIL grants: AssemblyInfo.InternalsVisibleTo.cs is out of date", _runs.Defective, StringComparison.Ordinal);
 
+    /// <remarks>
+    /// A NOTE, never a FAIL: some family assemblies really carry the prefix. The note must say how to
+    /// silence it, with the exact line to write.
+    /// </remarks>
     [Fact]
-    public void A_root_namespace_in_the_External_file_fails() =>
-        Assert.Contains("grants \"Bennewitz.Ninja.Alpha\", a root namespace", _runs.Defective, StringComparison.Ordinal);
+    public void A_prefixed_name_in_the_External_file_is_a_note_that_says_how_to_silence_it()
+    {
+        Assert.Contains("NOTE grants: AssemblyInfo.InternalsVisibleTo.External.cs grants \"Bennewitz.Ninja.Alpha\", a prefixed name", _runs.Defective, StringComparison.Ordinal);
+        Assert.Contains("[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Bennewitz.Ninja.Alpha\")] // repo-conventions: assembly name", _runs.Defective, StringComparison.Ordinal);
+        Assert.DoesNotContain(Lines(_runs.Defective), l => l.StartsWith("FAIL grants: AssemblyInfo.InternalsVisibleTo.External.cs", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_prefixed_name_marked_as_checked_is_silent() =>
+        Assert.DoesNotContain("Bennewitz.Ninja.Marked", _runs.Defective, StringComparison.Ordinal);
 
     [Fact]
     public void A_nearer_targets_file_that_drops_the_link_fails() =>
@@ -94,6 +126,9 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
     [InlineData("FAIL grants: Stray declares its own grant to \"Somewhere\" in an <InternalsVisibleTo> item")]
     [InlineData("FAIL grants: Attribute declares its own grant to \"Elsewhere\" in an <AssemblyAttribute>")]
     [InlineData("FAIL grants: Source: src/Source/Grant.cs declares [assembly: InternalsVisibleTo]")]
+    [InlineData("FAIL grants: Listed: src/Listed/Grant.cs declares [assembly: InternalsVisibleTo]")]
+    [InlineData("FAIL grants: Split: src/Split/Grant.cs declares [assembly: InternalsVisibleTo]")]
+    [InlineData("FAIL grants: Aliased: src/Aliased/Grant.cs declares [assembly: InternalsVisibleTo]")]
     public void A_grant_a_project_declares_itself_fails_in_every_spelling(string finding) =>
         Assert.Contains(finding, _runs.Defective, StringComparison.Ordinal);
 
@@ -126,7 +161,7 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
 
         public Runs()
         {
-            string conforming = Fixture(["Alpha", "Alpha.Tests", "Renamed", "OptedOut"], solution: true, content: []);
+            string conforming = Fixture(["Alpha", "Alpha.Tests", "Renamed", "OptedOut", "OptedOutCaps"], solution: true, content: []);
             try
             {
                 (_, GrantsOutput) = Script(conforming, "grants");
@@ -146,11 +181,13 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
                 Directory.Delete(conforming, recursive: true);
             }
 
-            string defective = Fixture(["Alpha", "Stray", "Attribute", "Source", "Shadowed"], solution: true, content: []);
+            string defective = Fixture(["Alpha", "Stray", "Attribute", "Source", "Shadowed", "Multi", "Listed", "Split", "Aliased"], solution: true, content: []);
             try
             {
                 Script(defective, "grants");
-                Write(defective, External, "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Bennewitz.Ninja.Alpha\")]\n");
+                Write(defective, External,
+                    "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Bennewitz.Ninja.Alpha\")]\n"
+                    + "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Bennewitz.Ninja.Marked\")] // repo-conventions: assembly name\n");
                 AddProject(defective, "Late");
                 Defective = Check(defective);
             }
@@ -250,9 +287,33 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
                 Write(directory, "src/Alpha/Sample.cs",
                     "namespace Fixture;\n\ninternal static class Sample\n{\n    internal const string Text = \"[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\\\"X\\\")]\";\n}\n");
             }
+            if (projects.Contains("Alpha"))
+            {
+                // A raw string whose line begins with a grant's text: still only text.
+                Write(directory, "src/Alpha/RawString.cs",
+                    "namespace Fixture;\n\ninternal static class RawString\n{\n    internal const string Text = \"\"\"\n        [assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"NotAGrant\")]\n        \"\"\";\n}\n");
+            }
             if (projects.Contains("Source"))
             {
                 Write(directory, "src/Source/Grant.cs", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Elsewhere\")]\n");
+            }
+            if (projects.Contains("Multi"))
+            {
+                Write(directory, "src/Multi/Grant.cs", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"MultiGrant\")]\n");
+            }
+            if (projects.Contains("Listed"))
+            {
+                Write(directory, "src/Listed/Grant.cs",
+                    "[assembly: System.Reflection.AssemblyMetadata(\"k\", \"v\"), System.Runtime.CompilerServices.InternalsVisibleTo(\"ListedSecond\")]\n");
+            }
+            if (projects.Contains("Split"))
+            {
+                Write(directory, "src/Split/Grant.cs", "[assembly:\n    System.Runtime.CompilerServices.InternalsVisibleTo(\"SplitLine\")]\n");
+            }
+            if (projects.Contains("Aliased"))
+            {
+                Write(directory, "src/Aliased/Grant.cs",
+                    "using Ivt = System.Runtime.CompilerServices.InternalsVisibleToAttribute;\n\n[assembly: Ivt(\"Aliased\")]\n");
             }
             if (projects.Contains("Shadowed"))
             {
@@ -286,6 +347,11 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
             "Renamed" => Sdk("<AssemblyName>Shipped.Name</AssemblyName>"),
             // Opted out, with a grant of its own: allowed, and it is still a grantee.
             "OptedOut" => Sdk("<SolutionFriendGrants>false</SolutionFriendGrants>", "<ItemGroup><InternalsVisibleTo Include=\"Special\" /></ItemGroup>"),
+            // The same opt-out, capitalised as MSBuild accepts it.
+            "OptedOutCaps" => Sdk("<SolutionFriendGrants>False</SolutionFriendGrants>", "<ItemGroup><InternalsVisibleTo Include=\"Special\" /></ItemGroup>"),
+            // Multi-targeted: its own items exist only in each framework's evaluation.
+            "Multi" => Sdk("<TargetFramework></TargetFramework><TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>",
+                "<ItemGroup Condition=\"'$(TargetFramework)' == 'net10.0'\"><InternalsVisibleTo Include=\"PerFramework\" /></ItemGroup>"),
             "Stray" => Sdk("", "<ItemGroup><InternalsVisibleTo Include=\"Somewhere\" /></ItemGroup>"),
             "Attribute" => Sdk("",
                 "<ItemGroup><AssemblyAttribute Include=\"System.Runtime.CompilerServices.InternalsVisibleTo\"><_Parameter1>Elsewhere</_Parameter1></AssemblyAttribute></ItemGroup>"),
