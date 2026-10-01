@@ -24,11 +24,12 @@
     - a file-based app under scripts/ (FileBasedProgram, measured on SDK 10.0.401): linked, a missing
       or broken grant file would stop repo-conventions.cs itself compiling, so `grants` could never
       repair it;
-    - a template package, which compiles nothing.
+    - a template package, which compiles nothing;
+    - anything but a C# project, since the files are C#.
 
     `repo-conventions check` fails when a project that has not opted out does not compile both files.
   -->
-  <ItemGroup Condition="'$(SolutionFriendGrants)' != 'false' and '$(FileBasedProgram)' != 'true' and '$(PackageType)' != 'Template'">
+  <ItemGroup Condition="'$(SolutionFriendGrants)' != 'false' and '$(FileBasedProgram)' != 'true' and '$(PackageType)' != 'Template' and '$(MSBuildProjectExtension)' == '.csproj'">
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.InternalsVisibleTo.External.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.External.cs" />
   </ItemGroup>
