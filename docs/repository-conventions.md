@@ -180,17 +180,35 @@ complete replaces per-project grants that were each precise and together unknowa
 |---|---|
 | `AssemblyInfo.InternalsVisibleTo.cs` | **Generated** by `repo-conventions grants`, at the root: one grant per assembly, from each project's evaluated `AssemblyName`, sorted. Never edited by hand |
 | `AssemblyInfo.InternalsVisibleTo.External.cs` | **Written by hand**, at the root: grants to the maintainer's other repositories. `grants` writes an empty one when there is none, and never touches it after |
-| `Directory.Build.targets` | Links both into every project, never copied: in targets, so a `Compile Remove` in a csproj cannot drop them. Not into a project that opts out, a file-based app under `scripts/` (`FileBasedProgram`), or a template package |
+| `Directory.Build.targets` | Links both into every project, never copied: in targets, so a `Compile Remove` in a csproj cannot drop them. Not into a project that opts out, a file-based app under `scripts/` (`FileBasedProgram`), a template package, or a project that is not C# |
 
-**A name is an assembly name, never a root namespace.** Family assemblies are unprefixed
+**A name is an assembly name, never a root namespace.** Most family assemblies are unprefixed
 (`AppServices`), and a grant to `Bennewitz.Ninja.AppServices` compiles, ships and grants nothing.
-The generated file cannot make that mistake; `check` fails the External file on it.
+Some carry the prefix, though: AutoVersioning's, FileServer's, Geo.Core's, GeoHash's and
+TrueCourseCalculator's. The generated file cannot make the mistake. In the External file, `check`
+reports every prefixed name as a NOTE, never a failure, and the note shows how to silence it: once
+you have confirmed an assembly is named exactly that, end the grant's line with the comment
+`// repo-conventions: assembly name`.
+
+```csharp
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Bennewitz.Ninja.FileServer")] // repo-conventions: assembly name
+```
+
+A wrong name cannot pass unnoticed where it matters: the consumer that needs the grant fails to
+compile with `CS0122` the first time it uses an internal it was meant to reach.
 
 **A project opts out** with `<SolutionFriendGrants>false</SolutionFriendGrants>` in its csproj,
 where a reader sees it. It then links neither file and may declare grants of its own, and it still
 receives everyone else's: it stays in the generated list. This is also how a repository adopts the
 convention before it has converted every project: a project not yet converted opts out and keeps its
 grants. No other project declares a grant of its own, in any spelling.
+
+**Two projects with an internal type of the same full name now collide.** Once each sees the other's
+internals, a project referencing both, or one referencing the other, fails with `CS0436`, which
+warnings as errors makes an error. Polyfills are the usual cause: two multi-targeted projects that
+each carry an internal `NotNullWhenAttribute` for `netstandard2.0`, or a source generator that emits a
+fixed-name internal type into every project. Keep a polyfill in one project, scope a generated type to
+its file (`file class`), or opt one of the projects out. `check` cannot see this; the build does.
 
 **None of this is a security boundary.** A grant matches by assembly name. No family assembly is
 strong-named, and on modern .NET public signing satisfies a keyed grant without the private key, so
@@ -210,12 +228,16 @@ loads the published consumers beside the new build; how a provider finds them is
 |---|---|
 | `AssemblyInfo.InternalsVisibleTo.cs` is missing, or differs from what `grants` would write (line endings aside) | Run `grants` |
 | `AssemblyInfo.InternalsVisibleTo.External.cs` is missing | Run `grants`, which writes an empty one |
-| The External file names a `Bennewitz.Ninja.` namespace | Name the assembly |
 | A project that has not opted out does not compile both files | Add the link to the root `Directory.Build.targets`, import it from a nearer one that shadows it, or opt the project out |
 | A project that has not opted out declares a grant: an `<InternalsVisibleTo>` item, an `<AssemblyAttribute>` for it, or `[assembly: InternalsVisibleTo]` in a file it compiles | Delete it: the generated file already grants every assembly in the repository, and the External file takes the rest |
 
 These run wherever `check` evaluates the projects: offline, at the token and admin depths, and in
-the release preflight. `check --repo` cannot, reading through the API.
+the release preflight. `check --repo` cannot, reading through the API. A multi-targeted project is
+evaluated once per framework, since its outer evaluation holds none of its own source. The source
+scan reads code, not comments or string literals, and finds the attribute anywhere in an
+`[assembly: …]` section, across lines or under a `using` alias. It is still a reading of source, not
+of the compiled assembly; a repository that uses AssemblyQuality reads the compiled grants too, with
+BNAQ1005.
 
 ## `.github/repository.json`
 

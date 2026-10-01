@@ -966,9 +966,59 @@ static class Projects
                 findings.Add(Finding.Fail("props", $"{name} could not be evaluated: {Tail(output)}"));
                 continue;
             }
-            evaluated.Add(new Evaluated(project, name, properties, result["Items"], Role(properties)));
+            JsonNode? items = result["Items"];
+            if (Text(properties["TargetFramework"]).Length == 0 && Text(properties["TargetFrameworks"]) is { Length: > 0 } frameworks)
+            {
+                items = PerFramework(root, project, name, frameworks, items, findings);
+            }
+            evaluated.Add(new Evaluated(project, name, properties, items, Role(properties)));
         }
         return evaluated;
+    }
+
+    // ⛔ A multi-targeted project's outer evaluation has no TargetFramework, and holds none of the
+    // project's own Compile items, nor any item an ItemGroup conditions on a framework: a grant declared
+    // in its source passed unseen. So the items the grant checks read come from each framework's own
+    // evaluation, combined.
+    private static readonly string[] PerFrameworkTypes = ["Compile", "InternalsVisibleTo", "AssemblyAttribute"];
+
+    private static JsonNode? PerFramework(string root, string project, string name, string frameworks, JsonNode? outer, List<Finding> findings)
+    {
+        JsonObject merged = outer?.DeepClone() as JsonObject ?? new JsonObject();
+        Dictionary<string, (JsonArray Items, HashSet<string> Seen)> combined = [];
+        foreach (string type in PerFrameworkTypes)
+        {
+            combined[type] = (new JsonArray(), new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+        }
+
+        foreach (string framework in frameworks.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string[] arguments = ["msbuild", project, "-p:Configuration=Release", "-p:TargetFramework=" + framework,
+                .. PerFrameworkTypes.Select(t => "-getItem:" + t)];
+            (int exit, string output) = Shell.Run("dotnet", root, null, Ci, arguments);
+            if ((exit == 0 ? Parse(output) : null)?["Items"] is not JsonObject inner)
+            {
+                findings.Add(Finding.Fail("grants", $"{name} could not be evaluated for {framework}: {Tail(output)}"));
+                continue;
+            }
+            foreach (string type in PerFrameworkTypes)
+            {
+                foreach (JsonNode? item in inner[type]?.AsArray() ?? [])
+                {
+                    string key = Text(item?["FullPath"]) is { Length: > 0 } full ? full : Text(item?["Identity"]) + "|" + Text(item?["_Parameter1"]);
+                    if (item is not null && combined[type].Seen.Add(key))
+                    {
+                        combined[type].Items.Add(item.DeepClone());
+                    }
+                }
+            }
+        }
+
+        foreach (string type in PerFrameworkTypes)
+        {
+            merged[type] = combined[type].Items;
+        }
+        return merged;
     }
 
     /// <summary>
@@ -1164,12 +1214,119 @@ static class Grants
 
     private const string Regenerate = "dotnet run --file scripts/repo-conventions.cs -- grants";
 
-    // A grant declared in C#, in any spelling the compiler accepts for the attribute. ⚠ Anchored to the
-    // start of the line, where an assembly attribute stands: unanchored, the text inside a string
-    // literal matched too, and this repository's own GrantsTests failed its conventions job on it.
-    private static readonly Regex Declared = new(
-        @"^\s*\[\s*assembly\s*:\s*(global::)?(System\.Runtime\.CompilerServices\.)?InternalsVisibleTo(Attribute)?\s*\(",
+    /// <summary>Ends a line of the External file whose prefixed name is a real assembly's.</summary>
+    public const string PrefixChecked = "// repo-conventions: assembly name";
+
+    // A grant declared in C#, read from the code alone (Code strips comments and every literal): an
+    // [assembly: …] section anywhere, across lines, holding the attribute among others or under a
+    // `using` alias. ⛔ Each of these was a real miss, or a false finding, of a line-by-line match: a
+    // grant listed after another attribute, one split across lines, one through an alias, and a raw
+    // string literal whose line begins with the attribute's text (CodeQuality's tests carry one).
+    private static readonly Regex AssemblySection = new(@"\[\s*assembly\s*:(?<body>[^\]]*)\]", RegexOptions.CultureInvariant);
+
+    private static readonly Regex Alias = new(
+        @"\busing\s+(?<alias>\w+)\s*=\s*(global::)?(System\.Runtime\.CompilerServices\.)?InternalsVisibleTo(Attribute)?\s*;",
         RegexOptions.CultureInvariant);
+
+    private static bool DeclaresGrant(string source)
+    {
+        string code = Code(source);
+        string[] names = ["InternalsVisibleTo", "InternalsVisibleToAttribute", .. Alias.Matches(code).Select(m => m.Groups["alias"].Value)];
+        Regex attribute = new(
+            @"(?<![\w.])(global::)?(System\.Runtime\.CompilerServices\.)?(" + string.Join("|", names.Select(Regex.Escape)) + @")\s*\(",
+            RegexOptions.CultureInvariant);
+        return AssemblySection.Matches(code).Any(section => attribute.IsMatch(section.Groups["body"].Value));
+    }
+
+    /// <summary>
+    /// C# source with comments and every string or character literal blanked, so only code is left:
+    /// regular, verbatim (@), interpolated ($, $@, @$) and raw ("""…""", with any $ prefix).
+    /// </summary>
+    private static string Code(string text)
+    {
+        StringBuilder code = new(text.Length);
+        int i = 0;
+        while (i < text.Length)
+        {
+            char c = text[i];
+            char next = i + 1 < text.Length ? text[i + 1] : '\0';
+
+            if (c == '/' && next == '/')
+            {
+                while (i < text.Length && text[i] != '\n')
+                {
+                    i++;
+                }
+                continue;
+            }
+            if (c == '/' && next == '*')
+            {
+                int end = text.IndexOf("*/", i + 2, StringComparison.Ordinal);
+                i = end < 0 ? text.Length : end + 2;
+                code.Append(' ');
+                continue;
+            }
+            if (c == '\'')
+            {
+                i++;
+                while (i < text.Length && text[i] != '\'' && text[i] != '\n')
+                {
+                    i += text[i] == '\\' ? 2 : 1;
+                }
+                i++;
+                code.Append("' '");
+                continue;
+            }
+
+            // A string literal, after its $ and @ prefixes.
+            int start = i;
+            bool verbatim = false;
+            while (i < text.Length && (text[i] == '$' || text[i] == '@'))
+            {
+                verbatim |= text[i] == '@';
+                i++;
+            }
+            if (i >= text.Length || text[i] != '"')
+            {
+                i = start;
+                code.Append(c);
+                i++;
+                continue;
+            }
+
+            int quotes = 0;
+            while (i + quotes < text.Length && text[i + quotes] == '"')
+            {
+                quotes++;
+            }
+            if (quotes >= 3)
+            {
+                // Raw: closed by the same run of quotes.
+                int close = text.IndexOf(new string('"', quotes), i + quotes, StringComparison.Ordinal);
+                i = close < 0 ? text.Length : close + quotes;
+            }
+            else if (verbatim)
+            {
+                i++;
+                while (i < text.Length && !(text[i] == '"' && (i + 1 >= text.Length || text[i + 1] != '"')))
+                {
+                    i += text[i] == '"' ? 2 : 1;
+                }
+                i++;
+            }
+            else
+            {
+                i++;
+                while (i < text.Length && text[i] != '"' && text[i] != '\n')
+                {
+                    i += text[i] == '\\' ? 2 : 1;
+                }
+                i++;
+            }
+            code.Append("\"\"");
+        }
+        return code.ToString();
+    }
 
     private static readonly Regex Named = new(
         @"InternalsVisibleTo(Attribute)?\s*\(\s*""([^""]+)""", RegexOptions.CultureInvariant);
@@ -1182,11 +1339,12 @@ static class Grants
         // touches it after. Directory.Build.targets links it into every project that links
         // AssemblyInfo.InternalsVisibleTo.cs, so a name here sees the internals of every such project.
         //
-        // A name is an ASSEMBLY name, unprefixed ("AppServices"), never a root namespace
-        // ("Bennewitz.Ninja.AppServices"): that form compiles, ships and grants nothing, and
-        // `repo-conventions check` fails on it. An internal another repository uses is a promise: change
-        // it only together with a release of that repository. See docs/repository-conventions.md in
-        // Bennewitz.Ninja.Templates.
+        // A name is an ASSEMBLY name. Most family assemblies are unprefixed ("AppServices"), and a grant
+        // to the root namespace instead ("Bennewitz.Ninja.AppServices") compiles, ships and grants
+        // nothing. Some do carry the prefix (FileServer's, Geo.Core's): `repo-conventions check` notes
+        // every prefixed name, and a line ending `// repo-conventions: assembly name` marks one checked.
+        // An internal another repository uses is a promise: change it only together with a release of
+        // that repository. See docs/repository-conventions.md in Bennewitz.Ninja.Templates.
         //
         // [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AppServices")]
 
@@ -1251,17 +1409,27 @@ static class Grants
         }
         else
         {
-            foreach (string name in Names(external).Where(n => n.StartsWith("Bennewitz.Ninja.", StringComparison.Ordinal)))
+            // ⚠ A NOTE, not a FAIL (the maintainer's decision, 2026-10-01): a prefixed name is a root
+            // namespace by mistake for most family assemblies, but FileServer's, Geo.Core's and others'
+            // assemblies really carry the prefix, and a grant to one of them is right. A wrong name
+            // grants nothing, and fails the consumer's own build (CS0122) the moment it is used.
+            foreach (string line in Uncommented(external).Where(l => !l.Contains(PrefixChecked, StringComparison.Ordinal)))
             {
-                findings.Add(Finding.Fail("grants",
-                    $"{External} grants \"{name}\", a root namespace, not an assembly: family assemblies are unprefixed, so it grants nothing. Name the assembly."));
+                foreach (string name in Named.Matches(line).Select(m => m.Groups[2].Value).Where(n => n.StartsWith("Bennewitz.Ninja.", StringComparison.Ordinal)))
+                {
+                    findings.Add(Finding.Note("grants",
+                        $"{External} grants \"{name}\", a prefixed name. A grant matches an assembly's name, so this is right only if an assembly is named exactly \"{name}\" (FileServer's and Geo.Core's are; most family assemblies are unprefixed); a name no assembly has grants nothing. "
+                        + $"If it is wrong, name the assembly. If it is right, silence this note by ending that line with the comment `{PrefixChecked}`, so it reads: "
+                        + $"[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"{name}\")] {PrefixChecked}"));
+                }
             }
         }
 
         string[] linked = [Path.GetFullPath(Path.Combine(root, File)), Path.GetFullPath(Path.Combine(root, External))];
         foreach (Evaluated project in projects.Where(p => p.Role != "template"))
         {
-            if (project.Value(OptOut) == "false")
+            // Case-insensitive, as MSBuild compares the link's condition: "False" unlinks the files too.
+            if (string.Equals(project.Value(OptOut), "false", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -1286,7 +1454,7 @@ static class Grants
 
             foreach (string file in compiled.Where(f => !linked.Contains(f, StringComparer.OrdinalIgnoreCase) && System.IO.File.Exists(f)))
             {
-                if (Uncommented(System.IO.File.ReadAllText(file)).Any(Declared.IsMatch))
+                if (DeclaresGrant(System.IO.File.ReadAllText(file)))
                 {
                     findings.Add(Finding.Fail("grants",
                         $"{project.Name}: {System.IO.Path.GetRelativePath(root, file).Replace('\\', '/')} declares [assembly: InternalsVisibleTo]. {OwnGrant}"));
