@@ -7,38 +7,33 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 ## Resume
 
 *Replaced, never appended, at each handoff. Written 2026-10-01, after `2c764dd` on `main`, with no
-pull request open.*
+pull request open; item 1 then closed by `2026.3.1001`, released and verified from the feed the same
+day (see `plans/00006`).*
 
 **Next, in order:**
-1. **Release `Bennewitz.Ninja.Templates`, on the maintainer's word only**, versioned by the day it is
-   tagged (`v2026.3.1001` if 2026-10-01). `2026.3.928` is the last published. It ships what has merged
-   since: the friend grants of [`plans/00006`](plans/00006-solution-friend-grants.md) with the review's
-   fixes (#20, #22), `bbavalonia` on AssemblyQuality 2026.3.929 with BNAQ1005 and on XamlQuality
-   2026.3.928 with BNXQ1007 (#13, #15, #17). Use the `package-release` skill: preflight, tag on `main`,
-   verify from nuget.org with `verify-release --published`.
-2. **After that release, tell the family it can adopt the friend grants** on its next sync of the
+1. **`2026.3.1001` is out, so tell the family it can adopt the friend grants** on its next sync of the
    conventions script: AppServices, FileServer and ScopedEditors (each documents "grants to tests
    only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
    an External file needs the `// repo-conventions: assembly name` marker). A trial in a copy of
    AppServices on 2026-09-30 found exactly its 3 real grants and built and tested clean.
-3. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
+2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md), `bbconsole` and one entry
    point for every app: approved 2026-09-29; steps 2–4 wait for AppServices' helper.** AppServices'
    own `plans/00001` was approved 2026-09-30 and is being built in JanusMael/Bennewitz.Ninja.AppServices#8:
    package `Bennewitz.Ninja.AppServices.EntryPoint`, `AppMain.RunConsoleAsync`/`RunHostAsync`/
    `RunDesktop`. AppServices messages when its release is verified. Two drift entries are in the
    plan's section below: `WebApplicationFactory` never throws `HostAbortedException`, and a crash on
    another thread keeps the runtime's exit code.
-4. **The trimming enforcement, a plan after `00007` is under way.** Side 1, the repository's own
+3. **The trimming enforcement, a plan after `00007` is under way.** Side 1, the repository's own
    libraries, is this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository
    restores, XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as
    a patch against the canonical script once it has confirmed the split in its own session. Whether
    `"trimming": "required"` stays is for that plan.
-5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+4. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
    2026-09-28).
-6. **Undecided:** a conventions rule that a release never globs `*.nupkg` (the FileServer audit showed
+5. **Undecided:** a conventions rule that a release never globs `*.nupkg` (the FileServer audit showed
    the check cannot see it); an analyzer template (`git diff e457b5d v2026.3.925` in
    JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed); a family
    AssemblyQuality reference in `bbpkg`, `bbweb` and `bbapi`, which would let them call BNAQ1005 too.
@@ -1005,6 +1000,17 @@ The rollout's escape hatch is the per-project opt-out, with no repository-wide s
 | 3 · `verify-release` covers the grant list | **done**, same branch | `verify-release` passes, every generated repository's offline check clean of grant findings; a stale list fails its check (`GrantsTests`) |
 | 4 · This repository adopts it | **done**, same branch | A root `Directory.Build.targets`, the two files (`Templates.Tests` alone: the packaging project is a template), and the script copy. `check --offline` here conforms |
 | 5 · `bbavalonia` calls BNAQ1005 | **done**, same branch | AssemblyQuality 2026.3.929; the allowed names are the two grant files' own. A generated `bbavalonia` passes 17 of 17; with a grant to `Nobody.Ships.This` planted in its source, BNAQ1005 fails, and so does its own conventions check |
+
+✅ **Released as `Bennewitz.Ninja.Templates 2026.3.1001`**, 2026-10-01, tag `v2026.3.1001` at
+`fb51c6c`, on the maintainer's word. It carries the friend grants with the review's fixes (#20, #22)
+and `bbavalonia` on AssemblyQuality 2026.3.929 and XamlQuality 2026.3.928 (#13, #15, #17). Before the
+tag: `verify-release` passed locally on `fb51c6c`, CI on `main` was green, and the blank-version
+preflight logged in and pushed nothing. Verified from the feed rather than the green run: the
+nuget.org flat-container lists `2026.3.1001`; the `.nupkg` downloaded from it carries 198 content
+entries across the four templates, each with `AssemblyInfo.InternalsVisibleTo.cs` and its `External`
+twin, and `bbavalonia` pins AssemblyQuality 2026.3.929 and XamlQuality 2026.3.928; and
+`verify-release --published 2026.3.1001` installed it from nuget.org, and all five generated
+repositories built, passed their tests and published for win-x64.
 
 ### Drift from `plans/00006`
 
