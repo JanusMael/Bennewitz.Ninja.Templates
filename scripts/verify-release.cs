@@ -829,6 +829,21 @@ string? Publish(Case entry, string generated)
         return $"The publish reported success but left no executable at '{executable}'.";
     }
 
+    // A native binary's symbols are files of their own, which its release archives beside it. The
+    // file is the one release.yml names for this platform, so a publish that stops writing it fails
+    // here rather than in the release.
+    if (entry.Publish == PublishKind.Native)
+    {
+        string symbols = Path.Combine(output, stem + (OperatingSystem.IsWindows() ? ".pdb" : OperatingSystem.IsMacOS() ? ".dSYM" : ".dbg"));
+
+        if (!File.Exists(symbols) && !Directory.Exists(symbols))
+        {
+            return $"The native publish left no symbols at '{symbols}', which the release archives beside the binary.";
+        }
+
+        Console.WriteLine($"  native symbols beside it: {Path.GetFileName(symbols)}");
+    }
+
     string? failure = entry.Publish switch
     {
         PublishKind.Console => RunConsole(executable, output),

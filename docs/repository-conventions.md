@@ -154,11 +154,12 @@ order matters: an xUnit v3 test project is a non-packable executable.
 | `AssemblyCompany` | `Bennewitz.Ninja` | |
 | `AutoVersioning` | references `Bennewitz.Ninja.AutoVersioning` at `2026.3.916` or later, with `GenerateAutoVersionedAssemblyInfo` `true` | |
 | `IsContinuousIntegration` | unset | |
+| `DebugType` | `embedded` in Release, so whatever ships carries its own symbols; a template package is not held to it | |
+| `DebugSymbols` | in Debug, `DebugType` `portable` (a `.pdb` beside the assembly) or `embedded`, never `none`; read from a second, Debug evaluation | |
 | `Authors` | | set |
 | `PackageLicenseExpression` | | `MIT` |
 | `RepositoryUrl` | | names this repository |
 | `PackageReadmeFile` | | set, so nuget.org shows a README; any name, and `dotnet pack` itself fails (`NU5039`) when the named file is not packed |
-| `DebugType` | | `embedded` in Release |
 
 **Trimming** is a stage. A library without `IsTrimmable` and `EnableTrimAnalyzer` is a NOTE until
 `repository.json` says `"trimming": "required"`, and then it fails. Apps and tools are not held to

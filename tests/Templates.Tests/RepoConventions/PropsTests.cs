@@ -82,6 +82,22 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
         Assert.Contains("FAIL props: NotTrimmable is not yet trimmable", _runs.Required, StringComparison.Ordinal);
     }
 
+    /// <summary>Every project that compiles embeds its symbols in Release, an app as much as a package.</summary>
+    [Fact]
+    public void An_app_without_symbols_in_Release_is_caught() =>
+        Assert.Contains("FAIL props: AppWithoutSymbols (app): builds Release with DebugType \"none\"", _runs.Defective, StringComparison.Ordinal);
+
+    /// <remarks>
+    /// ⛔ The project is correct in Release, which is how every other rule evaluates it; a check that
+    /// read only Release would pass it.
+    /// </remarks>
+    [Fact]
+    public void A_project_without_symbols_in_Debug_is_caught()
+    {
+        Assert.Contains("FAIL props: DebugWithoutSymbols (library): builds Debug with DebugType \"none\"", _runs.Defective, StringComparison.Ordinal);
+        Assert.DoesNotContain(Lines(_runs.Defective), l => l.StartsWith("FAIL props: DebugWithoutSymbols (library): builds Release", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void A_conforming_project_beside_broken_ones_is_not_blamed() =>
         Assert.DoesNotContain(Lines(_runs.Defective), l => l.StartsWith("FAIL props: Good", StringComparison.Ordinal));
@@ -114,7 +130,7 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     public sealed class Runs
     {
         private static readonly string[] Conforming_ = ["Good", "GoodTests", "GoodApp", "GoodTool", "OtherReadme"];
-        private static readonly string[] Broken = ["Override", "CiProperty", "OldAutoVersioning", "NoReadme", "NotTrimmable"];
+        private static readonly string[] Broken = ["Override", "CiProperty", "OldAutoVersioning", "NoReadme", "NotTrimmable", "AppWithoutSymbols", "DebugWithoutSymbols"];
 
         public Runs()
         {
@@ -231,6 +247,11 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
             "NoReadme" => Sdk("<IsPackable>true</IsPackable><PackageReadmeFile></PackageReadmeFile>"),
             "OtherReadme" => Sdk("<IsPackable>true</IsPackable><PackageReadmeFile>hosting-guide.md</PackageReadmeFile>"),
             "NotTrimmable" => Sdk("<IsPackable>true</IsPackable><IsTrimmable>false</IsTrimmable>"),
+            // An app was not held to DebugType before: Release symbols were a package rule.
+            "AppWithoutSymbols" => Sdk("<IsPackable>false</IsPackable><OutputType>Exe</OutputType><PackageReadmeFile></PackageReadmeFile><DebugType>none</DebugType>"),
+            // Correct in Release, as every rule reads it; only the Debug evaluation can see this.
+            "DebugWithoutSymbols" => Sdk("<IsPackable>true</IsPackable>",
+                "<PropertyGroup Condition=\"'$(Configuration)' == 'Debug'\"><DebugType>none</DebugType></PropertyGroup>"),
             _ => Sdk("<IsPackable>true</IsPackable>"),
         };
 

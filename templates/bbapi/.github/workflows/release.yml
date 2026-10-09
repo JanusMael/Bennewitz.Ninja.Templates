@@ -102,19 +102,29 @@ jobs:
           --nologo -p:Version=${{ needs.verify.outputs.version }} -p:CommitSha=${{ github.sha }}
           -o publish/${{ matrix.rid }}
 
-      # The executable and its settings file; not the symbols (.dbg, .pdb, .dSYM), which only a
-      # debugger reads.
+      # Two archives per runtime identifier: the executable and its settings file, which is what a user
+      # runs, and the native symbols beside it, which is what makes a crash dump from that binary
+      # readable. A native binary's symbols are its own files, not embedded: ApiStem.pdb on Windows,
+      # ApiStem.dbg on Linux, the ApiStem.dSYM bundle on macOS. A missing one fails the release.
       - name: Archive
         shell: bash
         run: |
           set -euo pipefail
           name="ApiStem-${{ needs.verify.outputs.version }}-${{ matrix.rid }}"
           cd "publish/${{ matrix.rid }}"
+          case "${{ matrix.rid }}" in
+            win-*) symbols=ApiStem.pdb ;;
+            linux-*) symbols=ApiStem.dbg ;;
+            osx-*) symbols=ApiStem.dSYM ;;
+          esac
+          test -e "$symbols"
           if [[ "${{ matrix.archive }}" == zip ]]; then
             7z a -tzip "../../${name}.zip" ApiStem.exe appsettings.json
+            7z a -tzip "../../${name}-symbols.zip" "$symbols"
           else
             chmod +x ApiStem
             tar -czf "../../${name}.tar.gz" ApiStem appsettings.json
+            tar -czf "../../${name}-symbols.tar.gz" "$symbols"
           fi
 
       - name: Upload
@@ -142,8 +152,9 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      # One asset per runtime identifier, named, never globbed: a missing one fails here rather than
-      # shipping a release without that platform, and nothing unnamed is attached.
+      # Two assets per runtime identifier, the binary and its symbols, named, never globbed: a missing
+      # one fails here rather than shipping a release without that platform, and nothing unnamed is
+      # attached.
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -151,8 +162,12 @@ jobs:
           set -euo pipefail
           version="${{ needs.verify.outputs.version }}"
           assets=()
-          for rid in win-x64 win-arm64; do assets+=("artifacts/ApiStem-${version}-${rid}.zip"); done
-          for rid in linux-x64 linux-arm64 osx-x64 osx-arm64; do assets+=("artifacts/ApiStem-${version}-${rid}.tar.gz"); done
+          for rid in win-x64 win-arm64; do
+            assets+=("artifacts/ApiStem-${version}-${rid}.zip" "artifacts/ApiStem-${version}-${rid}-symbols.zip")
+          done
+          for rid in linux-x64 linux-arm64 osx-x64 osx-arm64; do
+            assets+=("artifacts/ApiStem-${version}-${rid}.tar.gz" "artifacts/ApiStem-${version}-${rid}-symbols.tar.gz")
+          done
           ls -l "${assets[@]}"
           gh release create "${{ needs.verify.outputs.tag }}" --title "ApiStem ${version}" --generate-notes \
             --target "${{ github.sha }}" "${assets[@]}"
