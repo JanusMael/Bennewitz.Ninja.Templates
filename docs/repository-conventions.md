@@ -6,8 +6,8 @@ prescribed. [`scripts/repo-conventions.cs`](../scripts/repo-conventions.cs) is h
 every repository carries a copy, and its CI runs the copy on every push and pull request.
 
 A repository generated from any of the family's templates starts with all of it in place: `bbpkg`
-for a NuGet package, `bbavalonia` for an Avalonia desktop app, `bbweb` for a Kestrel web site and
-`bbapi` for a Kestrel API. What generation
+for a NuGet package, `bbavalonia` for an Avalonia desktop app, `bbweb` for a Kestrel web site,
+`bbapi` for a Kestrel API and `bbconsole` for a console app. What generation
 cannot know is left as a marker, and CI stays red until every marker is gone. A repository that was
 not generated from the template adopts the same files by hand; see
 [Bringing an existing repository in](#bringing-an-existing-repository-in).
@@ -294,8 +294,8 @@ binds to the project instead.
 
 What generation does is marked ✅; the rest is yours.
 
-1. ✅ `dotnet new <template> -n <Stem> --RepoOwner <owner>`, with `bbpkg`, `bbavalonia`, `bbweb`
-   or `bbapi`, writes every file in the table above. An app template also takes `--RepoName` when
+1. ✅ `dotnet new <template> -n <Stem> --RepoOwner <owner>`, with `bbpkg`, `bbavalonia`, `bbweb`,
+   `bbapi` or `bbconsole`, writes every file in the table above. An app template also takes `--RepoName` when
    the repository is not named after the app, and `bbweb` takes `--blazor`.
 2. Create the GitHub repository and push `main`. CI goes red on the `conventions` job, listing
    every gap. That is expected.

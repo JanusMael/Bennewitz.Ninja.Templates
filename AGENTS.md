@@ -6,10 +6,13 @@
 
 ## What this repository is
 
-The `bbpkg` template, shipped two ways: as the NuGet package `Bennewitz.Ninja.Templates`
-(`dotnet new bbpkg`) and as a GitHub template repository. A generated repository publishes .NET
-packages to nuget.org through trusted publishing, with CI, a release workflow, the two-list
-packaging guard, and the family's documentation and conventions.
+The family's `dotnet new` templates, shipped as one NuGet package, `Bennewitz.Ninja.Templates`, and
+only that way: the repository stopped being a GitHub template on 2026-09-28. `bbpkg` generates a
+repository that publishes .NET packages to nuget.org through trusted publishing, with the two-list
+packaging guard; `bbavalonia`, `bbweb`, `bbapi` and `bbconsole` generate apps released on GitHub
+Releases, each starting through the shared entry point in Bennewitz.Ninja.AppServices.EntryPoint.
+Every generated repository carries CI, a release workflow, and the family's documentation and
+conventions.
 
 It is also where the family's conventions are prescribed:
 [`docs/repository-conventions.md`](docs/repository-conventions.md), enforced by
@@ -19,7 +22,7 @@ It is also where the family's conventions are prescribed:
 
 | Directory | What it holds |
 |---|---|
-| `templates/` | The shipped content. `templates/bbpkg/` is the template; nothing beneath it describes this repository |
+| `templates/` | The shipped content, one folder per template; nothing beneath them describes this repository |
 | `scripts/` | File-based apps: the release gate, the packaging guard, the conventions check, and a test-suite converter |
 | `tests/` | `Templates.Tests`, which reads this repository's files and runs its scripts |
 | `docs/` | The conventions, runbooks, and records of past decisions |
