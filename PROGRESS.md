@@ -17,9 +17,10 @@ day (see `plans/00006`).*
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
    an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
    adopted them (JanusMael/Bennewitz.Ninja.AppServices#9, released in `2026.4.1001`).
-2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md) steps 2 and 3 can start:
-   AppServices' helper is released** as `Bennewitz.Ninja.AppServices.EntryPoint 2026.4.1001` (step 1,
-   see the plan's section below for the API and the drift its templates must know).
+2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md) step 3**: `bbweb`, `bbapi` and
+   `bbavalonia` call AppServices' helper (`Bennewitz.Ninja.AppServices.EntryPoint 2026.4.1001`), and
+   `verify-release` runs each published app once with a `Program` that throws on start-up. Step 2,
+   `bbconsole`, is done; see the plan's section below for the API and the drift.
 3. **The trimming enforcement, a plan after `00007` is under way.** Side 1, the repository's own
    libraries, is this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository
    restores, XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as
@@ -1061,11 +1062,27 @@ stderr, as the draft had claimed, and that the helper must survive `WebApplicati
 | Step | State | Notes |
 |---|---|---|
 | 1 · AppServices ships the helper | **done** 2026-10-01 | `2026.4.1001`, tag `v2026.4.1001` at `03ebb64`, built in JanusMael/Bennewitz.Ninja.AppServices#8. Checked here, not taken on report: all five AppServices ids list `2026.4.1001` in the nuget.org flat-container, `.EntryPoint` among them, and the release run and the required `aot-linux` and `aot-windows` jobs are green on `03ebb64`. AppServices reports a warning-free native AOT publish on both, the probe's contract passing 18 of 18 on Linux, including real SIGINT and SIGTERM, and 14 on win-x64 with the 4 signal cases skipped |
-| 2 · `bbconsole` and its `verify-release` case | ready | |
+| 2 · `bbconsole` and its `verify-release` case | **done** 2026-10-09 | `templates/bbconsole`, stem `CliStem`: one console project calling `AppMain.RunConsoleAsync`, an example command counting lines (`LineCount`), and `CommandLineTests`, which run the built executable as a child process: exit 0 with the count on stdout, `--version` printing `PublicVersion`, 2 with the usage for an unknown option and for no file, 1 with the report for a missing file, and 130 after SIGINT, skipped on Windows. Trimmed and single-file with ILLink's warnings as errors, no baseline; the release publishes six runtime identifiers from Linux; CI's `publish` job publishes linux-x64 and runs it. `verify-release` gains its case and a `Console` publish kind, which runs the published binary: `--version` must print exactly the published version, and an unknown option must exit 2 with the usage on stderr and nothing on stdout. Verified: 10 of 10 tests on Linux (WSL, SDK 10.0.401), 9 and the SIGINT skip on Windows; a trimmed linux-x64 publish with no warnings, 13 MB; `verify-release` passes, all six generated repositories, 244 package entries in five templates; 105 of 105 root tests. Canaried: `--version` changed to print the informational version fails the generated repository's own test (actual "Built with ♥"), and with that test silenced, fails `verify-release`'s check of the published binary |
 | 3 · The other app templates call the helper | ready | |
 | 4 · Documents, and a release | waits for steps 2 and 3 | |
 
 ### Drift from `plans/00007`
+
+**Decision 9's exit-1 case is a missing file, not a test-only argument.** The example command
+counts lines, so a path that does not exist is a real failure it does not handle:
+`FileNotFoundException` escapes and the entry point reports it and exits 1. A flag that exists only for
+tests would ship in every generated app.
+
+⛔ **A read from standard input never saw Ctrl+C, and only Linux showed it.** `Console.In` is a
+synchronised reader whose `ReadLineAsync` runs synchronously, so the work blocked inside the read and
+`WaitAsync` on the token was never reached: measured in WSL, the app was still waiting 5 s after
+SIGINT, and the test timed out at 30 s. On Windows the test is skipped, so a Windows run alone passes.
+Standard input is now read on a thread of its own, and the wait for it observes the token: exit 130,
+and the test passes. ⓘ The harness has a trap of its own: a non-interactive bash starts a background
+job with SIGINT ignored, so a by-hand reproduction needs `set -m`.
+
+**CI's job that publishes and runs the binary is `publish`**, a required check beside `build` and
+`conventions`; `bbavalonia`'s equivalent is `trim`, which holds a baseline this template does not have.
 
 ⛔ **Decision 3's reason and step 3's verification are wrong about `WebApplicationFactory`.** Found
 by AppServices on 2026-09-30 in the .NET 10 sources: `WebApplicationFactory` resolves the entry point

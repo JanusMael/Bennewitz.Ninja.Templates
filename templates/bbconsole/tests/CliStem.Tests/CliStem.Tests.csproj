@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <!-- The app itself, built beside the tests, which run it as a child process: an exit code and
+         the two streams can only be seen from outside the process. -->
+    <ProjectReference Include="../../src/CliStem/CliStem.csproj" />
+  </ItemGroup>
+</Project>

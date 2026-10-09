@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # PublishTrimmed in the app's project runs the trim analyser on this build too, so the app's
+      # own code is held to trim safety here, with warnings as errors.
+      - name: Build
+        run: dotnet build CliStem.slnx -c Release --nologo -warnaserror
+
+      # The tests run the built executable as a child process. On Linux that includes Ctrl+C, sent
+      # as SIGINT, which is the only place it is verified.
+      - name: Test
+        run: dotnet test --solution CliStem.slnx --no-build -c Release
+
+  # ⭐ The trimmed single-file binary a release ships, published and run on every push. ILLink's
+  # warnings are errors, so a dependency that trimming would break fails here rather than in a
+  # user's hands, and the binary is asked for its version and given a bad option, as a script would.
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Publish trimmed
+        run: >
+          dotnet publish src/CliStem/CliStem.csproj -c Release -r linux-x64 --self-contained
+          --nologo -o publish/linux-x64
+
+      - name: Run what was published
+        run: |
+          set -euo pipefail
+          app=publish/linux-x64/CliStem
+          "$app" --version
+          printf 'one\ntwo\n' > two-lines.txt
+          test "$("$app" two-lines.txt)" = "$(printf '2\ttwo-lines.txt')"
+          code=0; "$app" --no-such-option 2> usage.txt || code=$?
+          test "$code" = 2
+          grep -q 'Usage:' usage.txt
+
+  # The family conventions: documentation at the root and in every top-level directory, the
+  # description, topics, feature toggles and rulesets. See docs/repository-conventions.md in
+  # Bennewitz.Ninja.Templates.
+  #
+  # ⭐ Red on a freshly generated repository, listing every gap, until each one is closed.
+  #
+  # ⚠ The job name is a required check in .github/repository.json. Renaming it means changing that
+  # list and running `repo-conventions apply` in the same change, or every pull request blocks.
+  conventions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Check the repository conventions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check

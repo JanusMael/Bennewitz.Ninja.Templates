@@ -12,12 +12,13 @@ instructions for a generated repository, not for this one.
 | `bbavalonia/` | An Avalonia desktop app, trimmed and single-file |
 | `bbweb/` | A Kestrel web site on MVC views; `--blazor` adds interactive server components |
 | `bbapi/` | A Kestrel API on minimal APIs, compiled with native AOT |
+| `bbconsole/` | A console app, trimmed and single-file, on the family's shared entry point |
 
 ## Rules
 
 | Rule | Why | Guarded by |
 |---|---|---|
-| Each template's stem (`PkgStem`, `AppStem`, `SiteStem`, `ApiStem`, in either case), `PKG_ID`, `REPO_OWNER` and `REPO_NAME` are placeholders, substituted at generation | Written literally anywhere under a template, they become the generated repository's names | `verify-release`, placeholder check, in every template |
+| Each template's stem (`PkgStem`, `AppStem`, `SiteStem`, `ApiStem`, `CliStem`, in either case), `PKG_ID`, `REPO_OWNER` and `REPO_NAME` are placeholders, substituted at generation | Written literally anywhere under a template, they become the generated repository's names | `verify-release`, placeholder check, in every template |
 | The `<!-- bbpkg: … -->` markers are intended | They are what the generated repository's `check` reports until someone replaces them. This repository's `repository.json` lists `templates/bbpkg` under `content`, so its own `check` skips them | `repo-conventions check` |
 | A file every generated repository must have is on `verify-release`'s required list for its template | Removed from the template, it would ship nowhere, and nothing else fails | `verify-release`, `Required` per case |
 | Every template has a case in `verify-release` | A template without one would ship without ever being generated, built or tested | `verify-release` fails when `templates/` and its cases disagree |

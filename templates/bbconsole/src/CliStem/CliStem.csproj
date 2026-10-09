@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- An app is run, not referenced: it releases as binaries on GitHub Releases, never as a package. -->
+    <IsPackable>false</IsPackable>
+    <AssemblyName>CliStem</AssemblyName>
+    <!-- No culture data: a self-contained Linux binary would otherwise need libicu on every machine it
+         runs on, and fail at start without it. Every string here is formatted invariantly anyway. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    The release is self-contained, single-file and trimmed, one binary per runtime identifier. The
+    runtime identifier and self-containment come from the publish command (see release.yml), so a
+    plain build and the test project that references this one stay framework-dependent.
+
+    ⭐ PublishTrimmed also turns the trim analyser on for every BUILD, so this app's own code is held
+    to trim safety on each push, with warnings as errors.
+
+    ⛔ ILLink's warnings are errors too, with no baseline. A console app has no UI framework whose
+    warnings would have to be held to one, so a trim warning in a publish is this app's or a
+    dependency's defect, and the publish fails on it rather than shipping a binary that may break.
+  -->
+  <PropertyGroup>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- One warning per site rather than one per assembly, so a failure names the call. -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <ILLinkTreatWarningsAsErrors>true</ILLinkTreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The entry point every family app shares: exit codes, the fatal report, Ctrl+C, the version flag. -->
+    <PackageReference Include="Bennewitz.Ninja.AppServices.EntryPoint" />
+  </ItemGroup>
+</Project>
