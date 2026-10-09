@@ -1,7 +1,7 @@
 # Bennewitz.Ninja.Templates
 
 `dotnet new` templates for Bennewitz.Ninja repositories: a NuGet package published through
-**Trusted Publishing (OIDC)**, with no long-lived API key anywhere, and three kinds of app. Every
+**Trusted Publishing (OIDC)**, with no long-lived API key anywhere, and four kinds of app. Every
 repository they generate builds with warnings as errors, passes its own tests, and meets the family's
 [repository conventions](https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/repository-conventions.md) from its first commit.
 
@@ -15,13 +15,21 @@ dotnet new install Bennewitz.Ninja.Templates
 | `bbavalonia` | An Avalonia desktop app: MVVM, the Semi theme, named controls and headless UI tests, published trimmed and single-file against a warning baseline | GitHub Releases, one binary per runtime |
 | `bbweb` | A Kestrel web site on MVC views, with `/healthz` and `/version`; `--blazor` adds interactive server components | GitHub Releases, single-file per runtime; a container image built in CI |
 | `bbapi` | A Kestrel API on minimal APIs with OpenAPI, compiled with native AOT | GitHub Releases, native per runtime; a chiseled container image built in CI |
+| `bbconsole` | A console app with an example command, tested by running the executable for its exit codes and streams, published trimmed and single-file with trim warnings as errors | GitHub Releases, one binary per runtime |
 
 ```bash
 dotnet new bbpkg -n Widget --RepoOwner JanusMael
 dotnet new bbavalonia -n Notebook --RepoOwner JanusMael
 dotnet new bbweb -n Gallery --RepoOwner JanusMael --blazor
 dotnet new bbapi -n Catalog --RepoOwner JanusMael
+dotnet new bbconsole -n Tally --RepoOwner JanusMael
 ```
+
+Every app starts through one entry point,
+[`Bennewitz.Ninja.AppServices.EntryPoint`](https://www.nuget.org/packages/Bennewitz.Ninja.AppServices.EntryPoint):
+an unhandled exception is reported on stderr and exits 1, `--version` prints the release version, and
+a console app exits 2 on a usage error and 130 on Ctrl+C. It is a package rather than template text, so
+a fix reaches every app already generated with a package update.
 
 ⚠ **`-n` takes the unprefixed stem.** `-n Widget` produces assembly `Widget` and package id
 `Bennewitz.Ninja.Widget`, which is the convention across these repos. Passing the full id instead
