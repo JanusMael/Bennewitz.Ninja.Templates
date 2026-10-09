@@ -1,6 +1,8 @@
 # Releasing ApiStem
 
-A release is one native executable per platform, with its settings file, attached to a GitHub
+A release is one native executable per platform, with its settings file, and beside it that
+platform's native symbols as an archive of their own (`ApiStem-<version>-<rid>-symbols`), which is
+what makes a crash dump from the binary readable. Both are attached to a GitHub
 Release. Nothing goes to nuget.org, and no credential needs setting up: the workflow's own token
 creates the release. The container image CI builds is pushed nowhere; pushing it to a registry, and
 deploying it, is a workflow this repository adds when it has somewhere to go.

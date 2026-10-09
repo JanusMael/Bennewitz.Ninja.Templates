@@ -25,8 +25,8 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
 5. **The release, on the maintainer's word only, once 1–3 and `plans/00008`'s side 1 have landed.** It
    carries `bbconsole`, the shared entry point in every app, AutoVersioning `2026.3.928` and Avalonia
-   `12.1.4`, the no-glob rule, AssemblyQuality in every template, and the trimming enforcement's side
-   1. Verified from nuget.org: `dotnet new list` shows five templates, `verify-release --published`
+   `12.1.4`, symbols in both configurations with `bbapi`'s native symbols released, the no-glob rule,
+   AssemblyQuality in every template, and the trimming enforcement's side 1. Verified from nuget.org: `dotnet new list` shows five templates, `verify-release --published`
    passes.
 6. **After that release, one note to each family repository** that can adopt the friend grants and the
    release's other conventions on its next sync: FileServer and ScopedEditors (each documents "grants
@@ -1187,3 +1187,26 @@ plan is unblocked the same day.
 ### Drift from `plans/00008`
 
 None yet.
+
+## Symbols in both configurations — outside the plans
+
+Asked for by the maintainer on 2026-10-09: every template generates or embeds PDBs in Debug and in
+Release. Every template's `Directory.Build.props` already did, `portable` in Debug and `embedded` in
+Release, with no project overriding it. Two gaps were closed:
+
+- **`bbapi`'s native symbols were thrown away at every release.** A native binary's symbols are files of
+  their own (`.pdb` on Windows, `.dbg` on Linux, the `.dSYM` bundle on macOS), and the release archived
+  only the executable and its settings. They are now a second asset per runtime identifier,
+  `ApiStem-<version>-<rid>-symbols`, named in the release like the binary; a missing one fails the
+  release. `verify-release` asserts the native publish writes this platform's file.
+- **The conventions held only libraries and tools to symbols, and only in Release.** `DebugType` is now
+  `embedded` in Release for every project but a template package, and a new rule, `DebugSymbols`, reads
+  a second, Debug evaluation and requires `portable` or `embedded`. `PropsTests` gains an app without
+  Release symbols and a library without Debug symbols; both fail against the previous script, and
+  every other case is unchanged (18 of 18).
+
+⚠ **`DebugSymbols` does not decide whether symbols are emitted; `DebugType` does.** Measured on SDK
+10.0.401: with `DebugType` `embedded`, Release evaluates `DebugSymbols` to `false` by default and the PDB
+is embedded all the same. The first version of the rule also required `DebugSymbols` not to be `false`,
+and failed every correct project in the fixtures. The rule is named `DebugSymbols` for what it protects;
+it reads `DebugType`.

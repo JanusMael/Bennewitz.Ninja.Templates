@@ -878,7 +878,7 @@ static class Settings
 /// fail on that property locally.
 /// </remarks>
 /// <summary>One project as MSBuild evaluated it, the way CI builds it.</summary>
-sealed record Evaluated(string Path, string Name, JsonObject Properties, JsonNode? Items, string Role)
+sealed record Evaluated(string Path, string Name, JsonObject Properties, JsonNode? Items, string Role, JsonObject? Debug = null)
 {
     public string Value(string property) => Properties[property] is JsonValue value && value.TryGetValue(out string? text) ? text ?? "" : "";
 
@@ -896,6 +896,10 @@ static class Projects
         "PackageReadmeFile", "DebugType", "IsTrimmable", "EnableTrimAnalyzer",
         "AssemblyName", Grants.OptOut,
     ];
+
+    // What a Debug build emits as symbols: read from a second evaluation, since every other property
+    // is read as CI builds, in Release. Two names, so msbuild answers in JSON.
+    private static readonly string[] DebugNames = ["DebugType", "OutputType"];
 
     private static readonly string[] ItemTypes =
         ["PackageReference", "PackageVersion", "Compile", "InternalsVisibleTo", "AssemblyAttribute"];
@@ -971,7 +975,15 @@ static class Projects
             {
                 items = PerFramework(root, project, name, frameworks, items, findings);
             }
-            evaluated.Add(new Evaluated(project, name, properties, items, Role(properties)));
+
+            string[] debugArguments = ["msbuild", project, "-p:Configuration=Debug", .. DebugNames.Select(n => "-getProperty:" + n)];
+            (int debugExit, string debugOutput) = Shell.Run("dotnet", root, null, Ci, debugArguments);
+            if ((debugExit == 0 ? Parse(debugOutput) : null)?["Properties"] is not JsonObject debug)
+            {
+                findings.Add(Finding.Fail("props", $"{name} could not be evaluated in Debug: {Tail(debugOutput)}"));
+                continue;
+            }
+            evaluated.Add(new Evaluated(project, name, properties, items, Role(properties), debug));
         }
         return evaluated;
     }
@@ -1082,7 +1094,7 @@ static class Props
             roles.Add($"{name} ({role})");
             IReadOnlyDictionary<string, string> exempt = config?.PropsExempt.GetValueOrDefault(name) ?? none;
 
-            foreach ((string rule, string? problem) in Rules(properties, evaluated.Items, role, repoName))
+            foreach ((string rule, string? problem) in Rules(properties, evaluated.Debug, evaluated.Items, role, repoName))
             {
                 if (problem is null)
                 {
@@ -1111,7 +1123,7 @@ static class Props
     }
 
     /// <summary>Every rule for this role, each with its problem, or null where the project meets it.</summary>
-    private static IEnumerable<(string Rule, string? Problem)> Rules(JsonObject p, JsonNode? items, string role, string? repoName)
+    private static IEnumerable<(string Rule, string? Problem)> Rules(JsonObject p, JsonObject? debug, JsonNode? items, string role, string? repoName)
     {
         string frameworks = Value(p, "TargetFrameworks") is { Length: > 0 } many ? many : Value(p, "TargetFramework");
         string[] targets = frameworks.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -1138,6 +1150,27 @@ static class Props
             : !AtLeast(version, AutoVersioningFloor) ? $"references {AutoVersioning} {version}; the family's floor is {AutoVersioningFloor}."
             : null);
 
+        // ⭐ Symbols in both configurations, for every project that compiles: a Debug build writes a
+        // .pdb beside the assembly or into it, for stepping through the source; a Release build embeds
+        // it, so whatever ships, a package, a single-file app or a test run's binaries, carries its own.
+        // A template package compiles nothing.
+        //
+        // ⚠ DebugType alone decides it. DebugSymbols evaluates to false in Release by default, and the
+        // PDB is embedded all the same (measured on SDK 10.0.401), so a rule reading it would fail
+        // every correct project.
+        if (role != "template")
+        {
+            string releaseType = Value(p, "DebugType");
+            yield return ("DebugType", releaseType == "embedded"
+                ? null
+                : $"builds Release with DebugType \"{releaseType}\"; the family embeds symbols in Release: DebugType \"embedded\".");
+
+            string debugType = debug is null ? "" : Value(debug, "DebugType");
+            yield return ("DebugSymbols", debug is null || debugType is "portable" or "embedded"
+                ? null
+                : $"builds Debug with DebugType \"{debugType}\", so no symbols; the family's are \"portable\" (a .pdb beside the assembly) or \"embedded\".");
+        }
+
         if (role is not ("library" or "tool"))
         {
             yield break;
@@ -1158,7 +1191,6 @@ static class Props
         yield return ("PackageReadmeFile", Value(p, "PackageReadmeFile").Trim().Length > 0
             ? null
             : "sets no PackageReadmeFile, so nuget.org shows the package without a README.");
-        yield return Expect(p, "DebugType", "embedded");
     }
 
     private static (string Rule, string? Problem) Expect(JsonObject p, string name, string wanted)

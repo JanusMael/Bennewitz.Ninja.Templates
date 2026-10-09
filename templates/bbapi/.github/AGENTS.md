@@ -15,7 +15,7 @@ The workflows and the repository's GitHub settings.
 |---|---|
 | **A job's name is part of the `main` ruleset.** Renaming or removing a job that `repository.json` lists under `requiredChecks` means updating the list and running `apply` in the same change | A required check that no job reports blocks every pull request, and GitHub never says why. `check` fails on the mismatch |
 | Each platform publishes on a runner of its own operating system | Native AOT links with the platform's own toolchain; there is no cross-OS publish |
-| The release names each asset it attaches, one per platform | A glob attaches whatever is in the folder, and silently omits a platform whose publish produced nothing |
+| The release names each asset it attaches, two per platform: the binary and its native symbols | A glob attaches whatever is in the folder, and silently omits a platform whose publish produced nothing. Without its symbols, a crash dump from a released native binary cannot be read |
 | CI's `container` job requests the native API | It is the only place the native binary answers a request before a release; the tests run under the JIT |
 | The container image is built and run in CI, and pushed nowhere | A registry is a deployment decision this repository makes for itself, in a workflow of its own |
 | Nothing here pushes to nuget.org | An API is run, not referenced. Publishing a library takes what `bbpkg` generates; see the root `AGENTS.md` |
