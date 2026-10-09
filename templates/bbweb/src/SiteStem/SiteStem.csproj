@@ -14,6 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The entry point every family app shares: the fatal report and exit 1, and the version flag. -->
+    <PackageReference Include="Bennewitz.Ninja.AppServices.EntryPoint" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Development settings stay on the developer's machine. -->
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
   </ItemGroup>

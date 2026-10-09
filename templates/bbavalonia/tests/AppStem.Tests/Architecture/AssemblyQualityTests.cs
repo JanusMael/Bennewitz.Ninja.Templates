@@ -61,15 +61,21 @@ public sealed class AssemblyQualityTests
     }
 
     /// <summary>
-    /// BNAQ1002: no Serilog type reaches the public surface, such as a logger in a view model's
-    /// constructor. The rule's default namespaces are serializer DOMs this app does not reference,
-    /// so with them it could never fire and would report that it inspected nothing. Add each library
-    /// the app comes to reference directly whose types should stay inside it.
+    /// BNAQ1002: no type from the family's app services or from Serilog reaches the public surface,
+    /// such as the entry point's options or a logger in a view model's constructor. The rule's default
+    /// namespaces are serializer DOMs this app does not reference, so with them it could never fire
+    /// and would report that it inspected nothing. Add each library the app comes to reference
+    /// directly whose types should stay inside it.
     /// </summary>
+    /// <remarks>
+    /// ⚠ Serilog alone inspected nothing once the entry point moved to AppServices: the app stopped
+    /// calling <c>Log</c> itself, so it no longer references Serilog directly. AppServices is what it
+    /// references now.
+    /// </remarks>
     [Fact]
     public void BNAQ1002_no_referenced_implementation_type_appears_in_the_public_surface()
     {
-        AssemblyRuleResult result = SurfaceLeakRule.Only(["Serilog"]).Analyze(AssemblyScanContext.Of(Shipped));
+        AssemblyRuleResult result = SurfaceLeakRule.Only(["Bennewitz.Ninja.AppServices", "Serilog"]).Analyze(AssemblyScanContext.Of(Shipped));
 
         Assert.True(result.Inspected > 0, "BNAQ1002 inspected nothing, so it proved nothing.");
         Assert.Empty(result.Skipped);

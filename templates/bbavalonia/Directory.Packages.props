@@ -20,9 +20,10 @@
   </ItemGroup>
 
   <ItemGroup Label="Family">
-    <!-- Logging (Serilog, a rolling file per hour, the Avalonia log bridge) and the fatal-error
-         dialog. Bennewitz.Ninja.AppServices.Logging comes with it. -->
-    <PackageVersion Include="Bennewitz.Ninja.AppServices.Avalonia" Version="2026.3.924" />
+    <!-- Logging (Serilog, a rolling file per hour, the Avalonia log bridge), the fatal-error dialog,
+         and EntryPointOptions(), which connects both to the shared entry point.
+         Bennewitz.Ninja.AppServices.Logging and .EntryPoint come with it. -->
+    <PackageVersion Include="Bennewitz.Ninja.AppServices.Avalonia" Version="2026.4.1001" />
     <!-- The markup and assembly rules, run as tests. -->
     <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.928" />
     <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.929" />

@@ -1,54 +1,70 @@
 using System.Reflection;
+using Bennewitz.Ninja.AppServices.EntryPoint;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Logging.Console;
 
-var builder = WebApplication.CreateBuilder(args);
+// The entry point every family app shares, from Bennewitz.Ninja.AppServices.EntryPoint: an unhandled
+// exception is reported on stderr and exits 1, and --version, alone, prints the release version before
+// the host is built. Everything else on the command line is configuration (--urls, --environment), so
+// nothing is rejected. The host owns Ctrl+C and SIGTERM, and shuts down gracefully on either.
+return await AppMain.RunHostAsync(typeof(Program).Assembly, args, RunAsync);
 
-builder.Services.AddControllersWithViews();
-#if (Blazor)
-
-// Interactive server components, embedded in the MVC views with the Component Tag Helper
-// (<component render-mode="ServerPrerendered">, Views/Home/Index.cshtml), prerendered with the page
-// and made interactive by the SignalR circuit _framework/blazor.server.js opens. The layout's
-// <base href> is what the circuit resolves its hub against; without it, a component on a nested
-// page asks for the hub at the wrong path.
-builder.Services.AddServerSideBlazor();
-#endif
-
-// Behind a reverse proxy, the scheme and client address arrive in X-Forwarded-* headers. Only a
-// proxy on this machine (loopback) is trusted by default; add a KnownNetworks entry for one elsewhere,
-// such as a container network, or every request looks like plain HTTP from the proxy.
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
-
-var app = builder.Build();
-
-app.UseForwardedHeaders();
-
-if (!app.Environment.IsDevelopment())
+static async Task RunAsync(string[] args)
 {
-    // The error page never shows the exception; the log has it.
-    app.UseExceptionHandler("/error/500");
-}
+    var builder = WebApplication.CreateBuilder(args);
 
-app.UseStatusCodePagesWithReExecute("/error/{0}");
-app.UseRouting();
+    // Every log line is a diagnostic, so all of them go to stderr: stdout stays free for whatever
+    // runs the site to read.
+    builder.Services.Configure<ConsoleLoggerOptions>(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 
-app.MapStaticAssets();
-app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    builder.Services.AddControllersWithViews();
 #if (Blazor)
-app.MapBlazorHub();
+
+    // Interactive server components, embedded in the MVC views with the Component Tag Helper
+    // (<component render-mode="ServerPrerendered">, Views/Home/Index.cshtml), prerendered with the page
+    // and made interactive by the SignalR circuit _framework/blazor.server.js opens. The layout's
+    // <base href> is what the circuit resolves its hub against; without it, a component on a nested
+    // page asks for the hub at the wrong path.
+    builder.Services.AddServerSideBlazor();
 #endif
 
-// For a load balancer, an orchestrator or a container healthcheck: the process is up and serving.
-app.MapGet("/healthz", () => Results.Text("ok", "text/plain"));
+    // Behind a reverse proxy, the scheme and client address arrive in X-Forwarded-* headers. Only a
+    // proxy on this machine (loopback) is trusted by default; add a KnownNetworks entry for one elsewhere,
+    // such as a container network, or every request looks like plain HTTP from the proxy.
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
 
-// Which build is live, as AutoVersioning stamped it: the release version the tag gave the build (its
-// PublicVersion; 1.0.0 on a local build), the build's own stamp, and the commit.
-// ⚠ Not AssemblyInformationalVersion: AutoVersioning sets that to "Built with ♥ <commit>".
-app.MapGet("/version", () => Results.Json(VersionInfo.Of(typeof(Program).Assembly)));
+    // Disposed when the site stops, which flushes the log.
+    await using var app = builder.Build();
 
-app.Run();
+    app.UseForwardedHeaders();
+
+    if (!app.Environment.IsDevelopment())
+    {
+        // The error page never shows the exception; the log has it.
+        app.UseExceptionHandler("/error/500");
+    }
+
+    app.UseStatusCodePagesWithReExecute("/error/{0}");
+    app.UseRouting();
+
+    app.MapStaticAssets();
+    app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}")
+        .WithStaticAssets();
+#if (Blazor)
+    app.MapBlazorHub();
+#endif
+
+    // For a load balancer, an orchestrator or a container healthcheck: the process is up and serving.
+    app.MapGet("/healthz", () => Results.Text("ok", "text/plain"));
+
+    // Which build is live, as AutoVersioning stamped it: the release version the tag gave the build (its
+    // PublicVersion; 1.0.0 on a local build), the build's own stamp, and the commit.
+    // ⚠ Not AssemblyInformationalVersion: AutoVersioning sets that to "Built with ♥ <commit>".
+    app.MapGet("/version", () => Results.Json(VersionInfo.Of(typeof(Program).Assembly)));
+
+    await app.RunAsync();
+}
 
 /// <summary>What <c>/version</c> answers.</summary>
 internal sealed record VersionInfo(string Version, string Build, string Commit)

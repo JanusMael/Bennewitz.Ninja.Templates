@@ -14,6 +14,13 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
   </ItemGroup>
 
+  <ItemGroup Label="Family">
+    <!-- The entry point: an unhandled exception reported on stderr and exit 1, and the version flag
+         answered before the host is built. References nothing beyond the framework, and is native
+         AOT compatible. -->
+    <PackageVersion Include="Bennewitz.Ninja.AppServices.EntryPoint" Version="2026.4.1001" />
+  </ItemGroup>
+
   <ItemGroup Label="Testing">
     <!-- The in-memory host that runs the real Program for the tests. Keep it on the same 10.0
          servicing line as the ASP.NET Core runtime the SDK in global.json brings. -->
