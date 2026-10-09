@@ -1,7 +1,8 @@
 #!/usr/bin/env dotnet
 // Pre-publication gate for the template package itself: pack it, install it FROM THE PACKED
 // .nupkg, generate a repository from EVERY template it ships, assert each generated tree, and
-// publish each app for this machine, running the web ones — all before anything is published.
+// publish each app for this machine, running the web and console ones — all before anything is
+// published.
 //
 // ⛔ Every check here asserts CONTENT, never an exit code. A template package whose content was
 // flattened still installs, still lists, and still "generates" — emitting the extracted nupkg
@@ -137,10 +138,20 @@ Case[] cases =
     new("bbapi", "bbapi", "Catalog", [], Packs: false,
         Required: [.. common, .. app, .. container],
         Forbidden: [], Publish: PublishKind.Native),
+    new("bbconsole", "bbconsole", "Tally", [], Packs: false,
+        Required:
+        [
+            .. common,
+            .. app,
+            // The exit codes and streams, tested by running the executable.
+            Path.Combine("tests", "{0}.Tests", "CommandLineTests.cs"),
+        ],
+        Forbidden: container, Publish: PublishKind.Console),
 ];
 
 // ⭐ Each app is published for the machine running this, the way its own release publishes that
-// runtime identifier, and a web app is then started and asked for /healthz and /version. A
+// runtime identifier; a web app is then started and asked for /healthz and /version, and a console
+// app is asked for --version and given an unknown option. A
 // template whose generated repository builds and tests clean can still fail to publish: a trim
 // warning the baseline does not hold, a native compile, a single-file site missing its wwwroot.
 string hostRid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
@@ -151,7 +162,7 @@ const string PublishedVersion = "2026.3.999";
 
 // No placeholder may survive, in a path or in a file: every template's stem, matched regardless of
 // case because the engine also substitutes the lowercase form (docker tags), and the symbols' tokens.
-string[] stemTokens = ["PkgStem", "AppStem", "SiteStem", "ApiStem"];
+string[] stemTokens = ["PkgStem", "AppStem", "SiteStem", "ApiStem", "CliStem"];
 string[] symbolTokens = ["PKG_ID", "REPO_OWNER", "REPO_NAME", "#if (", "#endif"];
 
 bool keep = args.Contains("--keep", StringComparer.OrdinalIgnoreCase);
@@ -698,12 +709,14 @@ string? Publish(Case entry, string generated)
     {
         PublishKind.Trimmed => $"Publish trimmed for {hostRid}, against the warning baseline",
         PublishKind.SingleFile => $"Publish single-file for {hostRid}, then run it",
+        PublishKind.Console => $"Publish trimmed for {hostRid}, warnings as errors, then run it",
         _ => $"Publish natively for {hostRid}, then run it",
     });
 
     string[] kind = entry.Publish switch
     {
-        PublishKind.Trimmed => ["--self-contained"],
+        // Trimmed and single-file are the project's own; ILLink's warnings are errors there too.
+        PublishKind.Trimmed or PublishKind.Console => ["--self-contained"],
         PublishKind.SingleFile => ["--self-contained", "-p:PublishSingleFile=true", "-p:IncludeNativeLibrariesForSelfExtract=true"],
         // PublishAot is the project's own.
         _ => [],
@@ -755,7 +768,65 @@ string? Publish(Case entry, string generated)
         return $"The publish reported success but left no executable at '{executable}'.";
     }
 
-    return Serve(executable, output);
+    return entry.Publish == PublishKind.Console ? RunConsole(executable, output) : Serve(executable, output);
+}
+
+// Runs a published console app the way a script calls it, and checks the contract plans/00007 sets:
+// --version prints the version it was published with and exits 0, and an unknown option exits 2 with
+// the usage on stderr and nothing on stdout.
+static string? RunConsole(string executable, string folder)
+{
+    (int versionCode, string versionOut, string versionErr) = RunOnce(executable, folder, ["--version"]);
+
+    // ⛔ Exactly the published version: "Built with ♥ …", the informational version, contains it too.
+    if (versionCode != 0 || versionOut.Trim() != PublishedVersion)
+    {
+        return $"--version exited {versionCode} printing '{versionOut.Trim()}', not exit 0 and the published version {PublishedVersion}."
+            + Environment.NewLine + versionErr;
+    }
+
+    (int usageCode, string usageOut, string usageErr) = RunOnce(executable, folder, ["--no-such-option"]);
+
+    if (usageCode != 2 || usageOut.Length > 0 || !usageErr.Contains("Usage:", StringComparison.Ordinal))
+    {
+        return $"An unknown option exited {usageCode}, with '{usageOut.Trim()}' on stdout and '{usageErr.Trim()}' on stderr; "
+            + "expected exit 2, nothing on stdout, and the usage on stderr.";
+    }
+
+    Console.WriteLine($"  {Path.GetFileName(executable)} --version printed {PublishedVersion}; an unknown option exited 2 with the usage");
+    return null;
+}
+
+static (int ExitCode, string Stdout, string Stderr) RunOnce(string executable, string folder, string[] arguments)
+{
+    ProcessStartInfo startInfo = new()
+    {
+        FileName = executable,
+        WorkingDirectory = folder,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+    };
+
+    foreach (string argument in arguments)
+    {
+        startInfo.ArgumentList.Add(argument);
+    }
+
+    using Process process = new() { StartInfo = startInfo };
+    process.Start();
+
+    Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+    Task<string> stderr = process.StandardError.ReadToEndAsync();
+
+    if (!process.WaitForExit(TimeSpan.FromSeconds(60)))
+    {
+        process.Kill(entireProcessTree: true);
+        process.WaitForExit();
+        return (-1, stdout.GetAwaiter().GetResult(), "it did not exit in 60 s. " + stderr.GetAwaiter().GetResult());
+    }
+
+    return (process.ExitCode, stdout.GetAwaiter().GetResult(), stderr.GetAwaiter().GetResult());
 }
 
 // Starts a published web app on a free loopback port, from its own folder as a deployment runs it,
@@ -976,5 +1047,6 @@ static int Fail(string message)
 record Case(string Label, string Template, string Stem, string[] Arguments, bool Packs, string[] Required, string[] Forbidden, PublishKind Publish);
 
 // How an app's release publishes it: trimmed and held to its warning baseline (bbavalonia),
-// self-contained single-file (bbweb), or compiled natively ahead of time (bbapi).
-enum PublishKind { None, Trimmed, SingleFile, Native }
+// self-contained single-file (bbweb), compiled natively ahead of time (bbapi), or trimmed and
+// single-file with ILLink's warnings as errors and run from the command line (bbconsole).
+enum PublishKind { None, Trimmed, SingleFile, Native, Console }

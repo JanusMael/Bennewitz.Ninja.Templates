@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/template",
+  "author": "Brian Bennewitz",
+  "classifications": [ "Common", "Console", "CLI" ],
+  "identity": "Bennewitz.Ninja.Templates.Console",
+  "name": "Bennewitz.Ninja console app (trimmed, single-file)",
+  "shortName": "bbconsole",
+  "preferNameDirectory": true,
+
+  "//sourceName": [
+    "-n takes the app's name, e.g. -n Tally, which becomes the assembly and executable name.",
+    "Namespaces carry Bennewitz.Ninja. from Directory.Build.props, as in every family repository."
+  ],
+  "sourceName": "CliStem",
+
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+
+  "symbols": {
+    "RepoOwner": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "GitHub account or organisation the generated repository lives under.",
+      "replaces": "REPO_OWNER",
+      "defaultValue": "REPO_OWNER"
+    },
+    "//RepoName": [
+      "An app's repository is usually named after the app, unprefixed, unlike a package",
+      "repository, which carries Bennewitz.Ninja. like its package id. So it defaults to -n."
+    ],
+    "RepoName": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "The GitHub repository's name, when it is not the app's name.",
+      "defaultValue": ""
+    },
+    "RepoNameResolved": {
+      "type": "generated",
+      "generator": "coalesce",
+      "parameters": {
+        "sourceVariableName": "RepoName",
+        "fallbackVariableName": "name"
+      },
+      "replaces": "REPO_NAME"
+    }
+  }
+}
