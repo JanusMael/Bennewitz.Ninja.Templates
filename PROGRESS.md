@@ -6,39 +6,45 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Written 2026-10-01, after `2c764dd` on `main`, with no
-pull request open; item 1 then closed by `2026.3.1001`, released and verified from the feed the same
-day (see `plans/00006`).*
+*Replaced, never appended, at each handoff. Rewritten 2026-10-09 from the maintainer's decisions of
+that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning `2026.3.928` and Avalonia
+`12.1.4` were taken.*
 
-**Next, in order:**
-1. **`2026.3.1001` is out, so tell the family it can adopt the friend grants** on its next sync of the
-   conventions script: FileServer and ScopedEditors (each documents "grants to tests only"),
-   AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
+**Next, in order** (the maintainer's decisions of 2026-10-09, below among the locked decisions):
+1. **Draft `plans/00008`, the trimming enforcement's side 1**: the conventions checker enforces a
+   trimming repository's own libraries. Side 2, every `Bennewitz.Ninja.*` package in its restore graph,
+   is XamlQuality's to write as a patch against the canonical script; XamlQuality has been told the
+   plan is unblocked. The plan also decides whether `"trimming": "required"` stays.
+2. **A conventions rule: a release never pushes a `*.nupkg` glob**, a failure, not a note, in the
+   canonical `repo-conventions.cs` and `docs/repository-conventions.md`. FileServer and AutoVersioning
+   glob today, so they fail `conventions` on their next sync until fixed.
+3. **AssemblyQuality in `bbpkg`, `bbweb`, `bbapi` and `bbconsole`**, as `bbavalonia` has it: a test
+   reference and `AssemblyQualityTests`, BNAQ1005 included.
+4. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
+   repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
+5. **The release, on the maintainer's word only, once 1–3 and `plans/00008`'s side 1 have landed.** It
+   carries `bbconsole`, the shared entry point in every app, AutoVersioning `2026.3.928` and Avalonia
+   `12.1.4`, the no-glob rule, AssemblyQuality in every template, and the trimming enforcement's side
+   1. Verified from nuget.org: `dotnet new list` shows five templates, `verify-release --published`
+   passes.
+6. **After that release, one note to each family repository** that can adopt the friend grants and the
+   release's other conventions on its next sync: FileServer and ScopedEditors (each documents "grants
+   to tests only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
    an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
-   adopted them (JanusMael/Bennewitz.Ninja.AppServices#9, released in `2026.4.1001`).
-2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md) step 4's release, on the
-   maintainer's word only**, verified from nuget.org: `dotnet new list` shows five templates, and
-   `verify-release --published` passes. Its documents are merged; steps 1–3 are done.
-3. **The trimming enforcement, a plan after `00007` is under way.** Side 1, the repository's own
-   libraries, is this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository
-   restores, XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as
-   a patch against the canonical script once it has confirmed the split in its own session. Whether
-   `"trimming": "required"` stays is for that plan.
-4. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+   adopted the grants (JanusMael/Bennewitz.Ninja.AppServices#9).
+7. **`plans/00009`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
+   v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
+8. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
    2026-09-28).
-5. **Undecided:** a conventions rule that a release never globs `*.nupkg` (the FileServer audit showed
-   the check cannot see it); an analyzer template (`git diff e457b5d v2026.3.925` in
-   JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed); a family
-   AssemblyQuality reference in `bbpkg`, `bbweb` and `bbapi`, which would let them call BNAQ1005 too.
 
 **Waiting on others:**
 - XamlQuality: side 2 of the trimming enforcement.
 - DiffView#2 stays red on `conventions` until DiffView's session writes its `AGENTS.md` set.
-- bleedink.com's `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥"; not
-  yet passed to its session.
+- bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
+  passed to its session on 2026-10-09.
 
 **Peer sessions on this machine** (addresses change when a session restarts; `ListAgents` gives the
 current names): AppServices, AssemblyQuality, XamlQuality, FileServer, AutoVersioning, CodeQuality.
@@ -83,6 +89,19 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   single-file; the behaviour lives in an AppServices helper.
 - The repository is not a GitHub template (`isTemplate: false`, 2026-09-28); templates ship only
   through `dotnet new`.
+- Decided 2026-10-09, through `choices`:
+  - The trimming enforcement: draft `plans/00008` for side 1 now, and tell XamlQuality its side 2 is
+    unblocked.
+  - A release never pushes a `*.nupkg` glob: a conventions FAIL, in the next release.
+  - AssemblyQuality in every template, in the next release. (Asked for `bbpkg`, `bbweb` and `bbapi`;
+    `bbconsole`, which postdates the question, is included on the same reasoning.)
+  - xunit.v3 4.x: investigate and report first; the scope is decided after.
+  - An analyzer template: `plans/00009`, after the trimming enforcement.
+  - The next release waits for the no-glob rule, AssemblyQuality in every template, and the trimming
+    enforcement's side 1.
+  - The family is told about the friend grants after that release, in one note per repository.
+  - bleedink.com's `/version` defect goes to its session by message.
+  - The previous session's leftover worktrees are removed once each is checked clean and merged.
 
 ## Status
 
