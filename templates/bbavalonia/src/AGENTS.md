@@ -7,7 +7,7 @@ view models and logging through Bennewitz.Ninja.AppServices.
 
 | Path | What it is |
 |---|---|
-| `AppStem/Program.cs` | Entry point: logging and the fatal-error hook first, then the Avalonia app; `--smoke` |
+| `AppStem/Program.cs` | The entry point, `AppMain.RunDesktop` with `AvaloniaDiagnostics.EntryPointOptions()`, then logging and the Avalonia app; `--smoke` |
 | `AppStem/App.axaml` | The theme, Semi.Avalonia, and application resources |
 | `AppStem/App.axaml.cs` | Wiring by hand: the main window and its view model, no container |
 | `AppStem/Views/` | Windows and views, each with `x:DataType` |
@@ -18,6 +18,7 @@ view models and logging through Bennewitz.Ninja.AppServices.
 
 | Rule | Why | Guarded by |
 |---|---|---|
+| `Main` only calls `AppMain.RunDesktop` with `AvaloniaDiagnostics.EntryPointOptions()`, and logging is configured inside the run | A failure is logged as fatal, shown in the native dialog and exits 1, the log is flushed on every exit, and `--version` prints the release version; all of it is the packages', so a fix reaches the app with an update. Configured inside the run, a failure configuring the log is still reported | `verify-release` in Bennewitz.Ninja.Templates, which runs the trimmed app with `--version` and with a start-up that throws |
 | Every view declares `x:DataType`; bindings are compiled by default | A reflection binding is exactly what the trimmed release breaks without a word | `AvaloniaUseCompiledBindingsByDefault`; the build |
 | No `{ReflectionBinding}` and no `x:CompileBindings="False"` | Same reason. If one is truly needed, the type it reaches must be kept from trimming, and a trimmed publish has to prove it works | review; the `trim` job |
 | Every interactive control has `AutomationProperties.AutomationId` and `AutomationProperties.Name` | The id is how a test or an agent finds it, the name is what is read out. See `docs/ai-drivable-ui.md` in Bennewitz.Ninja.XamlQuality | `AutomationNameTests` |

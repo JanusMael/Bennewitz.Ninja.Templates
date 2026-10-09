@@ -17,10 +17,10 @@ day (see `plans/00006`).*
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
    an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
    adopted them (JanusMael/Bennewitz.Ninja.AppServices#9, released in `2026.4.1001`).
-2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md) step 3**: `bbweb`, `bbapi` and
-   `bbavalonia` call AppServices' helper (`Bennewitz.Ninja.AppServices.EntryPoint 2026.4.1001`), and
-   `verify-release` runs each published app once with a `Program` that throws on start-up. Step 2,
-   `bbconsole`, is done; see the plan's section below for the API and the drift.
+2. **[`plans/00007`](plans/00007-console-template-and-entry-points.md) step 4**: the package README,
+   the package description and `docs/repository-conventions.md` name `bbconsole`, then a release on
+   the maintainer's word, verified from nuget.org (`dotnet new list` shows five templates, and
+   `verify-release --published` passes). Steps 2 and 3 are done; see the plan's section below.
 3. **The trimming enforcement, a plan after `00007` is under way.** Side 1, the repository's own
    libraries, is this repository's; side 2, every `Bennewitz.Ninja.*` package a trimming repository
    restores, XamlQuality writes and this repository lands in the checker. XamlQuality sends side 2 as
@@ -1063,7 +1063,7 @@ stderr, as the draft had claimed, and that the helper must survive `WebApplicati
 |---|---|---|
 | 1 · AppServices ships the helper | **done** 2026-10-01 | `2026.4.1001`, tag `v2026.4.1001` at `03ebb64`, built in JanusMael/Bennewitz.Ninja.AppServices#8. Checked here, not taken on report: all five AppServices ids list `2026.4.1001` in the nuget.org flat-container, `.EntryPoint` among them, and the release run and the required `aot-linux` and `aot-windows` jobs are green on `03ebb64`. AppServices reports a warning-free native AOT publish on both, the probe's contract passing 18 of 18 on Linux, including real SIGINT and SIGTERM, and 14 on win-x64 with the 4 signal cases skipped |
 | 2 · `bbconsole` and its `verify-release` case | **done** 2026-10-09 | `templates/bbconsole`, stem `CliStem`: one console project calling `AppMain.RunConsoleAsync`, an example command counting lines (`LineCount`), and `CommandLineTests`, which run the built executable as a child process: exit 0 with the count on stdout, `--version` printing `PublicVersion`, 2 with the usage for an unknown option and for no file, 1 with the report for a missing file, and 130 after SIGINT, skipped on Windows. Trimmed and single-file with ILLink's warnings as errors, no baseline; the release publishes six runtime identifiers from Linux; CI's `publish` job publishes linux-x64 and runs it. `verify-release` gains its case and a `Console` publish kind, which runs the published binary: `--version` must print exactly the published version, and an unknown option must exit 2 with the usage on stderr and nothing on stdout. Verified: 10 of 10 tests on Linux (WSL, SDK 10.0.401), 9 and the SIGINT skip on Windows; a trimmed linux-x64 publish with no warnings, 13 MB; `verify-release` passes, all six generated repositories, 244 package entries in five templates; 105 of 105 root tests. Canaried: `--version` changed to print the informational version fails the generated repository's own test (actual "Built with ♥"), and with that test silenced, fails `verify-release`'s check of the published binary |
-| 3 · The other app templates call the helper | ready | |
+| 3 · The other app templates call the helper | **done** 2026-10-09 | `bbweb` and `bbapi` build and run their host inside `AppMain.RunHostAsync`, send every log line to stderr (`LogToStandardErrorThreshold`) and dispose the app on exit; both take `AppServices.EntryPoint 2026.4.1001`. `bbavalonia` calls `AppMain.RunDesktop` with `AvaloniaDiagnostics.EntryPointOptions()` and configures logging inside the run, on `AppServices.Avalonia 2026.4.1001`. `verify-release` now runs `--version` on every published app, which must print exactly the published version, and publishes each app once more with its `Program.cs` replaced, in the scratch copy only, by one that throws inside the entry point: it must exit 1 with the fatal report naming the failure on stderr, and for `bbavalonia` in its log file too. Verified: `verify-release` passes, every existing test passing (the web ones through `WebApplicationFactory`), `bbavalonia`'s trim baseline unchanged at 7. Canaried in one run, every other case still passing: `bbapi` calling its host without `AppMain` fails the `--version` check (the API took `--version` as configuration and served until killed at 60 s), and a planted throw outside `AppMain` fails the exit-1 check (the runtime's own code, -532462766) |
 | 4 · Documents, and a release | waits for steps 2 and 3 | |
 
 ### Drift from `plans/00007`
@@ -1083,6 +1083,24 @@ job with SIGINT ignored, so a by-hand reproduction needs `set -m`.
 
 **CI's job that publishes and runs the binary is `publish`**, a required check beside `build` and
 `conventions`; `bbavalonia`'s equivalent is `trim`, which holds a baseline this template does not have.
+
+**Step 3's planted failure for `bbavalonia` does not use the package's own `OnFatal`.**
+`EntryPointOptions()` logs the failure and then opens the native fatal-error dialog, which blocks until
+someone dismisses it, so an unattended `verify-release` would never end. Its replacement keeps the
+package's `FlushLog` and `OnUnobservedTaskException` and logs the failure without the dialog; the log
+file, written by the trimmed binary's own Serilog pipeline, is what the check reads. The dialog itself is
+verified by nobody.
+
+**`verify-release` also runs `bbconsole`'s planted failure and every app's `--version`**, beyond the
+three templates step 3 names: the check costs one publish per app, and it is the only place a published
+`bbweb`, `bbapi` or `bbavalonia` is asked for its version.
+
+⚠ **`bbavalonia`'s BNAQ1002 test inspected nothing once its entry point moved.** The rule was limited
+to Serilog, and the app referenced Serilog only through `Log.Fatal` and `Log.CloseAndFlush` in
+`Program.cs`, which the package now calls. With no candidate the test fails by design ("inspected
+nothing, so it proved nothing"), and it did. The rule now covers `Bennewitz.Ninja.AppServices` too,
+which the app references directly, so the entry point's options and the diagnostics types are held out
+of its public surface.
 
 ⛔ **Decision 3's reason and step 3's verification are wrong about `WebApplicationFactory`.** Found
 by AppServices on 2026-09-30 in the .NET 10 sources: `WebApplicationFactory` resolves the entry point

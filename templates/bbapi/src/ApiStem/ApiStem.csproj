@@ -29,5 +29,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <!-- The entry point every family app shares: the fatal report and exit 1, and the version flag.
+         AOT-compatible, measured by AppServices' own native publish. -->
+    <PackageReference Include="Bennewitz.Ninja.AppServices.EntryPoint" />
   </ItemGroup>
 </Project>

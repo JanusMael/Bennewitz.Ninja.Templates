@@ -103,6 +103,67 @@ string[] blazorOnly =
     Path.Combine("tests", "{0}.Tests", "ComponentTests.cs"),
 ];
 
+// ⭐ What each app's Program.cs is replaced with, in the scratch copy only, for one more publish: a
+// start-up that throws inside the shared entry point (plans/00007 step 3). The published app must exit
+// 1 with the fatal report on stderr, so a template that stops calling AppMain, or a publish that
+// breaks it, fails here. __STEM__, __MARKER__ and __LOGS__ are filled in when it is written; none of
+// these ever ships.
+const string HostCrash = """
+    using Bennewitz.Ninja.AppServices.EntryPoint;
+
+    return await AppMain.RunHostAsync(typeof(Program).Assembly, args, _ => throw new InvalidOperationException("__MARKER__"));
+
+    public partial class Program;
+    """;
+
+const string ConsoleCrash = """
+    using Bennewitz.Ninja.AppServices.EntryPoint;
+
+    namespace Bennewitz.Ninja.__STEM__;
+
+    internal static class Program
+    {
+        public static Task<int> Main(string[] args) =>
+            AppMain.RunConsoleAsync(typeof(Program).Assembly, args, (_, _) => throw new InvalidOperationException("__MARKER__"));
+    }
+    """;
+
+// ⚠ The package's own OnFatal logs the failure and then opens the native fatal-error dialog, which
+// blocks until someone dismisses it, so an unattended run would never end. This replacement keeps the
+// package's flush and its unobserved-task handler and logs the failure without the dialog; the log
+// file, written by the trimmed binary's own Serilog pipeline, is what proves the report survived.
+const string DesktopCrash = """
+    using Bennewitz.Ninja.AppServices.AvaloniaUI;
+    using Bennewitz.Ninja.AppServices.EntryPoint;
+    using Serilog;
+
+    namespace Bennewitz.Ninja.__STEM__;
+
+    internal static class Program
+    {
+        [STAThread]
+        public static int Main(string[] args)
+        {
+            AppMainOptions shipped = AvaloniaDiagnostics.EntryPointOptions();
+
+            return AppMain.RunDesktop(
+                typeof(Program).Assembly,
+                args,
+                _ =>
+                {
+                    AvaloniaDiagnostics.ConfigureLogging(new AvaloniaDiagnosticsOptions { AppName = "__STEM__", LogsDirectory = @"__LOGS__" });
+                    throw new InvalidOperationException("__MARKER__");
+                },
+                new AppMainOptions
+                {
+                    FlushLog = shipped.FlushLog,
+                    OnUnobservedTaskException = shipped.OnUnobservedTaskException,
+                    OnFatal = exception => Log.Fatal(exception, "__STEM__ stopped on an unhandled exception"),
+                });
+        }
+    }
+    """;
+
 // ⭐ One case per generated repository: every template, and bbweb in both variants. The packed-
 // content check below requires the package's templates to be exactly the ones named here, so a
 // template added without a case fails this script rather than shipping unverified.
@@ -128,16 +189,16 @@ Case[] cases =
             Path.Combine("scripts", "check-trim-warnings.cs"),
             Path.Combine("src", "{0}", "trim-warnings.txt"),
         ],
-        Forbidden: [], Publish: PublishKind.Trimmed),
+        Forbidden: [], Publish: PublishKind.Trimmed, Crash: DesktopCrash),
     new("bbweb", "bbweb", "Gallery", [], Packs: false,
         Required: [.. common, .. app, .. container],
-        Forbidden: blazorOnly, Publish: PublishKind.SingleFile),
+        Forbidden: blazorOnly, Publish: PublishKind.SingleFile, Crash: HostCrash),
     new("bbweb --blazor", "bbweb", "Gallery", ["--blazor"], Packs: false,
         Required: [.. common, .. app, .. container, .. blazorOnly],
-        Forbidden: [], Publish: PublishKind.SingleFile),
+        Forbidden: [], Publish: PublishKind.SingleFile, Crash: HostCrash),
     new("bbapi", "bbapi", "Catalog", [], Packs: false,
         Required: [.. common, .. app, .. container],
-        Forbidden: [], Publish: PublishKind.Native),
+        Forbidden: [], Publish: PublishKind.Native, Crash: HostCrash),
     new("bbconsole", "bbconsole", "Tally", [], Packs: false,
         Required:
         [
@@ -146,14 +207,15 @@ Case[] cases =
             // The exit codes and streams, tested by running the executable.
             Path.Combine("tests", "{0}.Tests", "CommandLineTests.cs"),
         ],
-        Forbidden: container, Publish: PublishKind.Console),
+        Forbidden: container, Publish: PublishKind.Console, Crash: ConsoleCrash),
 ];
 
 // ⭐ Each app is published for the machine running this, the way its own release publishes that
-// runtime identifier; a web app is then started and asked for /healthz and /version, and a console
-// app is asked for --version and given an unknown option. A
-// template whose generated repository builds and tests clean can still fail to publish: a trim
-// warning the baseline does not hold, a native compile, a single-file site missing its wwwroot.
+// runtime identifier; a web app is then started and asked for /healthz and /version, a console app
+// is given an unknown option, and every app is asked for --version. Then it is published once more
+// with a start-up that throws, and must exit 1 with the fatal report. A template whose generated
+// repository builds and tests clean can still fail to publish: a trim warning the baseline does not
+// hold, a native compile, a single-file site missing its wwwroot.
 string hostRid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
 
 // Passed to every publish and read back from /version, so a site that reports anything but the
@@ -707,7 +769,7 @@ string? Publish(Case entry, string generated)
 
     Step(entry.Publish switch
     {
-        PublishKind.Trimmed => $"Publish trimmed for {hostRid}, against the warning baseline",
+        PublishKind.Trimmed => $"Publish trimmed for {hostRid}, against the warning baseline, then run it",
         PublishKind.SingleFile => $"Publish single-file for {hostRid}, then run it",
         PublishKind.Console => $"Publish trimmed for {hostRid}, warnings as errors, then run it",
         _ => $"Publish natively for {hostRid}, then run it",
@@ -758,7 +820,6 @@ string? Publish(Case entry, string generated)
         }
 
         Console.WriteLine("  " + LastNonEmptyLines(trimLog, 1));
-        return null;
     }
 
     string executable = Path.Combine(output, OperatingSystem.IsWindows() ? stem + ".exe" : stem);
@@ -768,23 +829,103 @@ string? Publish(Case entry, string generated)
         return $"The publish reported success but left no executable at '{executable}'.";
     }
 
-    return entry.Publish == PublishKind.Console ? RunConsole(executable, output) : Serve(executable, output);
+    string? failure = entry.Publish switch
+    {
+        PublishKind.Console => RunConsole(executable, output),
+        PublishKind.Trimmed => null,
+        _ => Serve(executable, output),
+    };
+
+    if (failure is not null)
+    {
+        return failure;
+    }
+
+    // Every app answers --version from the shared entry point, before any host or window exists.
+    if (CheckVersion(executable, output) is { } versionFailure)
+    {
+        return versionFailure;
+    }
+
+    Console.WriteLine($"  {Path.GetFileName(executable)} --version printed {PublishedVersion}");
+
+    return entry.Crash is null ? null : PublishCrash(entry, generated, project, kind, environment);
+}
+
+// Publishes the app once more with its Program.cs replaced by one that throws on start-up, inside the
+// shared entry point, and checks it exits 1 with the fatal report on stderr naming the failure; for a
+// desktop app, the failure must also reach its log file. The replacement is written into this scratch
+// copy and put back afterwards. Returns why it failed, or null.
+string? PublishCrash(Case entry, string generated, string project, string[] kind, Dictionary<string, string> environment)
+{
+    string stem = entry.Stem;
+    string programPath = Path.Combine(generated, "src", stem, "Program.cs");
+    string output = Path.Combine(generated, "publish", hostRid + "-crash");
+    string logs = Path.Combine(generated, "crash-logs");
+    const string Marker = "verify-release planted this start-up failure";
+
+    Step("Publish it again with a start-up that throws, then run it");
+
+    string original = File.ReadAllText(programPath);
+    File.WriteAllText(programPath, entry.Crash!.Replace("__STEM__", stem).Replace("__MARKER__", Marker).Replace("__LOGS__", logs));
+
+    try
+    {
+        if (!Dotnet(["publish", project, "-c", "Release", "-r", hostRid, "--nologo", .. kind,
+            $"-p:Version={PublishedVersion}", "-p:CommitSha=0000000", "-o", output], generated, out string publishLog, environment))
+        {
+            return "The publish with a throwing start-up fails:" + Environment.NewLine + publishLog;
+        }
+    }
+    finally
+    {
+        File.WriteAllText(programPath, original);
+    }
+
+    string executable = Path.Combine(output, OperatingSystem.IsWindows() ? stem + ".exe" : stem);
+    (int code, string stdout, string stderr) = RunOnce(executable, output, []);
+
+    if (code != 1 || !stderr.Contains("fatal:", StringComparison.Ordinal) || !stderr.Contains(Marker, StringComparison.Ordinal))
+    {
+        return $"A start-up that throws exited {code}, with '{stdout.Trim()}' on stdout and '{stderr.Trim()}' on stderr; "
+            + "expected exit 1 and the fatal report, naming the failure, on stderr.";
+    }
+
+    if (entry.Publish == PublishKind.Trimmed)
+    {
+        string[] logged = Directory.Exists(logs)
+            ? [.. Directory.EnumerateFiles(logs, "*", SearchOption.AllDirectories).Where(file => File.ReadAllText(file).Contains(Marker, StringComparison.Ordinal))]
+            : [];
+
+        if (logged.Length == 0)
+        {
+            return $"A start-up that throws was reported on stderr but never reached the log in '{logs}'.";
+        }
+
+        Console.WriteLine($"  exited 1 with the fatal report on stderr and in {Path.GetFileName(logged[0])}");
+        return null;
+    }
+
+    Console.WriteLine("  exited 1 with the fatal report on stderr");
+    return null;
+}
+
+// --version, alone, must print exactly the version the app was published with, and exit 0.
+static string? CheckVersion(string executable, string folder)
+{
+    (int code, string stdout, string stderr) = RunOnce(executable, folder, ["--version"]);
+
+    // ⛔ Exactly the published version: "Built with ♥ …", the informational version, contains it too.
+    return code == 0 && stdout.Trim() == PublishedVersion
+        ? null
+        : $"--version exited {code} printing '{stdout.Trim()}', not exit 0 and the published version {PublishedVersion}."
+            + Environment.NewLine + stderr;
 }
 
 // Runs a published console app the way a script calls it, and checks the contract plans/00007 sets:
-// --version prints the version it was published with and exits 0, and an unknown option exits 2 with
-// the usage on stderr and nothing on stdout.
+// an unknown option exits 2 with the usage on stderr and nothing on stdout.
 static string? RunConsole(string executable, string folder)
 {
-    (int versionCode, string versionOut, string versionErr) = RunOnce(executable, folder, ["--version"]);
-
-    // ⛔ Exactly the published version: "Built with ♥ …", the informational version, contains it too.
-    if (versionCode != 0 || versionOut.Trim() != PublishedVersion)
-    {
-        return $"--version exited {versionCode} printing '{versionOut.Trim()}', not exit 0 and the published version {PublishedVersion}."
-            + Environment.NewLine + versionErr;
-    }
-
     (int usageCode, string usageOut, string usageErr) = RunOnce(executable, folder, ["--no-such-option"]);
 
     if (usageCode != 2 || usageOut.Length > 0 || !usageErr.Contains("Usage:", StringComparison.Ordinal))
@@ -793,7 +934,7 @@ static string? RunConsole(string executable, string folder)
             + "expected exit 2, nothing on stdout, and the usage on stderr.";
     }
 
-    Console.WriteLine($"  {Path.GetFileName(executable)} --version printed {PublishedVersion}; an unknown option exited 2 with the usage");
+    Console.WriteLine($"  {Path.GetFileName(executable)}: an unknown option exited 2 with the usage");
     return null;
 }
 
@@ -1044,7 +1185,7 @@ static int Fail(string message)
 
 // One generated repository: which template, under which stem, with which arguments, and what its
 // tree must and must not hold. `{0}` in a path is the stem.
-record Case(string Label, string Template, string Stem, string[] Arguments, bool Packs, string[] Required, string[] Forbidden, PublishKind Publish);
+record Case(string Label, string Template, string Stem, string[] Arguments, bool Packs, string[] Required, string[] Forbidden, PublishKind Publish, string? Crash = null);
 
 // How an app's release publishes it: trimmed and held to its warning baseline (bbavalonia),
 // self-contained single-file (bbweb), compiled natively ahead of time (bbapi), or trimmed and
