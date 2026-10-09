@@ -11,10 +11,11 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
 `12.1.4` were taken.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09, below among the locked decisions):
-1. **Draft `plans/00008`, the trimming enforcement's side 1**: the conventions checker enforces a
-   trimming repository's own libraries. Side 2, every `Bennewitz.Ninja.*` package in its restore graph,
-   is XamlQuality's to write as a patch against the canonical script; XamlQuality has been told the
-   plan is unblocked. The plan also decides whether `"trimming": "required"` stays.
+1. **[`plans/00008`](plans/00008-trimming-enforcement.md) steps 1 and 2**, approved 2026-10-09: a
+   repository trims when any project sets `IsTrimmable`, `EnableTrimAnalyzer`, `PublishTrimmed` or
+   `PublishAot`; then every library must set both trimming properties or fail; otherwise nothing is
+   reported; `"trimming"` is retired, a NOTE where still present. Step 3, side 2, is XamlQuality's
+   patch, told on 2026-10-09 that it is unblocked; it does not block the release.
 2. **A conventions rule: a release never pushes a `*.nupkg` glob**, a failure, not a note, in the
    canonical `repo-conventions.cs` and `docs/repository-conventions.md`. FileServer and AutoVersioning
    glob today, so they fail `conventions` on their next sync until fixed.
@@ -1168,3 +1169,21 @@ on SIGTERM there, so its plan's premise, and this plan's "`FlushLog` also runs o
 `PosixSignalRegistration` that flushes the log and lets the signal end the process (exit code 143); a
 web run relies on its host's own SIGTERM handling. A run flushes once, so an app that handles SIGTERM
 itself, such as a generic host, belongs in `RunHostAsync`, not inside `RunConsoleAsync`.
+
+## `plans/00008` — the trimming enforcement
+
+[`plans/00008`](plans/00008-trimming-enforcement.md), approved 2026-10-09 and frozen. The maintainer
+chose, through `choices`, each of the decisions that could have gone another way: all four properties
+make a repository a trimming one, a repository that does not trim gets no finding at all, and the
+`"trimming"` key is retired with a NOTE where it remains. Side 2 is XamlQuality's, which was told the
+plan is unblocked the same day.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · The predicate, the library rule and the retired key's NOTE, with the documentation | next | |
+| 2 · The templates drop `"trimming"` | after step 1 | |
+| 3 · Side 2, XamlQuality's patch, behind the same predicate | waits for the patch | Does not block the release |
+
+### Drift from `plans/00008`
+
+None yet.
