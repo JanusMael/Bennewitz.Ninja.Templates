@@ -11,37 +11,35 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
 `12.1.4` were taken.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09, below among the locked decisions):
-1. **[`plans/00008`](plans/00008-trimming-enforcement.md) step 2**: the templates drop `"trimming"`
-   from `repository.json`, canaried through `verify-release`. Step 1 (the `Trims` predicate, the
-   library rule and the retired key's NOTE) is done. Step 3, side 2, is XamlQuality's patch, told on
-   2026-10-09 that it is unblocked; it does not block the release.
-2. **A conventions rule: a release never pushes a `*.nupkg` glob**, a failure, not a note, in the
+1. **A conventions rule: a release never pushes a `*.nupkg` glob**, a failure, not a note, in the
    canonical `repo-conventions.cs` and `docs/repository-conventions.md`. FileServer and AutoVersioning
    glob today, so they fail `conventions` on their next sync until fixed.
-3. **AssemblyQuality in `bbpkg`, `bbweb`, `bbapi` and `bbconsole`**, as `bbavalonia` has it: a test
+2. **AssemblyQuality in `bbpkg`, `bbweb`, `bbapi` and `bbconsole`**, as `bbavalonia` has it: a test
    reference and `AssemblyQualityTests`, BNAQ1005 included.
-4. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
+3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
-5. **The release, on the maintainer's word only, once 1–3 and `plans/00008`'s side 1 have landed.** It
+4. **The release, on the maintainer's word only, once 1 and 2 have landed** (`plans/00008`'s side 1,
+   steps 1 and 2, has). It
    carries `bbconsole`, the shared entry point in every app, AutoVersioning `2026.3.928` and Avalonia
    `12.1.4`, symbols in both configurations with `bbapi`'s native symbols released, the no-glob rule,
    AssemblyQuality in every template, and the trimming enforcement's side 1. Verified from nuget.org: `dotnet new list` shows five templates, `verify-release --published`
    passes.
-6. **After that release, one note to each family repository** that can adopt the friend grants and the
+5. **After that release, one note to each family repository** that can adopt the friend grants and the
    release's other conventions on its next sync: FileServer and ScopedEditors (each documents "grants
    to tests only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
    an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
-   adopted the grants (JanusMael/Bennewitz.Ninja.AppServices#9).
-7. **`plans/00009`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
+   adopted the grants (JanusMael/Bennewitz.Ninja.AppServices#9). The same note says the `"trimming"`
+   key is retired: drop it from `repository.json`.
+6. **`plans/00009`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
    v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
-8. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+7. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
    2026-09-28).
 
 **Waiting on others:**
-- XamlQuality: side 2 of the trimming enforcement.
+- XamlQuality: side 2 of the trimming enforcement, `plans/00008` step 3, behind `Trimming.Trims`.
 - DiffView#2 stays red on `conventions` until DiffView's session writes its `AGENTS.md` set.
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
   passed to its session on 2026-10-09.
@@ -1180,7 +1178,7 @@ plan is unblocked the same day.
 | Step | State | Notes |
 |---|---|---|
 | 1 · The predicate, the library rule and the retired key's NOTE, with the documentation | **done** 2026-10-22 | `Trimming.Trims` and `Trimming.Reasons` in the canonical script, over the four properties, now in `Projects.Names`. The rule is `Trimming` among the library rules, so its exemption and the stale-exemption NOTE come from the shared path; the FAIL names up to three projects that make the repository trim. `TrimmingRequired` is gone, and `"trimming"` present is a `repository.json` NOTE. `PropsTests` gains three runs over a `Directory.Build.props` that sets no trimming property: one trimming through nothing, one through an app's `PublishTrimmed`, one through `PublishAot`. Six new tests, each failing against the previous script while the other 17 pass; 23 of 23 with the new one, 112 of 112 root tests. This repository's own `check` conforms |
-| 2 · The templates drop `"trimming"` | next | |
+| 2 · The templates drop `"trimming"` | **done** 2026-10-22 | All five templates' `repository.json`. `ConventionsWorkflowTests.The_template_requires_trimming` becomes `No_template_ships_the_retired_trimming_key`, over every template. `verify-release` passes, every generated repository's offline check showing only the intended gaps. Canaried with `IsTrimmable` removed from `bbpkg`'s `src/Directory.Build.props`: `verify-release` fails on `bbpkg` alone, and the generated repository's own `check --offline`, with no `"trimming"` key, fails `Widget (library): is not trimmable, and the repository trims (Widget: EnableTrimAnalyzer)` |
 | 3 · Side 2, XamlQuality's patch, behind the same predicate | waits for the patch | Does not block the release. XamlQuality's design (its message of 2026-10-10): walk `project.assets.json` and read `[AssemblyMetadata("IsTrimmable", "True")]` from each `Bennewitz.Ninja.*` package's assemblies with System.Reflection.Metadata. It calls `Trimming.Trims` |
 
 ### Drift from `plans/00008`
@@ -1188,6 +1186,10 @@ plan is unblocked the same day.
 - **A `Trimming` exemption in a repository that does not trim is reported as no longer needed.** The plan
   says only that a stale exemption is still reported; with nothing to exempt from, the exemption is
   stale too. It is a NOTE about the exemption, not a trimming finding about a library.
+- **Step 2's canary fails `verify-release` earlier than the plan says.** The plan expects the generated
+  `bbpkg`'s trimming FAIL; the generated repository's own `TrimmableTests` fails first, at its test
+  step, so the conventions step never runs. The FAIL was shown instead by running that repository's
+  `check --offline` on the tree `--keep` left. Two guards for one loss, and the earlier one wins.
 
 ⚠ **A script canary must touch the file it swaps in.** `Copy-Item` keeps the source's timestamp, and
 `dotnet run --file` then reused its cached build of the newer script: the first canary of step 1 passed
