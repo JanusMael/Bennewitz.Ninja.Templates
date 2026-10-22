@@ -1288,9 +1288,13 @@ accepted with the plan.
 | 5–7 · Inspections: rename, import, policy, archive | after step 3 | Each irreversible action on the maintainer's word |
 | 8 · AppKit | after Inspections | |
 | 9 · Each family's first release from its new home | when it next changes | |
-| 10 · AgentForge rename in ClaudeForge | any time | |
+| 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
 | 11 · Links | last | |
 
 ### Drift from `plans/00009`
 
-None yet.
+- **Decision 7 and step 10 rested on a misread catalog.** ClaudeForge's `src/Directory.Build.props`
+  has set `PackageId` to `Bennewitz.Ninja.$(MSBuildProjectName)` since `c3f34ca8` (2026-09-13), and
+  GitHub Packages holds `Bennewitz.Ninja.AgentForge.*`. The catalog read only each `.csproj` and the
+  root props, so it reported the bare ids and a collision with `subhajitlabs`' `AgentForge.*` on
+  nuget.org that does not exist. Nothing was changed in ClaudeForge; the catalog is corrected.

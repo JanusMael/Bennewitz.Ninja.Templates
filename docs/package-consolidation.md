@@ -29,11 +29,12 @@ decisions are at the end.
 | Repository | Ids | Where they go |
 |---|---|---|
 | `Bennewitz.Ninja.DiffView` | `Bennewitz.Ninja.DiffView.Core`, `Bennewitz.Ninja.DiffView.Avalonia` | Nowhere yet. No tag has been pushed |
-| `ClaudeForge` | `AgentForge.Abstractions`, `.Artifacts`, `.Core`, `.Sdk`, `.Avalonia.Shell` | GitHub Packages, privately, from `release-packages.yml` on `packages-v*` tags |
+| `ClaudeForge` | `Bennewitz.Ninja.AgentForge.Abstractions`, `.Artifacts`, `.Core`, `.Sdk`, `.Avalonia.Shell` | GitHub Packages, privately, from `release-packages.yml` on `packages-v*` tags |
 
-⛔ **`AgentForge.Abstractions` and `AgentForge.Core` already exist on nuget.org, owned by
-`subhajitlabs`.** Those ids can never be published there by this account. If `AgentForge.*` is ever
-made public, it needs a new name first.
+⚠ **The ids carry the prefix from `src/Directory.Build.props`, not from any `.csproj`.**
+`PackageId` is `Bennewitz.Ninja.$(MSBuildProjectName)` there, since `c3f34ca8` (2026-09-13). The bare
+`AgentForge.Abstractions` and `AgentForge.Core` on nuget.org belong to another owner, `subhajitlabs`,
+and do not collide with them.
 
 ### Repositories with no NuGet package
 
