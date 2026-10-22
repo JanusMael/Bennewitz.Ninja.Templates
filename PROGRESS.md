@@ -40,7 +40,14 @@ decisions):
    2026-09-28).
 
 **Waiting on others:**
-- XamlQuality: side 2 of the trimming enforcement, `plans/00008` step 3, behind `Trimming.Trims`.
+- XamlQuality: side 2 of the trimming enforcement, `plans/00008` step 3, behind `Trimming.Trims`. ⚠ On
+  2026-10-22 the running XamlQuality session said it does not hold that patch; the design came from an
+  earlier session on 2026-10-10. Nobody may be writing it; it needs picking up in XamlQuality.
+- XamlQuality: its sync to `2026.4.1022` is queued behind its current work, on the maintainer's
+  go-ahead. No project there sets a trimming property, so it does not trim.
+- AssemblyQuality: synced to `2026.4.1022` on its unpushed branch `feat/friend-grants` (`ba229fe`, on
+  the friend-grants adoption `c385770`): `check --offline` conforms, 54 of 54 tests. The push and pull
+  request wait on the maintainer's word.
 - DiffView#2 stays red on `conventions` until DiffView's session writes its `AGENTS.md` set.
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
   passed to its session on 2026-10-09.
