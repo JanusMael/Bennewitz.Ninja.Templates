@@ -9,8 +9,9 @@ namespace Templates.Tests.RepoConventions;
 /// </summary>
 /// <remarks>
 /// <para>
-/// ⭐ <b>Three runs, many projects each.</b> A restore is the slow part, so each run carries several
-/// projects, each conforming or broken in exactly one way, and every test reads the run it needs.
+/// ⭐ <b>Six runs, several projects each.</b> A restore is the slow part, so each run carries several
+/// projects, each conforming or broken in exactly one way, and every test reads the run it needs. Three
+/// of them trim through nothing but the project the run is about (plans/00008).
 /// </para>
 /// <para>
 /// ⛔ <b>The cases the check exists for:</b> a csproj overriding a correct <c>Directory.Build.props</c>;
@@ -75,11 +76,52 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     public void A_readme_under_another_name_is_a_readme() =>
         Assert.DoesNotContain(Lines(_runs.Conforming), l => l.StartsWith("FAIL props: OtherReadme", StringComparison.Ordinal));
 
+    /// <summary>A repository trims when any project sets a trimming property, here every library but one (plans/00008).</summary>
     [Fact]
-    public void An_untrimmable_library_is_a_note_until_trimming_is_required()
+    public void An_unmarked_library_fails_where_the_libraries_trim() =>
+        Assert.Contains("FAIL props: NotTrimmable (library): is not trimmable, and the repository trims (", _runs.Defective, StringComparison.Ordinal);
+
+    /// <remarks>
+    /// ⛔ No library sets either property: only the app's publish makes the repository trim, and it
+    /// trims the library too. Apps themselves are not held to the rule.
+    /// </remarks>
+    [Fact]
+    public void An_unmarked_library_fails_where_an_app_publishes_trimmed()
     {
-        Assert.Contains("NOTE props: NotTrimmable is not yet trimmable", _runs.Defective, StringComparison.Ordinal);
-        Assert.Contains("FAIL props: NotTrimmable is not yet trimmable", _runs.Required, StringComparison.Ordinal);
+        Assert.Contains("FAIL props: Good (library): is not trimmable, and the repository trims (TrimmedApp: ", _runs.PublishTrimmed, StringComparison.Ordinal);
+        Assert.Contains("PublishTrimmed", _runs.PublishTrimmed, StringComparison.Ordinal);
+        Assert.DoesNotContain(Lines(_runs.PublishTrimmed), l => l.StartsWith("FAIL props: TrimmedApp", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void An_unmarked_library_fails_where_an_app_publishes_natively()
+    {
+        Assert.Contains("FAIL props: Good (library): is not trimmable, and the repository trims (AotApp: ", _runs.PublishAot, StringComparison.Ordinal);
+        Assert.Contains("PublishAot", _runs.PublishAot, StringComparison.Ordinal);
+        Assert.DoesNotContain(Lines(_runs.PublishAot), l => l.StartsWith("FAIL props: AotApp", StringComparison.Ordinal));
+    }
+
+    /// <remarks>The policy enforces nothing where nothing trims: not a FAIL, and not a NOTE either.</remarks>
+    [Fact]
+    public void A_repository_that_does_not_trim_has_no_trimming_finding()
+    {
+        Assert.Contains("NOTE props: 4 projects evaluated after a restore", _runs.Untrimmed, StringComparison.Ordinal);
+        Assert.DoesNotContain(Lines(_runs.Untrimmed), l => l.Contains("trimm", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void A_trimming_exemption_excuses_the_library_and_a_stale_one_is_noted()
+    {
+        Assert.DoesNotContain(Lines(_runs.Exempted), l => l.StartsWith("FAIL props: NotTrimmable", StringComparison.Ordinal));
+        Assert.Contains("NOTE props: Good: the exemption for Trimming is no longer needed", _runs.Exempted, StringComparison.Ordinal);
+    }
+
+    /// <summary>The retired key is a NOTE, never a FAIL, so a repository still carrying it stays green.</summary>
+    [Fact]
+    public void The_retired_trimming_key_is_noted()
+    {
+        Assert.Contains("NOTE repository.json: \"trimming\" is no longer read; remove it.", _runs.Exempted, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"trimming\"", _runs.Defective, StringComparison.Ordinal);
     }
 
     /// <summary>Every project that compiles embeds its symbols in Release, an app as much as a package.</summary>
@@ -104,15 +146,15 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
 
     [Fact]
     public void An_exemption_with_a_reason_excuses_its_rule() =>
-        Assert.DoesNotContain(Lines(_runs.Required), l => l.StartsWith("FAIL props: NoReadme", StringComparison.Ordinal));
+        Assert.DoesNotContain(Lines(_runs.Exempted), l => l.StartsWith("FAIL props: NoReadme", StringComparison.Ordinal));
 
     [Fact]
     public void An_exemption_without_a_reason_fails() =>
-        Assert.Contains("\"props\" exempts Override's Nullable without a reason", _runs.Required, StringComparison.Ordinal);
+        Assert.Contains("\"props\" exempts Override's Nullable without a reason", _runs.Exempted, StringComparison.Ordinal);
 
     [Fact]
     public void An_exemption_that_is_no_longer_needed_is_noted() =>
-        Assert.Contains("NOTE props: Good: the exemption for Nullable is no longer needed", _runs.Required, StringComparison.Ordinal);
+        Assert.Contains("NOTE props: Good: the exemption for Nullable is no longer needed", _runs.Exempted, StringComparison.Ordinal);
 
     [Fact]
     public void Offline_refuses_to_read_another_repository_through_the_API()
@@ -126,7 +168,7 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     private static IEnumerable<string> Lines(string text) =>
         text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Select(l => l.Trim());
 
-    /// <summary>The three runs, each over its own repository, shared by every test in the class.</summary>
+    /// <summary>The six runs, each over its own repository, shared by every test in the class.</summary>
     public sealed class Runs
     {
         private static readonly string[] Conforming_ = ["Good", "GoodTests", "GoodApp", "GoodTool", "OtherReadme"];
@@ -136,25 +178,37 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
         {
             Conforming = Run(Conforming_, new JsonObject());
             Defective = Run([.. Conforming_, .. Broken], new JsonObject());
-            Required = Run([.. Conforming_, .. Broken], new JsonObject
+            Exempted = Run([.. Conforming_, .. Broken], new JsonObject
             {
                 ["trimming"] = "required",
                 ["props"] = new JsonObject
                 {
                     ["NoReadme"] = new JsonObject { ["PackageReadmeFile"] = "The fixture's reason." },
+                    ["NotTrimmable"] = new JsonObject { ["Trimming"] = "The fixture's reason." },
                     ["Override"] = new JsonObject { ["Nullable"] = " " },
-                    ["Good"] = new JsonObject { ["Nullable"] = "Stale: Good meets it." },
+                    ["Good"] = new JsonObject { ["Nullable"] = "Stale: Good meets it.", ["Trimming"] = "Stale: Good is trimmable." },
                 },
             });
+
+            // Over a Directory.Build.props that sets no trimming property, so only these projects decide.
+            Untrimmed = Run(["Good", "GoodTests", "GoodApp", "GoodTool"], new JsonObject(), trims: false);
+            PublishTrimmed = Run(["Good", "GoodApp", "TrimmedApp"], new JsonObject(), trims: false);
+            PublishAot = Run(["Good", "GoodApp", "AotApp"], new JsonObject(), trims: false);
         }
 
         public string Conforming { get; }
 
         public string Defective { get; }
 
-        public string Required { get; }
+        public string Exempted { get; }
 
-        private static string Run(string[] projects, JsonObject extra)
+        public string Untrimmed { get; }
+
+        public string PublishTrimmed { get; }
+
+        public string PublishAot { get; }
+
+        private static string Run(string[] projects, JsonObject extra, bool trims = true)
         {
             string directory = Path.Combine(Path.GetTempPath(), "repo-conventions-props-" + Guid.NewGuid().ToString("N"));
             try
@@ -169,8 +223,9 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                       </packageSources>
                     </configuration>
                     """);
+                string trimming = trims ? "<IsTrimmable>true</IsTrimmable><EnableTrimAnalyzer>true</EnableTrimAnalyzer>" : "";
                 Write(directory, "Directory.Build.props",
-                    """
+                    $$"""
                     <Project>
                       <PropertyGroup>
                         <TargetFramework>net10.0</TargetFramework>
@@ -184,8 +239,7 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                         <PackageLicenseExpression>MIT</PackageLicenseExpression>
                         <RepositoryUrl>https://github.com/o/r</RepositoryUrl>
                         <PackageReadmeFile>README.md</PackageReadmeFile>
-                        <IsTrimmable>true</IsTrimmable>
-                        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+                        {{trimming}}
                       </PropertyGroup>
                       <PropertyGroup Condition="'$(Configuration)' == 'Release'">
                         <DebugType>embedded</DebugType>
@@ -247,6 +301,9 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
             "NoReadme" => Sdk("<IsPackable>true</IsPackable><PackageReadmeFile></PackageReadmeFile>"),
             "OtherReadme" => Sdk("<IsPackable>true</IsPackable><PackageReadmeFile>hosting-guide.md</PackageReadmeFile>"),
             "NotTrimmable" => Sdk("<IsPackable>true</IsPackable><IsTrimmable>false</IsTrimmable>"),
+            // Each makes the repository trim by its publish alone, over a Directory.Build.props that does not.
+            "TrimmedApp" => Sdk("<IsPackable>false</IsPackable><OutputType>Exe</OutputType><PackageReadmeFile></PackageReadmeFile><PublishTrimmed>true</PublishTrimmed>"),
+            "AotApp" => Sdk("<IsPackable>false</IsPackable><OutputType>Exe</OutputType><PackageReadmeFile></PackageReadmeFile><PublishAot>true</PublishAot>"),
             // An app was not held to DebugType before: Release symbols were a package rule.
             "AppWithoutSymbols" => Sdk("<IsPackable>false</IsPackable><OutputType>Exe</OutputType><PackageReadmeFile></PackageReadmeFile><DebugType>none</DebugType>"),
             // Correct in Release, as every rule reads it; only the Debug evaluation can see this.

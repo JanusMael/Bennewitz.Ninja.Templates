@@ -11,11 +11,10 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
 `12.1.4` were taken.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09, below among the locked decisions):
-1. **[`plans/00008`](plans/00008-trimming-enforcement.md) steps 1 and 2**, approved 2026-10-09: a
-   repository trims when any project sets `IsTrimmable`, `EnableTrimAnalyzer`, `PublishTrimmed` or
-   `PublishAot`; then every library must set both trimming properties or fail; otherwise nothing is
-   reported; `"trimming"` is retired, a NOTE where still present. Step 3, side 2, is XamlQuality's
-   patch, told on 2026-10-09 that it is unblocked; it does not block the release.
+1. **[`plans/00008`](plans/00008-trimming-enforcement.md) step 2**: the templates drop `"trimming"`
+   from `repository.json`, canaried through `verify-release`. Step 1 (the `Trims` predicate, the
+   library rule and the retired key's NOTE) is done. Step 3, side 2, is XamlQuality's patch, told on
+   2026-10-09 that it is unblocked; it does not block the release.
 2. **A conventions rule: a release never pushes a `*.nupkg` glob**, a failure, not a note, in the
    canonical `repo-conventions.cs` and `docs/repository-conventions.md`. FileServer and AutoVersioning
    glob today, so they fail `conventions` on their next sync until fixed.
@@ -1180,13 +1179,20 @@ plan is unblocked the same day.
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · The predicate, the library rule and the retired key's NOTE, with the documentation | next | |
-| 2 · The templates drop `"trimming"` | after step 1 | |
-| 3 · Side 2, XamlQuality's patch, behind the same predicate | waits for the patch | Does not block the release |
+| 1 · The predicate, the library rule and the retired key's NOTE, with the documentation | **done** 2026-10-22 | `Trimming.Trims` and `Trimming.Reasons` in the canonical script, over the four properties, now in `Projects.Names`. The rule is `Trimming` among the library rules, so its exemption and the stale-exemption NOTE come from the shared path; the FAIL names up to three projects that make the repository trim. `TrimmingRequired` is gone, and `"trimming"` present is a `repository.json` NOTE. `PropsTests` gains three runs over a `Directory.Build.props` that sets no trimming property: one trimming through nothing, one through an app's `PublishTrimmed`, one through `PublishAot`. Six new tests, each failing against the previous script while the other 17 pass; 23 of 23 with the new one, 112 of 112 root tests. This repository's own `check` conforms |
+| 2 · The templates drop `"trimming"` | next | |
+| 3 · Side 2, XamlQuality's patch, behind the same predicate | waits for the patch | Does not block the release. XamlQuality's design (its message of 2026-10-10): walk `project.assets.json` and read `[AssemblyMetadata("IsTrimmable", "True")]` from each `Bennewitz.Ninja.*` package's assemblies with System.Reflection.Metadata. It calls `Trimming.Trims` |
 
 ### Drift from `plans/00008`
 
-None yet.
+- **A `Trimming` exemption in a repository that does not trim is reported as no longer needed.** The plan
+  says only that a stale exemption is still reported; with nothing to exempt from, the exemption is
+  stale too. It is a NOTE about the exemption, not a trimming finding about a library.
+
+⚠ **A script canary must touch the file it swaps in.** `Copy-Item` keeps the source's timestamp, and
+`dotnet run --file` then reused its cached build of the newer script: the first canary of step 1 passed
+all 23 tests against the previous script. With the copy's `LastWriteTime` set to now, the six new tests
+failed as they should.
 
 ## Symbols in both configurations — outside the plans
 
