@@ -161,13 +161,19 @@ order matters: an xUnit v3 test project is a non-packable executable.
 | `RepositoryUrl` | | names this repository |
 | `PackageReadmeFile` | | set, so nuget.org shows a README; any name, and `dotnet pack` itself fails (`NU5039`) when the named file is not packed |
 
-**Trimming** is a stage. A library without `IsTrimmable` and `EnableTrimAnalyzer` is a NOTE until
-`repository.json` says `"trimming": "required"`, and then it fails. Apps and tools are not held to
-it: a `dotnet tool` runs on the installed framework, and an app's trimming is decided by its kind.
+**Trimming** follows from the projects, never from a declaration. A repository trims when any of
+its projects evaluates `IsTrimmable`, `EnableTrimAnalyzer`, `PublishTrimmed` or `PublishAot` to
+`true`: an app published trimmed or natively trims its own libraries too. When it trims, every
+library must evaluate `IsTrimmable` and `EnableTrimAnalyzer` to `true`, or it fails, the finding
+naming the projects that make it trim. When it does not, nothing is reported. Apps and tools are
+not held to it: a `dotnet tool` runs on the installed framework, and an app's trimming is decided
+by its kind. The `"trimming"` key `repository.json` once carried is no longer read; a NOTE asks for
+it to be removed.
 
 **A rule can be exempted for one project**, under `props` in `repository.json`, with its reason. The
 rule names are the ones in the table above, plus `Trimming`. An exemption the project no longer
-needs is reported, so it is removed rather than left to hide a later regression.
+needs is reported, so it is removed rather than left to hide a later regression; a `Trimming`
+exemption in a repository that does not trim is one of those.
 
 ## Friend grants
 
@@ -264,7 +270,7 @@ Only what varies from one repository to the next:
 | `content` | Paths whose Markdown is shipped content rather than this repository's own documentation, so a marker inside them is intended. This repository lists `templates/bbpkg` |
 | `undocumented` | Top-level directories exempt from `AGENTS.md`, each mapped to its reason. An empty reason fails |
 | `props` | Per-project exemptions from the [build properties](#build-properties): `{ "<project>": { "<rule>": "<reason>" } }`. An empty reason fails |
-| `trimming` | `"required"` once every library in the repository is trimmable; absent until then |
+| `trimming` | Retired: no longer read, and a NOTE while present. Whether a repository trims follows from its projects ([build properties](#build-properties)) |
 
 ## Commands
 
