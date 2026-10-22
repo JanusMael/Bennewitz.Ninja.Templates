@@ -1281,8 +1281,8 @@ accepted with the plan.
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · AutoVersioning: `packages.push`, no glob push | started 2026-10-22, its own session | Independent; the queued release's no-glob rule confirms it |
-| 2 · XamlQuality: `packages.push` | started 2026-10-22, its own session | Independent |
+| 1 · AutoVersioning: `packages.push`, no glob push | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.AutoVersioning#5, merged as `aa0b9bd`, `build` and `conventions` green. The queued release's no-glob rule confirms it on the next sync. The preflight has not been run |
+| 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
 | 3 · Templates: multi-family support | after the queued release | Released on the maintainer's word |
 | 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
 | 5–7 · Inspections: rename, import, policy, archive | after step 3 | Each irreversible action on the maintainer's word |
