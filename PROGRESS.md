@@ -1246,3 +1246,21 @@ Who it reaches today, read from GitHub on 2026-10-22: no family repository. Auto
 glob that day (its `aa0b9bd`, PR #5), and FileServer already had; a stale local checkout of either
 still shows one. TrueCourseCalculator, Geo.Core and GeoHash glob, but are local-only and carry no
 script.
+
+## The root tests in 93 s instead of about 260 — outside the plans
+
+Asked for by the maintainer on 2026-10-22. Measured class by class first, each alone: `GrantsTests`
+106 s, `PropsTests` 93 s, `RepoConventionsTests` 25 s, the other six 37 s together. The first three
+shared one serial collection, because parallel `dotnet run --file` builds of one script contend for
+its output, so the suite's wall-clock was that chain. A `dotnet run --file` launch also cost about 0.5 s
+against 0.06 s for the built program.
+
+`ConventionsScript` builds `repo-conventions.cs` once per test run, `--no-incremental`, and launches
+the program; the collection is gone, and `PropsTests`' six repositories and `GrantsTests`' three run
+at once. One test, `The_script_runs_as_a_person_runs_it`, still launches it with `dotnet run --file`.
+116 of 116 in 93 s, and 97 s on a second pass. `tests/AGENTS.md` records the rule.
+
+⭐ **The canary trap is gone with it.** The file-based cache trusts timestamps, so the first canary of
+`plans/00008` step 1 ran a stale build. With the pre-no-glob script copied in under a January
+timestamp, the forced build read it as it was and the two glob tests failed, as they should.
+

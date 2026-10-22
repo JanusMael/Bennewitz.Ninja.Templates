@@ -1,11 +1,10 @@
-using System.Diagnostics;
 using System.Text.Json.Nodes;
 
 namespace Templates.Tests.RepoConventions;
 
 /// <summary>
-/// <c>scripts/repo-conventions.cs</c>, run exactly as CI runs it, over a repository built in a temp
-/// directory and GitHub's answers read from fixture files.
+/// <c>scripts/repo-conventions.cs</c>, run with the arguments CI passes, over a repository built in a
+/// temp directory and GitHub's answers read from fixture files.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,13 +19,27 @@ namespace Templates.Tests.RepoConventions;
 /// by construction and could never catch it building the wrong ruleset.
 /// </para>
 /// <para>
-/// ⓘ One class, so the runs are sequential: parallel <c>dotnet run --file</c> builds of the same
-/// file contend for its build output.
+/// ⓘ The script is built once and launched as a program (<see cref="ConventionsScript"/>), so this
+/// class runs in parallel with the other conventions classes. One test still runs it exactly as a
+/// person does.
 /// </para>
 /// </remarks>
-[Collection("repo-conventions")]
 public sealed class RepoConventionsTests
 {
+    /// <remarks>
+    /// ⛔ The one launch through <c>dotnet run --file</c>, so the script as a person runs it, compiled
+    /// by the SDK from the file, is still proven to start. Every other test runs the built copy.
+    /// </remarks>
+    [Fact]
+    public void The_script_runs_as_a_person_runs_it()
+    {
+        (int exit, string output) = ConventionsScript.Execute("dotnet", RepoRoot(),
+            "run", "--file", Path.Combine("scripts", "repo-conventions.cs"), "--", "check", "--offline", "--repo", "o/r");
+
+        Assert.Equal(2, exit);
+        Assert.Contains("--offline checks a checkout", output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_conforming_repository_passes_at_admin_depth()
     {
@@ -617,16 +630,7 @@ public sealed class RepoConventionsTests
         return new Fixture(files, config, api);
     }
 
-    private static string RepoRoot()
-    {
-        DirectoryInfo? directory = new(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Bennewitz.Ninja.Templates.csproj")))
-        {
-            directory = directory.Parent;
-        }
-        Assert.NotNull(directory);
-        return directory.FullName;
-    }
+    private static string RepoRoot() => ConventionsScript.RepoRoot();
 
     private sealed record Result(int ExitCode, string Output);
 
@@ -669,32 +673,17 @@ public sealed class RepoConventionsTests
                     File.WriteAllText(Path.Combine(answers, name + ".json"), answer?.ToJsonString() ?? "");
                 }
 
-                (int initExit, string initOutput) = Execute("git", tree, "init", "-q");
+                (int initExit, string initOutput) = ConventionsScript.Execute("git", tree, "init", "-q");
                 Assert.True(initExit == 0, initOutput);
 
-                (int exit, string output) = Execute("dotnet", RepoRoot(),
-                    ["run", "--file", Path.Combine("scripts", "repo-conventions.cs"), "--",
-                     .. arguments, "--root", tree, "--repo", "o/r", "--api-fixtures", answers]);
+                (int exit, string output) = ConventionsScript.Run(RepoRoot(),
+                    [.. arguments, "--root", tree, "--repo", "o/r", "--api-fixtures", answers]);
                 return new Result(exit, output);
             }
             finally
             {
                 Directory.Delete(directory, recursive: true);
             }
-        }
-
-        private static (int ExitCode, string Output) Execute(string file, string workingDirectory, params string[] arguments)
-        {
-            ProcessStartInfo start = new(file) { WorkingDirectory = workingDirectory, RedirectStandardOutput = true, RedirectStandardError = true };
-            foreach (string argument in arguments)
-            {
-                start.ArgumentList.Add(argument);
-            }
-            using Process process = Process.Start(start)!;
-            Task<string> stdout = process.StandardOutput.ReadToEndAsync();
-            Task<string> stderr = process.StandardError.ReadToEndAsync();
-            process.WaitForExit();
-            return (process.ExitCode, stdout.Result + stderr.Result);
         }
     }
 }
