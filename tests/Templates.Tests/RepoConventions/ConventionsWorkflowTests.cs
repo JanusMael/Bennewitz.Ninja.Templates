@@ -78,16 +78,19 @@ public sealed class ConventionsWorkflowTests
     }
 
     /// <summary>
-    /// A generated repository requires trimming from its first commit (plans/00004 step 4). It costs
-    /// nothing there, because the template's src/Directory.Build.props already marks every shipped
-    /// assembly trimmable; this keeps it from quietly ceasing to be required.
+    /// No template ships the retired <c>"trimming"</c> key (plans/00008): a generated repository trims
+    /// because its projects say so, and would otherwise start life with a NOTE asking for its removal.
     /// </summary>
     [Fact]
-    public void The_template_requires_trimming()
+    public void No_template_ships_the_retired_trimming_key()
     {
-        JsonNode config = JsonNode.Parse(File.ReadAllText(Path.Combine(RepoRoot(), ShippedRepositoryJson)))!;
-
-        Assert.Equal("required", config["trimming"]?.GetValue<string>());
+        string[] templates = Directory.GetDirectories(Path.Combine(RepoRoot(), "templates"));
+        Assert.NotEmpty(templates);
+        Assert.All(templates, template =>
+        {
+            JsonObject config = JsonNode.Parse(File.ReadAllText(Path.Combine(template, ".github", "repository.json")))!.AsObject();
+            Assert.False(config.ContainsKey("trimming"), $"{Path.GetFileName(template)} still ships \"trimming\".");
+        });
     }
 
     /// <summary>
