@@ -11,8 +11,14 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
-1. **One note to each family repository, now that `2026.4.1022` is out**, so each adopts the friend
-   grants and the release's other conventions on its next sync: FileServer and ScopedEditors (each documents "grants
+1. **Sent 2026-10-22; follow up when each repository syncs.** The note to each family repository,
+   from `check --repo` run against each that day: issues AppServices#16, ScopedEditors#12,
+   AutoVersioning#6, FileServer#12, JsonC#4 and CodeQuality#3 (no session running), and messages to
+   the AssemblyQuality, XamlQuality and DiffView sessions. Every copy of the script was drifted; the
+   retired key remains in AppServices, ScopedEditors, AssemblyQuality, JsonC and CodeQuality; no
+   repository globs. TrueCourseCalculator, Geo.Core and GeoHash have no remote and no session, so
+   they had no note. What it was to carry, so each adopts the friend grants and the release's other
+   conventions on its next sync: FileServer and ScopedEditors (each documents "grants
    to tests only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
    an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
