@@ -144,6 +144,7 @@ return verb switch
 int Check()
 {
     Documentation.Check(tree, config, findings);
+    Workflows.CheckPublishing(tree, findings);
 
     if (offline)
     {
@@ -651,6 +652,41 @@ static class Workflows
             }
         }
     }
+
+    /// <summary>
+    /// A release publishes the ids <c>packages.push</c> names, each by its exact file, never a
+    /// <c>*.nupkg</c> glob: a glob publishes whatever the build happened to produce, and a nuget.org
+    /// version is permanent. A FAIL at every depth, so the release preflight stops before the push.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Read per workflow, not per step. A workflow that publishes, by <c>nuget push</c> or by a GitHub
+    /// release, may not glob a package anywhere, so a glob in a folded or continued command line, or
+    /// in an action's <c>files:</c>, is caught too. A workflow that publishes nothing may: CI listing
+    /// <c>./artifacts/*.nupkg</c> ships nothing. Comment lines are skipped.
+    /// </remarks>
+    public static void CheckPublishing(Tree tree, List<Finding> findings)
+    {
+        foreach (string path in tree.Files.Where(IsWorkflow))
+        {
+            string[] lines = (tree.Read(path) ?? "").Split('\n');
+            if (!lines.Any(line => !IsComment(line) && Publishes.IsMatch(line)))
+            {
+                continue;
+            }
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (!IsComment(lines[i]) && PackageGlob.Match(lines[i]) is { Success: true } glob)
+                {
+                    findings.Add(Finding.Fail("release", $"{path}:{i + 1} publishes a package glob, `{glob.Value}`. A release publishes the ids packages.push names, each by its exact file; a glob publishes whatever the build produced, and a nuget.org version is permanent."));
+                }
+            }
+        }
+    }
+
+    private static readonly Regex Publishes = new(@"\bnuget\s+push\b|\bgh\s+release\s+(create|upload)\b|action-gh-release");
+    private static readonly Regex PackageGlob = new(@"[^\s""'()]*[*?][^\s""'()]*\.s?nupkg\b");
+
+    private static bool IsComment(string line) => line.TrimStart().StartsWith('#');
 
     private static bool IsWorkflow(string path) =>
         path.StartsWith(".github/workflows/", StringComparison.Ordinal) &&

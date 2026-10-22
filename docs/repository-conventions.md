@@ -32,6 +32,19 @@ not generated from the template adopts the same files by hand; see
 A **top-level directory** is any directory at the root that git tracks. `check` reads the list from
 the tree, so a directory added later needs its documents on the day it is added.
 
+## A release publishes what `packages.push` names
+
+**A workflow that publishes never globs a package.** It pushes each id `packages.push` names by its
+exact file, `<id>.<version>.nupkg`, to nuget.org and to the GitHub release alike, as the template's
+`release.yml` does. A `*.nupkg` glob publishes whatever the build happened to produce, and a
+nuget.org version is permanent: one stray package is published for good.
+
+`check` fails, at every depth including `--release`, on a `.nupkg` or `.snupkg` path holding `*` or
+`?` anywhere in a workflow that publishes, by `nuget push`, `gh release create` or `upload`, or an
+`action-gh-release` step. The whole workflow is read, not one step, so a glob on a continued or
+folded command line is caught. A workflow that publishes nothing may glob: CI listing its packages
+ships nothing. Comment lines are skipped.
+
 ## The AI-facing documents
 
 The content is written once, in `AGENTS.md`, and addresses no particular agent. Each tool finds its
@@ -284,10 +297,10 @@ dotnet run --file scripts/repo-conventions.cs -- grants
 
 | Command | Run by | What it does |
 |---|---|---|
-| `check` | CI, on every push and pull request | Documentation, markers, description, topics, homepage, feature toggles, rulesets, required checks |
-| `check --release` | the release workflow | Only what is prescribed: the documents, the markers, a non-empty description and the friend grants. A drifted setting does not stop a publish |
+| `check` | CI, on every push and pull request | Documentation, markers, package globs, description, topics, homepage, feature toggles, rulesets, required checks |
+| `check --release` | the release workflow | Only what is prescribed: the documents, the markers, the package globs, a non-empty description and the friend grants. A drifted setting does not stop a publish |
 | `check --admin` | the maintainer | Everything, including the merge options and security toggles; fails on anything unreadable |
-| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the required checks against the workflows, the build properties, the friend grants, and the script copy |
+| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, the required checks against the workflows, the build properties, the friend grants, and the script copy |
 | `grants` | anyone, after adding, removing or renaming a project | Writes `AssemblyInfo.InternalsVisibleTo.cs` from the projects' assembly names, and an empty External file when there is none. Asks nothing of GitHub |
 | `apply --dry-run` | the maintainer | Prints every request `apply` would send |
 | `apply` | the maintainer | Writes the description, homepage, topics, baseline settings, security toggles and both rulesets |

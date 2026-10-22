@@ -11,29 +11,28 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
 `12.1.4` were taken.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09, below among the locked decisions):
-1. **A conventions rule: a release never pushes a `*.nupkg` glob**, a failure, not a note, in the
-   canonical `repo-conventions.cs` and `docs/repository-conventions.md`. FileServer and AutoVersioning
-   glob today, so they fail `conventions` on their next sync until fixed.
-2. **AssemblyQuality in `bbpkg`, `bbweb`, `bbapi` and `bbconsole`**, as `bbavalonia` has it: a test
+1. **AssemblyQuality in `bbpkg`, `bbweb`, `bbapi` and `bbconsole`**, as `bbavalonia` has it: a test
    reference and `AssemblyQualityTests`, BNAQ1005 included.
-3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
+2. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
-4. **The release, on the maintainer's word only, once 1 and 2 have landed** (`plans/00008`'s side 1,
-   steps 1 and 2, has). It
+3. **The release, on the maintainer's word only, once 1 has landed** (`plans/00008`'s side 1 and the
+   no-glob rule have). It
    carries `bbconsole`, the shared entry point in every app, AutoVersioning `2026.3.928` and Avalonia
    `12.1.4`, symbols in both configurations with `bbapi`'s native symbols released, the no-glob rule,
    AssemblyQuality in every template, and the trimming enforcement's side 1. Verified from nuget.org: `dotnet new list` shows five templates, `verify-release --published`
    passes.
-5. **After that release, one note to each family repository** that can adopt the friend grants and the
+4. **After that release, one note to each family repository** that can adopt the friend grants and the
    release's other conventions on its next sync: FileServer and ScopedEditors (each documents "grants
    to tests only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
    an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
    adopted the grants (JanusMael/Bennewitz.Ninja.AppServices#9). The same note says the `"trimming"`
-   key is retired: drop it from `repository.json`.
-6. **`plans/00009`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
+   key is retired: drop it from `repository.json`. TrueCourseCalculator, Geo.Core and GeoHash also push
+   `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
+   remote, no script copy).
+5. **`plans/00009`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
    v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
-7. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+6. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
    2026-09-28).
@@ -1218,3 +1217,32 @@ Release, with no project overriding it. Two gaps were closed:
 is embedded all the same. The first version of the rule also required `DebugSymbols` not to be `false`,
 and failed every correct project in the fixtures. The rule is named `DebugSymbols` for what it protects;
 it reads `DebugType`.
+
+## No package glob in a release — outside the plans
+
+The maintainer's decision of 2026-10-09: a release never publishes a `*.nupkg` glob, and the
+conventions check fails it, not merely notes it. Until now only this repository's own two release
+workflows were held to it, by `PackagingTests`; every family repository now is, through `check`.
+
+`Workflows.CheckPublishing` fails a `.nupkg` or `.snupkg` path holding `*` or `?` anywhere in a
+workflow that publishes (`nuget push`, `gh release create` or `upload`, `action-gh-release`), at every
+depth including `--release`, so the preflight stops the publish. It reads the whole workflow because
+the family's globs sit on continued or folded lines apart from their command. A workflow that
+publishes nothing may glob, and comments are skipped. Documented as its own section of
+`docs/repository-conventions.md`.
+
+`RepoConventionsTests` gains three: AutoVersioning's former release (both globs, at release depth),
+Geo.Core's folded `run: >` shape, and a passing case of exact files per id, a glob in a commented line
+and one in a workflow that only lists packages. The two failing cases fail against the previous
+script. The passing case was proven by two planted over-reaches, each caught by it alone: comments
+read as code, and every workflow treated as publishing. 30 of 30 in the class.
+
+⚠ **A planted mutant must still compile.** The first version of the second mutant, `if (false)`, is
+unreachable code, an error under warnings-as-errors, so the script never built and 29 of 30 tests
+failed for that reason alone. `line.Length >= 0` in place of the publishing match compiles and
+failed only the passing case.
+
+Who it reaches today, read from GitHub on 2026-10-22: no family repository. AutoVersioning dropped its
+glob that day (its `aa0b9bd`, PR #5), and FileServer already had; a stale local checkout of either
+still shows one. TrueCourseCalculator, Geo.Core and GeoHash glob, but are local-only and carry no
+script.
