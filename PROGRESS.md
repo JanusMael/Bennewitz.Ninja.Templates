@@ -6,37 +6,32 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-10-09 from the maintainer's decisions of
-that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning `2026.3.928` and Avalonia
-`12.1.4` were taken.*
+*Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
+2026.4.1022` was released and verified from nuget.org (its section below).*
 
-**Next, in order** (the maintainer's decisions of 2026-10-09, below among the locked decisions):
-1. **The release, on the maintainer's word only.** Everything it waited for has landed: `plans/00008`'s
-   side 1, the no-glob rule and AssemblyQuality in every template. It carries `bbconsole`, the shared
-   entry point in every app, AutoVersioning `2026.3.928` and Avalonia `12.1.4`, symbols in both
-   configurations with `bbapi`'s native symbols released, the no-glob rule, AssemblyQuality in every
-   template, and the trimming enforcement's side 1. Verified from nuget.org: `dotnet new list` shows
-   five templates, `verify-release --published` passes.
-2. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
-   repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
-3. **After that release, one note to each family repository** that can adopt the friend grants and the
-   release's other conventions on its next sync: FileServer and ScopedEditors (each documents "grants
+**Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
+decisions):
+1. **One note to each family repository, now that `2026.4.1022` is out**, so each adopts the friend
+   grants and the release's other conventions on its next sync: FileServer and ScopedEditors (each documents "grants
    to tests only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
    an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
    adopted the grants (JanusMael/Bennewitz.Ninja.AppServices#9). The same note says the `"trimming"`
    key is retired: drop it from `repository.json`. TrueCourseCalculator, Geo.Core and GeoHash also push
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
-   remote, no script copy).
+   remote, no script copy). Each `Bennewitz.Ninja.*` library also starts failing `Trimming` on its next
+   sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
+2. **[`plans/00009`](plans/00009-package-consolidation.md) step 3: multi-family support here**, for the
+   next Templates release, now that the queued one has shipped. Steps 1 and 2 are done; step 4 waits on
+   DiffView's own session. Its own section below tracks it.
+3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
+   repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
    v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
 5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
    2026-09-28).
-6. **[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22**: steps 1 and 2 are
-   done, step 4 waits on DiffView's own session, and step 3, multi-family support here, ships in the
-   Templates release after the queued one. Its own section below tracks it.
 
 **Waiting on others:**
 - XamlQuality: side 2 of the trimming enforcement, `plans/00008` step 3, behind `Trimming.Trims`.
@@ -1081,7 +1076,7 @@ stderr, as the draft had claimed, and that the helper must survive `WebApplicati
 | 1 · AppServices ships the helper | **done** 2026-10-01 | `2026.4.1001`, tag `v2026.4.1001` at `03ebb64`, built in JanusMael/Bennewitz.Ninja.AppServices#8. Checked here, not taken on report: all five AppServices ids list `2026.4.1001` in the nuget.org flat-container, `.EntryPoint` among them, and the release run and the required `aot-linux` and `aot-windows` jobs are green on `03ebb64`. AppServices reports a warning-free native AOT publish on both, the probe's contract passing 18 of 18 on Linux, including real SIGINT and SIGTERM, and 14 on win-x64 with the 4 signal cases skipped |
 | 2 · `bbconsole` and its `verify-release` case | **done** 2026-10-09 | `templates/bbconsole`, stem `CliStem`: one console project calling `AppMain.RunConsoleAsync`, an example command counting lines (`LineCount`), and `CommandLineTests`, which run the built executable as a child process: exit 0 with the count on stdout, `--version` printing `PublicVersion`, 2 with the usage for an unknown option and for no file, 1 with the report for a missing file, and 130 after SIGINT, skipped on Windows. Trimmed and single-file with ILLink's warnings as errors, no baseline; the release publishes six runtime identifiers from Linux; CI's `publish` job publishes linux-x64 and runs it. `verify-release` gains its case and a `Console` publish kind, which runs the published binary: `--version` must print exactly the published version, and an unknown option must exit 2 with the usage on stderr and nothing on stdout. Verified: 10 of 10 tests on Linux (WSL, SDK 10.0.401), 9 and the SIGINT skip on Windows; a trimmed linux-x64 publish with no warnings, 13 MB; `verify-release` passes, all six generated repositories, 244 package entries in five templates; 105 of 105 root tests. Canaried: `--version` changed to print the informational version fails the generated repository's own test (actual "Built with ♥"), and with that test silenced, fails `verify-release`'s check of the published binary |
 | 3 · The other app templates call the helper | **done** 2026-10-09 | `bbweb` and `bbapi` build and run their host inside `AppMain.RunHostAsync`, send every log line to stderr (`LogToStandardErrorThreshold`) and dispose the app on exit; both take `AppServices.EntryPoint 2026.4.1001`. `bbavalonia` calls `AppMain.RunDesktop` with `AvaloniaDiagnostics.EntryPointOptions()` and configures logging inside the run, on `AppServices.Avalonia 2026.4.1001`. `verify-release` now runs `--version` on every published app, which must print exactly the published version, and publishes each app once more with its `Program.cs` replaced, in the scratch copy only, by one that throws inside the entry point: it must exit 1 with the fatal report naming the failure on stderr, and for `bbavalonia` in its log file too. Verified: `verify-release` passes, every existing test passing (the web ones through `WebApplicationFactory`), `bbavalonia`'s trim baseline unchanged at 7. Canaried in one run, every other case still passing: `bbapi` calling its host without `AppMain` fails the `--version` check (the API took `--version` as configuration and served until killed at 60 s), and a planted throw outside `AppMain` fails the exit-1 check (the runtime's own code, -532462766) |
-| 4 · Documents, and a release | documents **done** 2026-10-09; the release waits for the maintainer's word | The package README names `bbconsole` with an example and the shared entry point; the package description and tags name it; `docs/repository-conventions.md` lists it in both template lists. The root `AGENTS.md` no longer describes only `bbpkg`, nor a GitHub template repository, which this stopped being on 2026-09-28 |
+| 4 · Documents, and a release | **done**: documents 2026-10-09; released as `2026.4.1022` on 2026-10-22 (its section below) | The package README names `bbconsole` with an example and the shared entry point; the package description and tags name it; `docs/repository-conventions.md` lists it in both template lists. The root `AGENTS.md` no longer describes only `bbpkg`, nor a GitHub template repository, which this stopped being on 2026-09-28 |
 
 ### Drift from `plans/00007`
 
@@ -1312,7 +1307,7 @@ accepted with the plan.
 |---|---|---|
 | 1 · AutoVersioning: `packages.push`, no glob push | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.AutoVersioning#5, merged as `aa0b9bd`, `build` and `conventions` green. The queued release's no-glob rule confirms it on the next sync. The preflight has not been run |
 | 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
-| 3 · Templates: multi-family support | after the queued release | Released on the maintainer's word |
+| 3 · Templates: multi-family support | next: the queued release shipped as `2026.4.1022` | Released on the maintainer's word |
 | 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
 | 5–7 · Inspections: rename, import, policy, archive | after step 3 | Each irreversible action on the maintainer's word |
 | 8 · AppKit | after Inspections | |
@@ -1327,3 +1322,26 @@ accepted with the plan.
   GitHub Packages holds `Bennewitz.Ninja.AgentForge.*`. The catalog read only each `.csproj` and the
   root props, so it reported the bare ids and a collision with `subhajitlabs`' `AgentForge.*` on
   nuget.org that does not exist. Nothing was changed in ClaudeForge; the catalog is corrected.
+
+## Release `2026.4.1022`
+
+✅ **Released as `Bennewitz.Ninja.Templates 2026.4.1022`**, 2026-10-22, tag `v2026.4.1022` at
+`198e5cd`, on the maintainer's word. It carries `bbconsole` and the shared entry point in every app
+(`plans/00007`), AutoVersioning `2026.3.928` and Avalonia `12.1.4`, symbols in both configurations with
+`bbapi`'s native symbols released, the trimming enforcement's side 1 (`plans/00008` steps 1–2), the
+no-glob rule, and AssemblyQuality in every template.
+
+Before the tag: `verify-release` passed locally on `198e5cd`, CI on `main` was green, and the release
+workflow's only push target was the one id in `packages.push`, covered by the policy every earlier
+release used; no preflight was run, nothing about the policy or `NUGET_USER` having changed. The
+`release` run passed (`publish`), and the GitHub release carries one asset,
+`Bennewitz.Ninja.Templates.2026.4.1022.nupkg`. Verified from the feed rather than the green run: the
+flat container listed `2026.4.1022` about six minutes after the run; `verify-release --published
+2026.4.1022` installed it from nuget.org, and all six generated repositories built, passed their
+tests (`bbpkg` 16, `bbavalonia` 17, `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with
+SIGINT skipped on Windows) and published for win-x64; and `dotnet new install` from nuget.org into a
+throwaway hive lists the five templates.
+
+⚠ **`2026.3.1001` carried the wrong quarter.** `YYYY.Q.MMDD` takes the calendar quarter
+(`docs/publishing.md`), so 1 October was `2026.4.1001`, as AppServices' release that day was named.
+A published version is permanent, and it does no harm to ordering: `2026.4.1022` sorts above it.
