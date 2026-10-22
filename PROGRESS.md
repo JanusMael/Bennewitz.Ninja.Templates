@@ -36,9 +36,9 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
    2026-09-28).
-7. **[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22**: steps 1, 2 and 4
-   can start now, each in its own repository; step 3, multi-family support here, ships in the release
-   after the queued one. Its own section below tracks it.
+7. **[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22**: steps 1 and 2 are
+   done, step 4 waits on DiffView's own session, and step 3, multi-family support here, ships in the
+   Templates release after the queued one. Its own section below tracks it.
 
 **Waiting on others:**
 - XamlQuality: side 2 of the trimming enforcement, `plans/00008` step 3, behind `Trimming.Trims`.
