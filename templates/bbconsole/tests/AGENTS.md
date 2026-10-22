@@ -8,6 +8,7 @@ executable that is never packed.
 | Path | What it covers |
 |---|---|
 | `CliStem.Tests/CommandLineTests.cs` | The built executable, run as a child process: a count on stdout and exit 0, `--version`, an unknown option and no file exiting 2 with the usage, a missing file exiting 1 with the report, and Ctrl+C exiting 130 |
+| `CliStem.Tests/Architecture/AssemblyQualityTests.cs` | AssemblyQuality's BNAQ1001, BNAQ1002, BNAQ1004 and BNAQ1005 over the compiled app, each asserting it skipped nothing and, where it can, that it inspected something; BNAQ1005: every compiled grant names an assembly the two grant files at the root allow |
 | `CliStem.Tests/PackagingTests.cs` | The app is never packed, and any library added later is declared |
 
 ## Rules

@@ -20,7 +20,7 @@ Generated from the `bbapi` template in Bennewitz.Ninja.Templates.
 | Directory | What it holds |
 |---|---|
 | `src/` | The API: `src/ApiStem`, its endpoints and its JSON contract |
-| `tests/` | The API over HTTP in memory, and the packaging guard |
+| `tests/` | The API over HTTP in memory, the AssemblyQuality rules, and the packaging guard |
 | `scripts/` | `repo-conventions.cs` |
 | `docs/` | `releasing.md`, the release runbook |
 | `.github/` | The workflows, `repository.json`, and the pointer for tools that read `.github/` |

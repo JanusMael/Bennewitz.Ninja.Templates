@@ -4,4 +4,9 @@
          the two streams can only be seen from outside the process. -->
     <ProjectReference Include="../../src/CliStem/CliStem.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- AssemblyQuality's rules, run over the app's compiled assembly. -->
+    <PackageReference Include="Bennewitz.Ninja.AssemblyQuality" />
+  </ItemGroup>
 </Project>

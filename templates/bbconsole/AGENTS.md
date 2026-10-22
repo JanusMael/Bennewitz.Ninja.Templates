@@ -20,7 +20,7 @@ every family app shares. Generated from the `bbconsole` template in Bennewitz.Ni
 | Directory | What it holds |
 |---|---|
 | `src/` | The app: `src/CliStem`, its entry point and its commands |
-| `tests/` | The app run as a child process, and the packaging guard |
+| `tests/` | The app run as a child process, the AssemblyQuality rules, and the packaging guard |
 | `scripts/` | `repo-conventions.cs` |
 | `docs/` | `releasing.md`, the release runbook |
 | `.github/` | The workflows, `repository.json`, and the pointer for tools that read `.github/` |
