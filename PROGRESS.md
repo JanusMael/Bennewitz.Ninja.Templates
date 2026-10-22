@@ -1281,10 +1281,10 @@ accepted with the plan.
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · AutoVersioning: `packages.push`, no glob push | next | Independent; the queued release's no-glob rule confirms it |
-| 2 · XamlQuality: `packages.push` | next | Independent |
+| 1 · AutoVersioning: `packages.push`, no glob push | started 2026-10-22, its own session | Independent; the queued release's no-glob rule confirms it |
+| 2 · XamlQuality: `packages.push` | started 2026-10-22, its own session | Independent |
 | 3 · Templates: multi-family support | after the queued release | Released on the maintainer's word |
-| 4 · DiffView conforms | next | DiffView#2 is open; no import while it is |
+| 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
 | 5–7 · Inspections: rename, import, policy, archive | after step 3 | Each irreversible action on the maintainer's word |
 | 8 · AppKit | after Inspections | |
 | 9 · Each family's first release from its new home | when it next changes | |
