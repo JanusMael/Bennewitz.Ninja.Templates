@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json.Nodes;
 
 namespace Templates.Tests.RepoConventions;
@@ -21,11 +20,10 @@ namespace Templates.Tests.RepoConventions;
 /// must be role <c>test</c>, not <c>app</c>.
 /// </para>
 /// <para>
-/// ⓘ In the same collection as <see cref="RepoConventionsTests"/>: both run the same file-based app,
-/// and parallel builds of one file contend for its output.
+/// ⓘ The script is built once and launched as a program (<see cref="ConventionsScript"/>), so this
+/// class runs in parallel with the other conventions classes, and its six runs with each other.
 /// </para>
 /// </remarks>
-[Collection("repo-conventions")]
 public sealed class PropsTests : IClassFixture<PropsTests.Runs>
 {
     private readonly Runs _runs;
@@ -169,44 +167,45 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
         text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Select(l => l.Trim());
 
     /// <summary>The six runs, each over its own repository, shared by every test in the class.</summary>
+    /// <remarks>Each run's output is assigned once, from its own thread, before any test reads it.</remarks>
     public sealed class Runs
     {
         private static readonly string[] Conforming_ = ["Good", "GoodTests", "GoodApp", "GoodTool", "OtherReadme"];
         private static readonly string[] Broken = ["Override", "CiProperty", "OldAutoVersioning", "NoReadme", "NotTrimmable", "AppWithoutSymbols", "DebugWithoutSymbols"];
 
-        public Runs()
-        {
-            Conforming = Run(Conforming_, new JsonObject());
-            Defective = Run([.. Conforming_, .. Broken], new JsonObject());
-            Exempted = Run([.. Conforming_, .. Broken], new JsonObject
-            {
-                ["trimming"] = "required",
-                ["props"] = new JsonObject
+        /// <remarks>The runs share nothing but the built script, so they run at once.</remarks>
+        public Runs() =>
+            Parallel.Invoke(
+                () => Conforming = Run(Conforming_, new JsonObject()),
+                () => Defective = Run([.. Conforming_, .. Broken], new JsonObject()),
+                () => Exempted = Run([.. Conforming_, .. Broken], new JsonObject
                 {
-                    ["NoReadme"] = new JsonObject { ["PackageReadmeFile"] = "The fixture's reason." },
-                    ["NotTrimmable"] = new JsonObject { ["Trimming"] = "The fixture's reason." },
-                    ["Override"] = new JsonObject { ["Nullable"] = " " },
-                    ["Good"] = new JsonObject { ["Nullable"] = "Stale: Good meets it.", ["Trimming"] = "Stale: Good is trimmable." },
-                },
-            });
+                    ["trimming"] = "required",
+                    ["props"] = new JsonObject
+                    {
+                        ["NoReadme"] = new JsonObject { ["PackageReadmeFile"] = "The fixture's reason." },
+                        ["NotTrimmable"] = new JsonObject { ["Trimming"] = "The fixture's reason." },
+                        ["Override"] = new JsonObject { ["Nullable"] = " " },
+                        ["Good"] = new JsonObject { ["Nullable"] = "Stale: Good meets it.", ["Trimming"] = "Stale: Good is trimmable." },
+                    },
+                }),
 
-            // Over a Directory.Build.props that sets no trimming property, so only these projects decide.
-            Untrimmed = Run(["Good", "GoodTests", "GoodApp", "GoodTool"], new JsonObject(), trims: false);
-            PublishTrimmed = Run(["Good", "GoodApp", "TrimmedApp"], new JsonObject(), trims: false);
-            PublishAot = Run(["Good", "GoodApp", "AotApp"], new JsonObject(), trims: false);
-        }
+                // Over a Directory.Build.props that sets no trimming property, so only these projects decide.
+                () => Untrimmed = Run(["Good", "GoodTests", "GoodApp", "GoodTool"], new JsonObject(), trims: false),
+                () => PublishTrimmed = Run(["Good", "GoodApp", "TrimmedApp"], new JsonObject(), trims: false),
+                () => PublishAot = Run(["Good", "GoodApp", "AotApp"], new JsonObject(), trims: false));
 
-        public string Conforming { get; }
+        public string Conforming { get; private set; } = "";
 
-        public string Defective { get; }
+        public string Defective { get; private set; } = "";
 
-        public string Exempted { get; }
+        public string Exempted { get; private set; } = "";
 
-        public string Untrimmed { get; }
+        public string Untrimmed { get; private set; } = "";
 
-        public string PublishTrimmed { get; }
+        public string PublishTrimmed { get; private set; } = "";
 
-        public string PublishAot { get; }
+        public string PublishAot { get; private set; } = "";
 
         private static string Run(string[] projects, JsonObject extra, bool trims = true)
         {
@@ -323,31 +322,11 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
         }
 
         public static (int ExitCode, string Output) Script(string workingDirectory, params string[] arguments) =>
-            Execute("dotnet", workingDirectory, ["run", "--file", Path.Combine("scripts", "repo-conventions.cs"), "--", .. arguments]);
+            ConventionsScript.Run(workingDirectory, arguments);
 
-        private static (int ExitCode, string Output) Execute(string file, string workingDirectory, params string[] arguments)
-        {
-            ProcessStartInfo start = new(file) { WorkingDirectory = workingDirectory, RedirectStandardOutput = true, RedirectStandardError = true };
-            foreach (string argument in arguments)
-            {
-                start.ArgumentList.Add(argument);
-            }
-            using Process process = Process.Start(start)!;
-            Task<string> stdout = process.StandardOutput.ReadToEndAsync();
-            Task<string> stderr = process.StandardError.ReadToEndAsync();
-            process.WaitForExit();
-            return (process.ExitCode, stdout.Result + stderr.Result);
-        }
+        private static (int ExitCode, string Output) Execute(string file, string workingDirectory, params string[] arguments) =>
+            ConventionsScript.Execute(file, workingDirectory, arguments);
 
-        public static string RepoRoot()
-        {
-            DirectoryInfo? directory = new(AppContext.BaseDirectory);
-            while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Bennewitz.Ninja.Templates.csproj")))
-            {
-                directory = directory.Parent;
-            }
-            Assert.NotNull(directory);
-            return directory.FullName;
-        }
+        public static string RepoRoot() => ConventionsScript.RepoRoot();
     }
 }

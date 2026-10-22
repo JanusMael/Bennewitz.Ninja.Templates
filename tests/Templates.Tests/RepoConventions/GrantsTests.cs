@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json.Nodes;
 
 namespace Templates.Tests.RepoConventions;
@@ -15,11 +14,11 @@ namespace Templates.Tests.RepoConventions;
 /// exclusion included.
 /// </para>
 /// <para>
-/// ⓘ In the same collection as <see cref="RepoConventionsTests"/> and <see cref="PropsTests"/>: all
-/// three run the same file-based app, and parallel builds of one file contend for its output.
+/// ⓘ The script is built once and launched as a program (<see cref="ConventionsScript"/>), so this
+/// class runs in parallel with the other conventions classes, and its three repositories with each
+/// other.
 /// </para>
 /// </remarks>
-[Collection("repo-conventions")]
 public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
 {
     private readonly Runs _runs;
@@ -159,7 +158,10 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
         private const string List = "AssemblyInfo.InternalsVisibleTo.cs";
         private const string External = "AssemblyInfo.InternalsVisibleTo.External.cs";
 
-        public Runs()
+        /// <remarks>Three repositories, each worked on in order, and the three at once.</remarks>
+        public Runs() => Parallel.Invoke(RunConforming, RunDefective, RunSolutionless);
+
+        private void RunConforming()
         {
             string conforming = Fixture(["Alpha", "Alpha.Tests", "Renamed", "OptedOut", "OptedOutCaps"], solution: true, content: []);
             try
@@ -180,7 +182,10 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
             {
                 Directory.Delete(conforming, recursive: true);
             }
+        }
 
+        private void RunDefective()
+        {
             string defective = Fixture(["Alpha", "Stray", "Attribute", "Source", "Shadowed", "Multi", "Listed", "Split", "Aliased"], solution: true, content: []);
             try
             {
@@ -195,7 +200,10 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
             {
                 Directory.Delete(defective, recursive: true);
             }
+        }
 
+        private void RunSolutionless()
+        {
             string solutionless = Fixture(["One", "Two"], solution: false, content: ["content"]);
             try
             {
@@ -209,23 +217,23 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
             }
         }
 
-        public string GrantsOutput { get; }
+        public string GrantsOutput { get; private set; } = "";
 
-        public string[] Granted { get; }
+        public string[] Granted { get; private set; } = [];
 
-        public string Conforming { get; }
+        public string Conforming { get; private set; } = "";
 
-        public string CrLf { get; }
+        public string CrLf { get; private set; } = "";
 
-        public string NoExternal { get; }
+        public string NoExternal { get; private set; } = "";
 
-        public int ScriptExit { get; }
+        public int ScriptExit { get; private set; }
 
-        public string ScriptOutput { get; }
+        public string ScriptOutput { get; private set; } = "";
 
-        public string Defective { get; }
+        public string Defective { get; private set; } = "";
 
-        public string[] Solutionless { get; }
+        public string[] Solutionless { get; private set; } = [];
 
         private static string Check(string directory) =>
             Script(directory, "check", "--offline", "--root", directory, "--repo", "o/r").Output;
@@ -371,18 +379,7 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
         public static (int ExitCode, string Output) Script(string workingDirectory, params string[] arguments) =>
             PropsTests.Runs.Script(PropsTests.Runs.RepoRoot(), [.. arguments, .. arguments.Contains("--root") ? [] : (string[])["--root", workingDirectory]]);
 
-        private static (int ExitCode, string Output) Execute(string file, string workingDirectory, params string[] arguments)
-        {
-            ProcessStartInfo start = new(file) { WorkingDirectory = workingDirectory, RedirectStandardOutput = true, RedirectStandardError = true };
-            foreach (string argument in arguments)
-            {
-                start.ArgumentList.Add(argument);
-            }
-            using Process process = Process.Start(start)!;
-            Task<string> stdout = process.StandardOutput.ReadToEndAsync();
-            Task<string> stderr = process.StandardError.ReadToEndAsync();
-            process.WaitForExit();
-            return (process.ExitCode, stdout.Result + stderr.Result);
-        }
+        private static (int ExitCode, string Output) Execute(string file, string workingDirectory, params string[] arguments) =>
+            ConventionsScript.Execute(file, workingDirectory, arguments);
     }
 }
