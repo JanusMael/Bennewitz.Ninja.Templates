@@ -312,6 +312,110 @@ public sealed class RepoConventionsTests
         Assert.Contains("FAIL repository.json: \"topics\" lacks \"csharp\", which every family repository carries.", result.Output, StringComparison.Ordinal);
     }
 
+    /// <remarks>
+    /// AutoVersioning's release as it stood on 2026-10-22: the push and the GitHub release both glob.
+    /// ⛔ At release depth, so the preflight stops the publish rather than CI merely reporting it.
+    /// </remarks>
+    [Fact]
+    public void A_release_that_pushes_a_package_glob_fails_at_release_depth()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files[".github/workflows/release.yml"] =
+            """
+            name: Release
+            on:
+              push:
+                tags: ['v*']
+            jobs:
+              release:
+                runs-on: ubuntu-latest
+                steps:
+                  - name: Push to NuGet.org
+                    run: dotnet nuget push ./packages/Release/*.nupkg --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+                  - name: Create GitHub Release
+                    run: |
+                      gh release create "${{ env.TAG }}" \
+                        --generate-notes \
+                        ./packages/Release/*.nupkg
+            """;
+
+        Result result = fixture.Run("check", "--release");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL release: .github/workflows/release.yml:10 publishes a package glob, `./packages/Release/*.nupkg`", result.Output, StringComparison.Ordinal);
+        Assert.Contains("FAIL release: .github/workflows/release.yml:15 publishes a package glob, `./packages/Release/*.nupkg`", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <remarks>
+    /// Geo.Core's shape: the glob sits on a line of its own inside a folded <c>run: &gt;</c>, apart from
+    /// the <c>nuget push</c> it belongs to, so a check of the command's own line would miss it.
+    /// </remarks>
+    [Fact]
+    public void A_glob_on_a_folded_line_of_a_publishing_workflow_fails()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files[".github/workflows/release.yml"] =
+            """
+            name: Release
+            on: workflow_dispatch
+            jobs:
+              publish:
+                runs-on: ubuntu-latest
+                steps:
+                  - name: Push to NuGet.org
+                    run: >
+                      dotnet nuget push
+                      "artifacts/Fixture.*.snupkg"
+                      --source https://api.nuget.org/v3/index.json
+            """;
+
+        Result result = fixture.Run("check");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL release: .github/workflows/release.yml:10 publishes a package glob, `artifacts/Fixture.*.snupkg`", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The template's release, by exact file per id, passes; so does a glob in a workflow that
+    /// publishes nothing, and one in a comment.
+    /// </summary>
+    [Fact]
+    public void Exact_files_and_a_glob_that_publishes_nothing_pass()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files[".github/workflows/release.yml"] =
+            """
+            name: Release
+            on: workflow_dispatch
+            jobs:
+              publish:
+                runs-on: ubuntu-latest
+                steps:
+                  # Never ./packages/Release/*.nupkg: a glob publishes whatever the build produced.
+                  - run: |
+                      targets=()
+                      while IFS= read -r id; do
+                        targets+=("./packages/Release/${id}.${VERSION}.nupkg")
+                      done < packages.push
+                      dotnet nuget push "${targets[@]}" --source https://api.nuget.org/v3/index.json
+            """;
+        fixture.Files[".github/workflows/packages.yml"] =
+            """
+            name: Packages
+            on: [push]
+            jobs:
+              list:
+                runs-on: ubuntu-latest
+                steps:
+                  - run: ls -l ./artifacts/*.nupkg
+            """;
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("FAIL release", result.Output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_copy_of_the_script_that_differs_from_the_template_fails()
     {

@@ -39,7 +39,7 @@ It is also where the family's conventions are prescribed:
 | Every template has a case in `verify-release` | A template ships without ever being generated, built or tested | `verify-release`, which compares `templates/` and the package against its cases |
 | Every file a generated repository must carry is on `verify-release`'s required list | A file dropped from the template ships nowhere, and nothing fails | `verify-release`, `required` |
 | `templates/bbpkg/scripts/repo-conventions.cs` is the canonical copy; `scripts/repo-conventions.cs` is identical to it | This repository checks itself with a different script than it ships | `repo-conventions check`, drift; this repository's `conventions` job |
-| The release pushes the ids `packages.push` names, never a glob, in both release workflows | A package nobody chose is published, permanently | `PackagingTests` |
+| The release pushes the ids `packages.push` names, never a glob, in both release workflows | A package nobody chose is published, permanently | `PackagingTests`; `repo-conventions check`, in every family repository |
 | A script run from this root passes `--file` | `dotnet run <file.cs>` binds to `Bennewitz.Ninja.Templates.csproj` instead and fails | `PackagingTests.A_script_run_from_this_repository_root_passes_the_file_flag` |
 | An approved plan is never edited | The record of what was agreed turns into a record of what was built | `plans/AGENTS.md` |
 
