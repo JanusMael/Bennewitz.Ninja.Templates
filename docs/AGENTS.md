@@ -8,6 +8,7 @@ Documents for humans. None of them is packed; the package ships `templates/**` o
 | `layered-editors-package-split.md` | How the LayeredEditors libraries were divided into packages, derived from measured imports | A record of `plans/00002`; not updated as the packages evolve |
 | `layered-editors-renames.md` | Every rename since that split, and why | Extended when a family package is renamed |
 | `windows-defender-dev-exclusions.md` | A Windows-only runbook for excluding development paths from real-time scanning | Nothing in this repository; it stands alone |
+| `package-consolidation.md` | The family's NuGet packages catalogued, the groupings proposed, and the decisions behind `plans/00009` | A record of `plans/00009`, measured 2026-10-20; the catalog is not refreshed as packages evolve |
 
 ## Rules
 
