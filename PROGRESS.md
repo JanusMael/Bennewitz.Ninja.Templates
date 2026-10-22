@@ -30,12 +30,15 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
    key is retired: drop it from `repository.json`. TrueCourseCalculator, Geo.Core and GeoHash also push
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
    remote, no script copy).
-5. **`plans/00009`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
+5. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
    v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
 6. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
    2026-09-28).
+7. **[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22**: steps 1, 2 and 4
+   can start now, each in its own repository; step 3, multi-family support here, ships in the release
+   after the queued one. Its own section below tracks it.
 
 **Waiting on others:**
 - XamlQuality: side 2 of the trimming enforcement, `plans/00008` step 3, behind `Trimming.Trims`.
@@ -93,7 +96,8 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   - AssemblyQuality in every template, in the next release. (Asked for `bbpkg`, `bbweb` and `bbapi`;
     `bbconsole`, which postdates the question, is included on the same reasoning.)
   - xunit.v3 4.x: investigate and report first; the scope is decided after.
-  - An analyzer template: `plans/00009`, after the trimming enforcement.
+  - An analyzer template: `plans/00010` (first named `00009`, which the package consolidation
+    took on 2026-10-22), after the trimming enforcement.
   - The next release waits for the no-glob rule, AssemblyQuality in every template, and the trimming
     enforcement's side 1.
   - The family is told about the friend grants after that release, in one note per repository.
@@ -1264,3 +1268,29 @@ at once. One test, `The_script_runs_as_a_person_runs_it`, still launches it with
 `plans/00008` step 1 ran a stale build. With the pre-no-glob script copied in under a January
 timestamp, the forced build read it as it was and the two glob tests failed, as they should.
 
+## `plans/00009` — package families consolidate into Inspections and AppKit
+
+[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22 and frozen. The catalog
+and the groupings it rests on are [`docs/package-consolidation.md`](docs/package-consolidation.md),
+measured 2026-10-20. The maintainer chose, through `choices`: groupings A and B in full; the names
+`Bennewitz.Ninja.Inspections` and `Bennewitz.Ninja.AppKit`; growing the largest family's repository by
+renaming it; a release per family; archiving with a pointer; `Bennewitz.Ninja.AgentForge.*` staying in
+ClaudeForge on GitHub Packages; multi-family support in the release after the queued one; old policies
+lingering until each family's first release from its new home. Decisions 9–22 were proposed and
+accepted with the plan.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · AutoVersioning: `packages.push`, no glob push | next | Independent; the queued release's no-glob rule confirms it |
+| 2 · XamlQuality: `packages.push` | next | Independent |
+| 3 · Templates: multi-family support | after the queued release | Released on the maintainer's word |
+| 4 · DiffView conforms | next | DiffView#2 is open; no import while it is |
+| 5–7 · Inspections: rename, import, policy, archive | after step 3 | Each irreversible action on the maintainer's word |
+| 8 · AppKit | after Inspections | |
+| 9 · Each family's first release from its new home | when it next changes | |
+| 10 · AgentForge rename in ClaudeForge | any time | |
+| 11 · Links | last | |
+
+### Drift from `plans/00009`
+
+None yet.
