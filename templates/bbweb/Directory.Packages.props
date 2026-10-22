@@ -25,5 +25,6 @@
          the platform above what xunit's bundled MSBuild extension can load, and the failure reads
          as an unrelated loader error. -->
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
+    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.929" />
   </ItemGroup>
 </Project>

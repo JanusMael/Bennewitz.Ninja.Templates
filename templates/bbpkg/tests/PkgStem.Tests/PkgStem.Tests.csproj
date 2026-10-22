@@ -3,4 +3,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PkgStem\PkgStem.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- AssemblyQuality's rules, run over the library's compiled assembly. -->
+    <PackageReference Include="Bennewitz.Ninja.AssemblyQuality" />
+  </ItemGroup>
 </Project>

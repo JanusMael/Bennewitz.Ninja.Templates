@@ -16,7 +16,7 @@
 | Directory | What it holds |
 |---|---|
 | `src/` | The shipped projects. Every one is packable and declared in a package list |
-| `tests/` | The test projects, including the packaging guards |
+| `tests/` | The test projects, including the packaging guards and the AssemblyQuality rules |
 | `scripts/` | File-based apps: `assert-packages.cs` and `repo-conventions.cs` |
 | `docs/` | `publishing.md`, the release runbook |
 | `.github/` | The workflows, `repository.json`, and the pointer for tools that read `.github/` |

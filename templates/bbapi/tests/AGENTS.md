@@ -8,6 +8,7 @@ executable that is never packed.
 | Path | What it covers |
 |---|---|
 | `ApiStem.Tests/ApiTests.cs` | The API over HTTP, in memory: `/healthz`, `/version`, the greeting and its validation problem, the OpenAPI document, the 404 problem, and an exception in Production |
+| `ApiStem.Tests/Architecture/AssemblyQualityTests.cs` | AssemblyQuality's BNAQ1001, BNAQ1002, BNAQ1004 and BNAQ1005 over the compiled API, each asserting it skipped nothing and, where it can, that it inspected something; BNAQ1005: every compiled grant names an assembly the two grant files at the root allow |
 | `ApiStem.Tests/PackagingTests.cs` | The API is never packed, and any library added later is declared |
 
 ## Rules

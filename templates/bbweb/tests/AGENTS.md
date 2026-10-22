@@ -9,6 +9,7 @@ executable that is never packed.
 |---|---|
 | `SiteStem.Tests/SiteTests.cs` | The site over HTTP, in memory: the home page through the layout, `/healthz`, `/version`, the stylesheet, the 404 page, and the error page in Production |
 | `SiteStem.Tests/ComponentTests.cs` | When the site has components: one prerenders into its view, the page loads the circuit script, and the circuit hub negotiates |
+| `SiteStem.Tests/Architecture/AssemblyQualityTests.cs` | AssemblyQuality's BNAQ1001, BNAQ1002, BNAQ1004 and BNAQ1005 over the compiled site, each asserting it skipped nothing and, where it can, that it inspected something; BNAQ1005: every compiled grant names an assembly the two grant files at the root allow |
 | `SiteStem.Tests/PackagingTests.cs` | The site is never packed, and any library added later is declared |
 
 ## Rules

@@ -20,7 +20,7 @@ in Bennewitz.Ninja.Templates.
 | Directory | What it holds |
 |---|---|
 | `src/` | The site: `src/SiteStem`, its controllers, views and static assets |
-| `tests/` | The site over HTTP in memory, and the packaging guard |
+| `tests/` | The site over HTTP in memory, the AssemblyQuality rules, and the packaging guard |
 | `scripts/` | `repo-conventions.cs` |
 | `docs/` | `releasing.md`, the release runbook |
 | `.github/` | The workflows, `repository.json`, and the pointer for tools that read `.github/` |

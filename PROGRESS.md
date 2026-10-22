@@ -11,17 +11,15 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
 `12.1.4` were taken.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09, below among the locked decisions):
-1. **AssemblyQuality in `bbpkg`, `bbweb`, `bbapi` and `bbconsole`**, as `bbavalonia` has it: a test
-   reference and `AssemblyQualityTests`, BNAQ1005 included.
+1. **The release, on the maintainer's word only.** Everything it waited for has landed: `plans/00008`'s
+   side 1, the no-glob rule and AssemblyQuality in every template. It carries `bbconsole`, the shared
+   entry point in every app, AutoVersioning `2026.3.928` and Avalonia `12.1.4`, symbols in both
+   configurations with `bbapi`'s native symbols released, the no-glob rule, AssemblyQuality in every
+   template, and the trimming enforcement's side 1. Verified from nuget.org: `dotnet new list` shows
+   five templates, `verify-release --published` passes.
 2. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
-3. **The release, on the maintainer's word only, once 1 has landed** (`plans/00008`'s side 1 and the
-   no-glob rule have). It
-   carries `bbconsole`, the shared entry point in every app, AutoVersioning `2026.3.928` and Avalonia
-   `12.1.4`, symbols in both configurations with `bbapi`'s native symbols released, the no-glob rule,
-   AssemblyQuality in every template, and the trimming enforcement's side 1. Verified from nuget.org: `dotnet new list` shows five templates, `verify-release --published`
-   passes.
-4. **After that release, one note to each family repository** that can adopt the friend grants and the
+3. **After that release, one note to each family repository** that can adopt the friend grants and the
    release's other conventions on its next sync: FileServer and ScopedEditors (each documents "grants
    to tests only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
    TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
@@ -30,13 +28,13 @@ that day, after `plans/00007` steps 1–4's documents merged and AutoVersioning 
    key is retired: drop it from `repository.json`. TrueCourseCalculator, Geo.Core and GeoHash also push
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
    remote, no script copy).
-5. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
+4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
    v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
-6. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
+5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
    2026-09-28).
-7. **[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22**: steps 1 and 2 are
+6. **[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22**: steps 1 and 2 are
    done, step 4 waits on DiffView's own session, and step 3, multi-family support here, ships in the
    Templates release after the queued one. Its own section below tracks it.
 
@@ -1267,6 +1265,37 @@ at once. One test, `The_script_runs_as_a_person_runs_it`, still launches it with
 ⭐ **The canary trap is gone with it.** The file-based cache trusts timestamps, so the first canary of
 `plans/00008` step 1 ran a stale build. With the pre-no-glob script copied in under a January
 timestamp, the forced build read it as it was and the two glob tests failed, as they should.
+
+## AssemblyQuality in every template — outside the plans
+
+The maintainer's decision of 2026-10-09, for the next release. `bbpkg`, `bbweb`, `bbapi` and `bbconsole`
+gain `tests/<Stem>.Tests/Architecture/AssemblyQualityTests.cs`, as `bbavalonia` has it, with
+AssemblyQuality `2026.3.929`, its latest, pinned in each: BNAQ1001, BNAQ1002, BNAQ1004 and BNAQ1005
+over the compiled assembly, each asserting it skipped nothing and, where it can, that it inspected
+something. BNAQ1003 is left out as in `bbavalonia`: a one-project repository has no layers yet.
+
+- **BNAQ1002 covers `Bennewitz.Ninja.AppServices` in the three apps,** which each references through
+  the shared entry point, so it inspects something there.
+- **In `bbpkg` it cannot fail yet, and says so.** A new library references no namespace worth keeping
+  inside it, so the default set inspects nothing. The test asserts only that it skipped and found
+  nothing; its comment and `tests/AGENTS.md` say to name the first such dependency and assert
+  `Inspected` then.
+
+`verify-release` passes: each generated repository gains exactly the four tests (`bbpkg` 16, `bbweb`
+14, `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with SIGINT skipped on Windows). Canaried with one
+planted defect per template, each failing only its own rule: a defaulted token in `bbpkg` (BNAQ1001),
+an `AppMainOptions` returned from a public method in `bbweb` (BNAQ1002), a stray grant in `bbapi`
+(BNAQ1005), a `Planted.System` namespace in `bbconsole` (BNAQ1004).
+
+⚠ **A namespace planted under the app's own root broke the build instead.** `Bennewitz.Ninja.CliStem.System`
+made the tests' `System.Globalization`, read from inside `Bennewitz.Ninja.CliStem.Tests`, resolve to it:
+CS0234, exactly the failure BNAQ1004 exists for, but at compile time, so the rule never ran. A plant
+outside the tests' namespace chain compiles and reaches the rule.
+
+⚠ **The raw `templates/bbweb` folder is not a valid build of the template.** Its `ComponentTests.cs`
+belongs to the `--blazor` variant and is excluded by `template.json` otherwise, so testing the folder
+directly fails three tests that `dotnet new` would never have emitted. Test a template through
+`verify-release`, or through `dotnet new` from the packed template.
 
 ## `plans/00009` — package families consolidate into Inspections and AppKit
 
