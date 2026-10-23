@@ -180,8 +180,9 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     public void A_reference_within_a_family_or_from_a_project_that_packs_nothing_passes()
     {
         // Gamma references Beta, its own family's; FamilyTests references both families and packs nothing.
-        string failure = Assert.Single(Lines(_runs.Families), l => l.StartsWith("FAIL families", StringComparison.Ordinal));
-        Assert.StartsWith("FAIL families: Beta,", failure, StringComparison.Ordinal);
+        // ⚠ Contains, not StartsWith: under GitHub Actions the script prefixes a FAIL with ::error::.
+        string failure = Assert.Single(Lines(_runs.Families), l => l.Contains("FAIL families", StringComparison.Ordinal));
+        Assert.Contains("FAIL families: Beta,", failure, StringComparison.Ordinal);
     }
 
     private static IEnumerable<string> Lines(string text) =>
