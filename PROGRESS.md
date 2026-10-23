@@ -27,9 +27,10 @@ decisions):
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
    remote, no script copy). Each `Bennewitz.Ninja.*` library also starts failing `Trimming` on its next
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
-2. **[`plans/00009`](plans/00009-package-consolidation.md) step 3: multi-family support here**, for the
-   next Templates release, now that the queued one has shipped. Steps 1 and 2 are done; step 4 waits on
-   DiffView's own session. Its own section below tracks it.
+2. **[`plans/00009`](plans/00009-package-consolidation.md) step 3, multi-family support, is on `main`
+   and unreleased.** It ships in the next Templates release, on the maintainer's word; then
+   `verify-release --published`. Inspections (steps 5–7) follows, each irreversible action on the
+   maintainer's word; step 4 waits on DiffView's own session. Its own section below tracks it.
 3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
@@ -1320,7 +1321,7 @@ accepted with the plan.
 |---|---|---|
 | 1 · AutoVersioning: `packages.push`, no glob push | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.AutoVersioning#5, merged as `aa0b9bd`, `build` and `conventions` green. The queued release's no-glob rule confirms it on the next sync. The preflight has not been run |
 | 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
-| 3 · Templates: multi-family support | next: the queued release shipped as `2026.4.1022` | Released on the maintainer's word |
+| 3 · Templates: multi-family support | **done** 2026-10-22, on `main`, unreleased | Below. Ships in the next Templates release, on the maintainer's word; `verify-release --published` after it |
 | 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
 | 5–7 · Inspections: rename, import, policy, archive | after step 3 | Each irreversible action on the maintainer's word |
 | 8 · AppKit | after Inspections | |
@@ -1328,8 +1329,40 @@ accepted with the plan.
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
 | 11 · Links | last | |
 
+### Step 3, as built
+
+What a release publishes is resolved by a new shipped script, `templates/bbpkg/scripts/release-target.cs`,
+which the shipped `release.yml` runs first, before anything is built:
+
+| Part | What it does |
+|---|---|
+| `release-target.cs resolve` | The tag (`v<version>`, or `<family>/v<version>` where `families` is declared) or the dispatch's `version` and `family`, into `VERSION`, `TAG`, `FAMILY`, `IDS` and `PREVIOUS_TAG`, appended to `$GITHUB_ENV`. Refuses a bare tag or a dispatch without a family where there are families, a family tag or a family dispatch where there are none, an undeclared family, and a family id `packages.push` lacks |
+| `release-target.cs projects` | After the build, the project that packs each of the family's ids, by evaluated `PackageId`; the release packs those alone |
+| `assert-packages.cs --family` | A family's pack must hold exactly the family's ids; without `--family`, unchanged |
+| `release.yml` | Tags `v*.*.*` and `*/v*.*.*`; a `family` dispatch input; `fetch-depth: 0` for the tags; push and GitHub release iterate `IDS`; a family's notes start at `PREVIOUS_TAG` |
+| `repo-conventions.cs` | `families` parsed and checked: a stem fit for a tag and declared once, the ids exactly `packages.push`'s, at every depth. `release-tags` includes `refs/tags/*/v*` only where `families` is declared. A packable project referencing another family's packable project FAILS, read by evaluated `PackageId` and `ProjectReference` |
+
+Tests: 157, from 116. `ReleaseTargetTests` (each tag and dispatch form, each refusal, the previous tag,
+the version check, `projects`), `AssertPackagesTests` (a family pack that matches, one with an extra
+id, one with a missing id), four conventions tests (the single-family ruleset unchanged, the family
+include, `families` against `packages.push`, a bad stem), and a seventh `PropsTests` run for the
+cross-family reference. Canaried 2026-10-22 with six defects planted at once, each in one new rule;
+nine tests failed, each on its own defect, and every file was restored byte for byte.
+`verify-release` also resolves a `v` tag in the generated `bbpkg`, compiling the script under that
+repository's own build properties.
+
 ### Drift from `plans/00009`
 
+- **The release also checks the version**, in every repository, families or not: `YYYY.Q.MMDD`,
+  three parts, the quarter of the date. Decision 13 moved the resolution into a script; refusing a
+  malformed version there costs nothing, and it would have refused `2026.3.1001`.
+- **A family's first release has no previous tag**, so its GitHub release says it is the first
+  rather than generating notes against another family's tag.
+- **This repository's own release is unchanged.** `release-target.cs` ships in `bbpkg` only, as
+  `assert-packages.cs`'s root copy is kept apart by intent: a template-motivated edit must not change
+  how Templates releases itself.
+- **A family's key is matched without regard to case and stored lower-case**; its tags must be
+  lower-case exactly, and a dispatch's family is lower-cased. An id in two families FAILS.
 - **Decision 7 and step 10 rested on a misread catalog.** ClaudeForge's `src/Directory.Build.props`
   has set `PackageId` to `Bennewitz.Ninja.$(MSBuildProjectName)` since `c3f34ca8` (2026-09-13), and
   GitHub Packages holds `Bennewitz.Ninja.AgentForge.*`. The catalog read only each `.csproj` and the

@@ -45,6 +45,49 @@ nuget.org version is permanent: one stray package is published for good.
 folded command line is caught. A workflow that publishes nothing may glob: CI listing its packages
 ships nothing. Comment lines are skipped.
 
+## Package families
+
+A repository that publishes several families of packages, each with its own version line,
+declares them in `.github/repository.json` (`plans/00009`). Each family then releases alone: one
+release publishes one family's ids, at that family's version.
+
+```json
+"families": {
+  "widgets": ["Example.Widgets", "Example.Widgets.Analyzers"],
+  "gadgets": ["Example.Gadgets"]
+}
+```
+
+| What | Without `families` | With `families` |
+|---|---|---|
+| Release tag | `v<version>` | `<family>/v<version>`, the family's stem in lower case: `widgets/v2026.4.1101` |
+| Dispatched release | the version | the version and the family |
+| Published | every id in `packages.push` | the family's ids |
+| Packed | the solution | the projects whose evaluated `PackageId` is one of the family's ids |
+| GitHub release notes | from the previous release | from the family's previous tag |
+| `release-tags` ruleset | `refs/tags/v*` | `refs/tags/v*` and `refs/tags/*/v*` |
+
+**The release refuses what it cannot attribute.** `scripts/release-target.cs` resolves the tag or
+the dispatch before anything is built. Where there are families it refuses a bare `v*` tag, a
+dispatch without a family, and a family that is not declared; where there are none, it refuses a
+family tag and a dispatch that names a family. In both kinds of repository it refuses a version
+that is not `YYYY.Q.MMDD` with the quarter of its date.
+
+`check` holds a repository with families to three more rules, at every depth:
+
+- **The families' ids are exactly `packages.push`'s.** `packages.push` says what publishes, and
+  `families` what releases together. An id that no family names would never be released, and one
+  that `packages.push` does not name would be released unchecked.
+- **A stem is fit for a tag and declared once:** letters and digits, separated by single `.`, `-`
+  or `_`, compared in lower case.
+- **A packable project never references a packable project of another family.** A family's release
+  packs at its own version, so a `ProjectReference` across families would pack a dependency on a
+  version of the other family that need not exist. Across families, reference the package at a
+  published version. Both sides are read by their evaluated `PackageId`. A test project, or a
+  tool or demo that packs nothing, may reference anything.
+
+A repository without `families` is unchanged by all of this.
+
 ## The AI-facing documents
 
 The content is written once, in `AGENTS.md`, and addresses no particular agent. Each tool finds its
@@ -110,7 +153,7 @@ one repository cannot quietly differ from the rest.
 | Ruleset | Applies to | Rules | Who bypasses |
 |---|---|---|---|
 | `main` | the default branch | No deletion, no force push. Changes arrive by pull request with **0** required approvals and every conversation resolved, merged by squash or rebase. The checks in `requiredChecks` must pass on an up-to-date branch | Repository admins, mode `always` |
-| `release-tags` | `refs/tags/v*` | No creation, update or deletion | Repository admins, mode `always` |
+| `release-tags` | `refs/tags/v*`, and `refs/tags/*/v*` where `repository.json` declares [families](#package-families) | No creation, update or deletion | Repository admins, mode `always` |
 
 ⛔ **The bypass mode must be `always`.** GitHub's other mode, `pull_request`, lets an admin bypass
 only inside a pull request, which blocks the maintainer's direct pushes to `main`.
@@ -283,6 +326,7 @@ Only what varies from one repository to the next:
 | `content` | Paths whose Markdown is shipped content rather than this repository's own documentation, so a marker inside them is intended. This repository lists `templates/bbpkg` |
 | `undocumented` | Top-level directories exempt from `AGENTS.md`, each mapped to its reason. An empty reason fails |
 | `props` | Per-project exemptions from the [build properties](#build-properties): `{ "<project>": { "<rule>": "<reason>" } }`. An empty reason fails |
+| `families` | Only in a repository that releases several [package families](#package-families): `{ "<stem>": ["<id>", …] }`. The ids together must be exactly `packages.push`'s |
 | `trimming` | Retired: no longer read, and a NOTE while present. Whether a repository trims follows from its projects ([build properties](#build-properties)) |
 
 ## Commands
@@ -297,10 +341,10 @@ dotnet run --file scripts/repo-conventions.cs -- grants
 
 | Command | Run by | What it does |
 |---|---|---|
-| `check` | CI, on every push and pull request | Documentation, markers, package globs, description, topics, homepage, feature toggles, rulesets, required checks |
-| `check --release` | the release workflow | Only what is prescribed: the documents, the markers, the package globs, a non-empty description and the friend grants. A drifted setting does not stop a publish |
+| `check` | CI, on every push and pull request | Documentation, markers, package globs, families, description, topics, homepage, feature toggles, rulesets, required checks |
+| `check --release` | the release workflow | Only what is prescribed: the documents, the markers, the package globs, a non-empty description, the friend grants and, where there are families, the families' rules. A drifted setting does not stop a publish |
 | `check --admin` | the maintainer | Everything, including the merge options and security toggles; fails on anything unreadable |
-| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, the required checks against the workflows, the build properties, the friend grants, and the script copy |
+| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, the families, the required checks against the workflows, the build properties, the friend grants, and the script copy |
 | `grants` | anyone, after adding, removing or renaming a project | Writes `AssemblyInfo.InternalsVisibleTo.cs` from the projects' assembly names, and an empty External file when there is none. Asks nothing of GitHub |
 | `apply --dry-run` | the maintainer | Prints every request `apply` would send |
 | `apply` | the maintainer | Writes the description, homepage, topics, baseline settings, security toggles and both rulesets |
