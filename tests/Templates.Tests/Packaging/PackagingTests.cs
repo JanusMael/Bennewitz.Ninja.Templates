@@ -62,9 +62,16 @@ public sealed class PackagingTests
         Assert.True(both.Length == 0, "In both packages.push and packages.local: " + string.Join(", ", both));
     }
 
+    /// <summary>Neither release workflow globs a package.</summary>
+    [Theory]
+    [InlineData(RootWorkflow)]
+    [InlineData(ShippedWorkflow)]
+    public void The_release_workflow_globs_nothing(string relativePath) =>
+        Assert.DoesNotContain("*.nupkg", Workflow(relativePath), StringComparison.Ordinal);
+
     /// <summary>
-    /// Neither release workflow globs, and in both, every publishing step takes its list from
-    /// <c>packages.push</c> rather than repeating it.
+    /// In this repository's release, every publishing step takes its list from <c>packages.push</c>
+    /// rather than repeating it.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -79,21 +86,41 @@ public sealed class PackagingTests
     /// nobody chose.
     /// </para>
     /// </remarks>
-    [Theory]
-    [InlineData(RootWorkflow)]
-    [InlineData(ShippedWorkflow)]
-    public void The_release_workflow_globs_nothing_and_publishes_what_is_declared(string relativePath)
+    [Fact]
+    public void This_repository_s_release_publishes_what_packages_push_declares()
     {
-        string workflow = Workflow(relativePath);
-
-        Assert.DoesNotContain("*.nupkg", workflow, StringComparison.Ordinal);
-
-        int declarationReads = workflow.Split("packages.push").Length - 1;
+        int declarationReads = Workflow(RootWorkflow).Split("packages.push").Length - 1;
         Assert.True(
             declarationReads >= 3,
-            $"{relativePath}: the push, the GitHub release and the preflight summary should each read " +
+            $"{RootWorkflow}: the push, the GitHub release and the preflight summary should each read " +
             $"packages.push; found {declarationReads} reference(s). A step that stops reading it stops " +
             "publishing what is declared.");
+    }
+
+    /// <summary>
+    /// The shipped release publishes what <c>scripts/release-target.cs</c> resolves (plans/00009): the
+    /// ids of <c>packages.push</c>, or of the family the tag names. The push and the GitHub release
+    /// both iterate those ids, and the guard checks a family's pack against that family.
+    /// </summary>
+    /// <remarks>
+    /// The script itself is tested by <c>ReleaseTargetTests</c>; this holds the workflow to using it,
+    /// since its YAML never runs before somebody's real tag.
+    /// </remarks>
+    [Fact]
+    public void The_shipped_release_publishes_what_release_target_resolves()
+    {
+        string workflow = Workflow(ShippedWorkflow);
+
+        Assert.Contains("'v*.*.*'", workflow, StringComparison.Ordinal);
+        Assert.Contains("'*/v*.*.*'", workflow, StringComparison.Ordinal);
+        Assert.Contains("dotnet run scripts/release-target.cs -- resolve", workflow, StringComparison.Ordinal);
+        Assert.Contains("--github-env \"$GITHUB_ENV\"", workflow, StringComparison.Ordinal);
+        Assert.Contains("dotnet run scripts/release-target.cs -- projects --family \"$FAMILY\"", workflow, StringComparison.Ordinal);
+        Assert.Contains("assert-packages.cs -- ./packages/Release ${FAMILY:+--family \"$FAMILY\"}", workflow, StringComparison.Ordinal);
+        Assert.Contains("--notes-start-tag \"$PREVIOUS_TAG\"", workflow, StringComparison.Ordinal);
+
+        int idReads = workflow.Split("read -ra ids <<< \"$IDS\"").Length - 1;
+        Assert.True(idReads == 2, $"The push and the GitHub release should each read IDS; found {idReads}.");
     }
 
     /// <summary>

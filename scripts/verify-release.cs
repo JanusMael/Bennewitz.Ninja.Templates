@@ -174,6 +174,7 @@ Case[] cases =
         [
             .. common,
             Path.Combine("scripts", "assert-packages.cs"),
+            Path.Combine("scripts", "release-target.cs"),
             Path.Combine("docs", "publishing.md"),
             // ⛔ Carries IsTrimmable. Its absence builds, tests and packs perfectly well, and ships
             // every assembly unmarked, so a tree check is the earliest place it can fail loudly.
@@ -703,6 +704,24 @@ string? Verify(Case entry)
         }
 
         Console.WriteLine("  " + LastNonEmptyLines(assertLog, 1));
+
+        // ── What its release would publish for a tag, resolved as the release workflow does ──
+        // ⭐ Compiled under the generated repository's own Directory.Build.props, which the tests of
+        // release-target.cs cannot do: they build it outside this repository.
+        Step("Resolve a release tag in the generated repository");
+
+        if (!Dotnet(["run", Path.Combine("scripts", "release-target.cs"), "--", "resolve", "--event", "push", "--ref", "v2026.4.1022"], generated, out string resolveLog))
+        {
+            return "release-target failed in the generated repository:" + Environment.NewLine + resolveLog;
+        }
+
+        string? resolvedIds = resolveLog.Split('\n').Select(line => line.Trim()).FirstOrDefault(line => line.StartsWith("IDS=", StringComparison.Ordinal));
+        if (resolvedIds != "IDS=" + expectedId)
+        {
+            return $"release-target resolved v2026.4.1022 to other ids than {expectedId}:" + Environment.NewLine + resolveLog;
+        }
+
+        Console.WriteLine("  " + resolvedIds);
     }
 
     // ── The family conventions, as its own CI will check them ───────────────────────────────

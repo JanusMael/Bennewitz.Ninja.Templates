@@ -126,7 +126,7 @@ else
 {
     try
     {
-        config = Config.Parse(configText, Baseline.Publishes(tree), findings);
+        config = Config.Parse(configText, Baseline.Pushed(tree), findings);
     }
     catch (JsonException error)
     {
@@ -225,6 +225,7 @@ void CheckProjects(bool props)
     {
         Props.Check(projects, config, repoName, findings);
     }
+    Families.CheckReferences(localRoot, projects, config, findings);
     Grants.Check(localRoot, tree, projects, findings);
 }
 
@@ -295,7 +296,7 @@ int Apply()
     ];
 
     Dictionary<string, long> existing = Rulesets.Existing(api);
-    foreach (JsonObject ruleset in Baseline.Rulesets(config.RequiredChecks))
+    foreach (JsonObject ruleset in Baseline.Rulesets(config.RequiredChecks, config.Families is not null))
     {
         string name = ruleset["name"]!.GetValue<string>();
         requests.Add(existing.TryGetValue(name, out long id)
@@ -391,17 +392,25 @@ static class Baseline
             ? "which every repository that publishes to nuget.org carries: packages.push names an id"
             : "which every family repository carries";
 
-    /// <summary>Whether <c>packages.push</c> names at least one id, blank lines and comments aside.</summary>
-    public static bool Publishes(Tree tree) =>
-        (tree.Read("packages.push") ?? "")
+    /// <summary>Whether <c>packages.push</c> names at least one id.</summary>
+    public static bool Publishes(Tree tree) => Pushed(tree).Count > 0;
+
+    /// <summary>The ids <c>packages.push</c> names, blank lines and comments aside.</summary>
+    public static IReadOnlyList<string> Pushed(Tree tree) =>
+        [.. (tree.Read("packages.push") ?? "")
             .Split('\n')
             .Select(line => line.Trim())
-            .Any(line => line.Length > 0 && !line.StartsWith('#'));
+            .Where(line => line.Length > 0 && !line.StartsWith('#'))];
 
     /// <summary>GitHub's built-in repository-admin role.</summary>
     public const int AdminRoleId = 5;
 
-    public static IEnumerable<JsonObject> Rulesets(IReadOnlyList<string> requiredChecks)
+    /// <param name="families">
+    /// Whether repository.json declares families (plans/00009). Their tags, <c>&lt;family&gt;/v…</c>, are
+    /// protected as well; only then, because the include list is compared exactly, and a second
+    /// pattern in every repository would fail each single-family one on its next sync.
+    /// </param>
+    public static IEnumerable<JsonObject> Rulesets(IReadOnlyList<string> requiredChecks, bool families)
     {
         // ⛔ Built with the constructor, never a collection expression or Add(JsonObject): both bind
         // to the generic Add<T>, which is not trim-safe, and a file-based app is compiled trimmed.
@@ -436,11 +445,13 @@ static class Baseline
             });
         }
 
-        yield return Ruleset("main", "branch", "~DEFAULT_BRANCH", mainRules);
-        yield return Ruleset("release-tags", "tag", "refs/tags/v*", new JsonArray(Rule("creation"), Rule("update"), Rule("deletion")));
+        yield return Ruleset("main", "branch", ["~DEFAULT_BRANCH"], mainRules);
+        // ⚠ A ruleset's `*` stops at a slash, so `refs/tags/v*` does not reach a family's tag.
+        yield return Ruleset("release-tags", "tag", families ? ["refs/tags/v*", "refs/tags/*/v*"] : ["refs/tags/v*"],
+            new JsonArray(Rule("creation"), Rule("update"), Rule("deletion")));
     }
 
-    private static JsonObject Ruleset(string name, string target, string include, JsonArray rules) => new()
+    private static JsonObject Ruleset(string name, string target, string[] include, JsonArray rules) => new()
     {
         ["name"] = name,
         ["target"] = target,
@@ -455,7 +466,7 @@ static class Baseline
         }),
         ["conditions"] = new JsonObject
         {
-            ["ref_name"] = new JsonObject { ["include"] = Json.Array([include]), ["exclude"] = new JsonArray() },
+            ["ref_name"] = new JsonObject { ["include"] = Json.Array(include), ["exclude"] = new JsonArray() },
         },
         ["rules"] = rules,
     };
@@ -471,10 +482,15 @@ sealed record Config(
     IReadOnlyList<string> RequiredChecks,
     IReadOnlyList<string> Content,
     IReadOnlyDictionary<string, string> Undocumented,
-    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> PropsExempt)
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> PropsExempt,
+    IReadOnlyDictionary<string, IReadOnlyList<string>>? Families)
 {
-    public static Config Parse(string text, bool publishes, List<Finding> findings)
+    // A family's stem becomes part of its tags, so it is what a ref name may hold, lower-cased.
+    private static readonly Regex FamilyStem = new(@"^[a-z0-9]+(?:[._-][a-z0-9]+)*$");
+
+    public static Config Parse(string text, IReadOnlyList<string> pushed, List<Finding> findings)
     {
+        bool publishes = pushed.Count > 0;
         JsonObject json = JsonNode.Parse(text)?.AsObject() ?? throw new JsonException("the document is empty.");
 
         string description = json["description"]?.GetValue<string>() ?? "";
@@ -531,7 +547,66 @@ sealed record Config(
             Strings(json["requiredChecks"]),
             [.. Strings(json["content"]).Select(p => p.TrimEnd('/') + "/")],
             undocumented,
-            propsExempt);
+            propsExempt,
+            json["families"] is { } declared ? ParseFamilies(declared, pushed, findings) : null);
+    }
+
+    /// <summary>
+    /// <c>"families": { "&lt;stem&gt;": ["&lt;id&gt;", …] }</c> (plans/00009): which of the ids
+    /// <c>packages.push</c> names release together, each family from its own tags. Keyed by the
+    /// lower-cased stem, as its tags spell it.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ The families' ids are exactly <c>packages.push</c>'s. One that no family names would never be
+    /// released, and one that <c>packages.push</c> does not name would be released but never checked.
+    /// </remarks>
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> ParseFamilies(JsonNode declared, IReadOnlyList<string> pushed, List<Finding> findings)
+    {
+        Dictionary<string, IReadOnlyList<string>> families = new(StringComparer.Ordinal);
+        if (declared is not JsonObject entries || entries.Count == 0)
+        {
+            findings.Add(Finding.Fail("families", "\"families\" must map each family's stem to its package ids, or be left out."));
+            return families;
+        }
+
+        foreach ((string stem, JsonNode? ids) in entries)
+        {
+            string key = stem.ToLowerInvariant();
+            string[] list = Strings(ids is JsonArray ? ids : null);
+            if (!FamilyStem.IsMatch(key))
+            {
+                findings.Add(Finding.Fail("families", $"The family \"{stem}\" cannot be part of a tag: letters and digits, separated by single '.', '-' or '_'."));
+            }
+            else if (families.ContainsKey(key))
+            {
+                findings.Add(Finding.Fail("families", $"The family \"{stem}\" is declared twice; its tags are lower-case, so case does not tell two apart."));
+            }
+            else if (list.Length == 0)
+            {
+                findings.Add(Finding.Fail("families", $"The family \"{stem}\" lists no package ids."));
+            }
+            else
+            {
+                families[key] = list;
+            }
+        }
+
+        string[] named = [.. families.Values.SelectMany(ids => ids)];
+        foreach (IGrouping<string, string> twice in named.GroupBy(id => id, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1))
+        {
+            findings.Add(Finding.Fail("families", $"{twice.Key} is in more than one family. Each id releases with one."));
+        }
+        string[] unreleased = [.. pushed.Except(named, StringComparer.OrdinalIgnoreCase)];
+        if (unreleased.Length > 0)
+        {
+            findings.Add(Finding.Fail("families", $"packages.push names {string.Join(", ", unreleased)}, which no family does, so no release would publish it. Add each to its family."));
+        }
+        string[] undeclared = [.. named.Except(pushed, StringComparer.OrdinalIgnoreCase)];
+        if (undeclared.Length > 0)
+        {
+            findings.Add(Finding.Fail("families", $"The families name {string.Join(", ", undeclared)}, which packages.push does not. packages.push says what publishes; a family only says what releases with what."));
+        }
+        return families;
     }
 
     private static string[] Strings(JsonNode? node) =>
@@ -761,7 +836,7 @@ static class Rulesets
     {
         Dictionary<string, long> existing = Existing(api);
 
-        foreach (JsonObject wanted in Baseline.Rulesets(config?.RequiredChecks ?? []))
+        foreach (JsonObject wanted in Baseline.Rulesets(config?.RequiredChecks ?? [], config?.Families is not null))
         {
             string name = wanted["name"]!.GetValue<string>();
             if (!existing.TryGetValue(name, out long id))
@@ -929,7 +1004,7 @@ static class Projects
         "IsContinuousIntegration", "IsPackable", "OutputType", "IsTestProject", "PackAsTool",
         "IsRoslynComponent", "PackageType", "Authors", "PackageLicenseExpression", "RepositoryUrl",
         "PackageReadmeFile", "DebugType", .. Trimming.Properties,
-        "AssemblyName", Grants.OptOut,
+        "AssemblyName", Grants.OptOut, "PackageId",
     ];
 
     // What a Debug build emits as symbols: read from a second evaluation, since every other property
@@ -937,7 +1012,7 @@ static class Projects
     private static readonly string[] DebugNames = ["DebugType", "OutputType"];
 
     private static readonly string[] ItemTypes =
-        ["PackageReference", "PackageVersion", "Compile", "InternalsVisibleTo", "AssemblyAttribute"];
+        ["PackageReference", "PackageVersion", "Compile", "InternalsVisibleTo", "AssemblyAttribute", "ProjectReference"];
 
     private static readonly Dictionary<string, string> Ci = new(StringComparer.Ordinal) { ["GITHUB_ACTIONS"] = "true" };
 
@@ -1027,7 +1102,7 @@ static class Projects
     // project's own Compile items, nor any item an ItemGroup conditions on a framework: a grant declared
     // in its source passed unseen. So the items the grant checks read come from each framework's own
     // evaluation, combined.
-    private static readonly string[] PerFrameworkTypes = ["Compile", "InternalsVisibleTo", "AssemblyAttribute"];
+    private static readonly string[] PerFrameworkTypes = ["Compile", "InternalsVisibleTo", "AssemblyAttribute", "ProjectReference"];
 
     private static JsonNode? PerFramework(string root, string project, string name, string frameworks, JsonNode? outer, List<Finding> findings)
     {
@@ -1132,6 +1207,71 @@ static class Trimming
     /// <summary>The reasons for a finding: the first three, and how many more.</summary>
     public static string Describe(IReadOnlyList<string> reasons) =>
         string.Join("; ", reasons.Take(3)) + (reasons.Count > 3 ? $"; and {reasons.Count - 3} more" : "");
+}
+
+/// <summary>
+/// Package families (plans/00009): a repository that declares <c>families</c> in repository.json
+/// releases each one alone, at its own version.
+/// </summary>
+static class Families
+{
+    /// <summary>
+    /// A packable project never references a packable project of another family. Across families the
+    /// reference is a <c>PackageReference</c> to a published version.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ A family's release packs at that family's version, so a <c>ProjectReference</c> across families
+    /// would pack a dependency on a version of the other family that need not exist. Each side is read
+    /// by its evaluated <c>PackageId</c>, never its file name. A test project, a tool or a demo that
+    /// packs nothing may reference anything.
+    /// </remarks>
+    public static void CheckReferences(string root, IReadOnlyList<Evaluated> projects, Config? config, List<Finding> findings)
+    {
+        if (config?.Families is not { Count: > 0 } families)
+        {
+            return;
+        }
+
+        Dictionary<string, string> familyOf = new(StringComparer.OrdinalIgnoreCase);
+        foreach ((string family, IReadOnlyList<string> ids) in families)
+        {
+            foreach (string id in ids)
+            {
+                familyOf.TryAdd(id, family);
+            }
+        }
+
+        Dictionary<string, Evaluated> byPath = new(StringComparer.OrdinalIgnoreCase);
+        foreach (Evaluated project in projects)
+        {
+            byPath[Full(Path.Combine(root, project.Path))] = project;
+        }
+
+        foreach (Evaluated project in projects)
+        {
+            if (FamilyOf(project, familyOf) is not { } family)
+            {
+                continue;
+            }
+            foreach (JsonNode reference in project.Item("ProjectReference"))
+            {
+                string path = reference["FullPath"] is JsonValue value && value.TryGetValue(out string? full) ? full : "";
+                if (path.Length == 0 || !byPath.TryGetValue(Full(path), out Evaluated? target))
+                {
+                    continue;
+                }
+                if (FamilyOf(target, familyOf) is { } other && other != family)
+                {
+                    findings.Add(Finding.Fail("families", $"{project.Name}, of the {family} family, references {target.Name}, of the {other} family, as a project. Reference {target.Value("PackageId")} as a package at a published version: {family}'s release packs at {family}'s version, which {other} need not have."));
+                }
+            }
+        }
+    }
+
+    private static string? FamilyOf(Evaluated project, Dictionary<string, string> familyOf) =>
+        project.Value("IsPackable") == "true" && familyOf.TryGetValue(project.Value("PackageId"), out string? family) ? family : null;
+
+    private static string Full(string path) => Path.GetFullPath(path.Replace('\\', '/')).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 }
 
 static class Props

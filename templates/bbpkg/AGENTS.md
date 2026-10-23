@@ -17,7 +17,7 @@
 |---|---|
 | `src/` | The shipped projects. Every one is packable and declared in a package list |
 | `tests/` | The test projects, including the packaging guards and the AssemblyQuality rules |
-| `scripts/` | File-based apps: `assert-packages.cs` and `repo-conventions.cs` |
+| `scripts/` | File-based apps: `assert-packages.cs`, `release-target.cs` and `repo-conventions.cs` |
 | `docs/` | `publishing.md`, the release runbook |
 | `.github/` | The workflows, `repository.json`, and the pointer for tools that read `.github/` |
 
@@ -26,12 +26,12 @@
 | Invariant | Failure if broken | Guarded by |
 |---|---|---|
 | Every packable project's id is in exactly one of `packages.push` and `packages.local` | A package nobody chose is published, permanently | `PackagingTests`; `scripts/assert-packages.cs`; the release step `Assert packed matches declared` |
-| The release pushes the ids `packages.push` names and never globs `*.nupkg` | A new packable project is published by the next tag | `.github/workflows/release.yml`, step `Push to NuGet.org` |
+| The release pushes the ids `scripts/release-target.cs` resolves from `packages.push`, or from the tagged family, and never globs `*.nupkg` | A new packable project is published by the next tag | `.github/workflows/release.yml`, steps `Resolve what this release publishes` and `Push to NuGet.org`; `repo-conventions check` |
 | Every shipped assembly declares itself trimmable | A consumer's trimmed publish keeps it whole and outside its trim analysis, and says nothing | `src/Directory.Build.props`; `TrimmableTests` |
 | Packages resolve from nuget.org only | A second source added later silently starts supplying packages | `NuGet.config`, `packageSourceMapping` |
 | Versions are pinned centrally | Two projects drift to different versions of one dependency | `Directory.Packages.props` |
 | Warnings are errors | A warning ships | `Directory.Build.props`; `ci.yml` builds with `-warnaserror` |
-| The version is the tag, `vYYYY.Q.MMDD` | The package and the tag disagree. A published version can never be replaced | `release.yml`, step `Resolve version and tag` |
+| The version is the tag, `vYYYY.Q.MMDD`, or `<family>/vYYYY.Q.MMDD` where `.github/repository.json` declares families | The package and the tag disagree. A published version can never be replaced | `scripts/release-target.cs`, run by `release.yml` before anything is built |
 | `NUGET_USER` is a repository **variable**, not a secret | A masked value hides why a trusted-publishing login fails | `release.yml`, step `Refuse to release without NUGET_USER` |
 | The repository meets the family conventions | Documentation or settings go missing unnoticed | `scripts/repo-conventions.cs`, run by CI |
 
@@ -42,6 +42,7 @@ dotnet build PkgStem.slnx -c Release -warnaserror
 dotnet test --solution PkgStem.slnx
 dotnet pack PkgStem.slnx -c Release --output ./packages/Release
 dotnet run scripts/assert-packages.cs -- ./packages/Release
+dotnet run scripts/release-target.cs -- resolve --event push --ref v<version>
 dotnet run --file scripts/repo-conventions.cs -- check
 dotnet run --file scripts/repo-conventions.cs -- grants
 ```

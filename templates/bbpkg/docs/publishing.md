@@ -93,6 +93,9 @@ leading zero dropped. `2026.3.920` is 20 September 2026, in Q3.
 ⚠ **Day resolution means ONE release per calendar day.** A second tag on the same date collides with
 a version that can never be replaced, and the recovery is to wait for tomorrow.
 
+The release refuses a version of any other shape, and one whose quarter is not its date's:
+`2026.3.1001` is refused, because 1 October is in the fourth quarter.
+
 ⛔ **A published version is permanent.** It cannot be replaced, re-pushed, or corrected — only
 superseded by a higher one, or unlisted.
 
@@ -113,6 +116,22 @@ rather than by remembering to bump a file.
 ⓘ A release can also be started from the Actions tab — **Release** → *Run workflow* → **enter the
 version** — which is the path to use when a tag already exists. Filling the version in is what
 separates a release from the preflight; leaving it blank never publishes.
+
+#### Where `.github/repository.json` declares families
+
+Each family releases alone, from a tag naming it in lower case:
+
+```bash
+git tag -a widgets/v2026.3.920 -m "widgets 2026.3.920"
+git push origin widgets/v2026.3.920
+```
+
+A dispatch fills in **family** beside the version. The release publishes only that family's ids,
+packs only the projects that produce them, and starts the GitHub release's notes from the family's
+previous tag. A bare `v…` tag, or a dispatch without a family, is refused before anything is built;
+so is a family tag in a repository that declares no families. The policy stays **one**, its Glob
+Patterns covering every family's ids. `docs/repository-conventions.md` in Bennewitz.Ninja.Templates
+lists what `check` adds for families.
 
 ### 5 · Watch the run
 

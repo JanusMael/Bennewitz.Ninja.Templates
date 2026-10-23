@@ -429,6 +429,70 @@ public sealed class RepoConventionsTests
         Assert.DoesNotContain("FAIL release", result.Output, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A repository without families keeps the one tag pattern it always had (plans/00009 decision 12):
+    /// the include list is compared exactly, so a second pattern for everyone would fail every
+    /// single-family repository on its next sync.
+    /// </summary>
+    [Fact]
+    public void A_single_family_repository_s_tag_ruleset_is_unchanged()
+    {
+        Result result = Conforming().Run("apply", "--dry-run");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        string tags = Assert.Single(Lines(result.Output), l => l.StartsWith("PUT repos/o/r/rulesets/2 ", StringComparison.Ordinal));
+        Assert.Contains("\"include\":[\"refs/tags/v*\"]", tags, StringComparison.Ordinal);
+    }
+
+    /// <summary>A ruleset's <c>*</c> stops at a slash, so <c>refs/tags/v*</c> leaves a family's tags unprotected.</summary>
+    [Fact]
+    public void A_repository_with_families_protects_their_tags_too()
+    {
+        Fixture fixture = Conforming();
+        fixture.Config["families"] = new JsonObject { ["widgets"] = new JsonArray("Fixture.Widget") };
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL rulesets: Ruleset \"release-tags\" branches or tags: wanted [refs/tags/*/v*, refs/tags/v*], GitHub has [refs/tags/v*]. Run `apply`.", result.Output, StringComparison.Ordinal);
+
+        fixture.Api["rulesets-2"]!["conditions"]!["ref_name"]!["include"] = new JsonArray("refs/tags/v*", "refs/tags/*/v*");
+        Result applied = fixture.Run("check", "--admin");
+
+        Assert.True(applied.ExitCode == 0, applied.Output);
+    }
+
+    /// <summary>
+    /// <c>packages.push</c> says what publishes and <c>families</c> what releases together, so their ids
+    /// are the same set. At release depth, so the preflight stops a publish.
+    /// </summary>
+    [Fact]
+    public void Families_must_name_exactly_the_ids_packages_push_names()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["packages.push"] = "Fixture.Widget\nFixture.Gadget\n";
+        fixture.Config["families"] = new JsonObject { ["widgets"] = new JsonArray("Fixture.Widget", "Fixture.Unlisted") };
+
+        Result result = fixture.Run("check", "--release");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL families: packages.push names Fixture.Gadget, which no family does, so no release would publish it.", result.Output, StringComparison.Ordinal);
+        Assert.Contains("FAIL families: The families name Fixture.Unlisted, which packages.push does not.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_family_declared_twice_or_unfit_for_a_tag_fails()
+    {
+        Fixture fixture = Conforming();
+        fixture.Config["families"] = JsonNode.Parse("""{ "Widgets": ["Fixture.Widget"], "widgets": ["Fixture.Widget"], "wid gets": ["Fixture.Widget"] }""");
+
+        Result result = fixture.Run("check", "--offline");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL families: The family \"widgets\" is declared twice; its tags are lower-case", result.Output, StringComparison.Ordinal);
+        Assert.Contains("FAIL families: The family \"wid gets\" cannot be part of a tag", result.Output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_copy_of_the_script_that_differs_from_the_template_fails()
     {

@@ -8,9 +8,10 @@ namespace Templates.Tests.RepoConventions;
 /// </summary>
 /// <remarks>
 /// <para>
-/// ⭐ <b>Six runs, several projects each.</b> A restore is the slow part, so each run carries several
+/// ⭐ <b>Seven runs, several projects each.</b> A restore is the slow part, so each run carries several
 /// projects, each conforming or broken in exactly one way, and every test reads the run it needs. Three
-/// of them trim through nothing but the project the run is about (plans/00008).
+/// of them trim through nothing but the project the run is about (plans/00008), and one declares
+/// package families (plans/00009).
 /// </para>
 /// <para>
 /// ⛔ <b>The cases the check exists for:</b> a csproj overriding a correct <c>Directory.Build.props</c>;
@@ -21,7 +22,7 @@ namespace Templates.Tests.RepoConventions;
 /// </para>
 /// <para>
 /// ⓘ The script is built once and launched as a program (<see cref="ConventionsScript"/>), so this
-/// class runs in parallel with the other conventions classes, and its six runs with each other.
+/// class runs in parallel with the other conventions classes, and its seven runs with each other.
 /// </para>
 /// </remarks>
 public sealed class PropsTests : IClassFixture<PropsTests.Runs>
@@ -163,10 +164,30 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
         Assert.Contains("--offline checks a checkout", output, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A family's release packs at that family's version (plans/00009 decision 11), so a packable
+    /// project referencing another family's project would pack a dependency on a version that need not
+    /// exist. Read by evaluated PackageId; the families' keys are matched as their tags spell them.
+    /// </summary>
+    [Fact]
+    public void A_packable_project_referencing_another_family_s_project_fails()
+    {
+        Assert.Contains("NOTE props: 4 projects evaluated after a restore", _runs.Families, StringComparison.Ordinal);
+        Assert.Contains("FAIL families: Beta, of the beta family, references Good, of the alpha family, as a project.", _runs.Families, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_reference_within_a_family_or_from_a_project_that_packs_nothing_passes()
+    {
+        // Gamma references Beta, its own family's; FamilyTests references both families and packs nothing.
+        string failure = Assert.Single(Lines(_runs.Families), l => l.StartsWith("FAIL families", StringComparison.Ordinal));
+        Assert.StartsWith("FAIL families: Beta,", failure, StringComparison.Ordinal);
+    }
+
     private static IEnumerable<string> Lines(string text) =>
         text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Select(l => l.Trim());
 
-    /// <summary>The six runs, each over its own repository, shared by every test in the class.</summary>
+    /// <summary>The seven runs, each over its own repository, shared by every test in the class.</summary>
     /// <remarks>Each run's output is assigned once, from its own thread, before any test reads it.</remarks>
     public sealed class Runs
     {
@@ -193,7 +214,13 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                 // Over a Directory.Build.props that sets no trimming property, so only these projects decide.
                 () => Untrimmed = Run(["Good", "GoodTests", "GoodApp", "GoodTool"], new JsonObject(), trims: false),
                 () => PublishTrimmed = Run(["Good", "GoodApp", "TrimmedApp"], new JsonObject(), trims: false),
-                () => PublishAot = Run(["Good", "GoodApp", "AotApp"], new JsonObject(), trims: false));
+                () => PublishAot = Run(["Good", "GoodApp", "AotApp"], new JsonObject(), trims: false),
+
+                // Good is the alpha family; Beta references it, and Gamma references Beta, its own family's.
+                () => Families = Run(["Good", "Beta", "Gamma", "FamilyTests"], new JsonObject
+                {
+                    ["families"] = new JsonObject { ["alpha"] = new JsonArray("Good"), ["Beta"] = new JsonArray("Beta", "Gamma") },
+                }, push: ["Good", "Beta", "Gamma"]));
 
         public string Conforming { get; private set; } = "";
 
@@ -207,7 +234,9 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
 
         public string PublishAot { get; private set; } = "";
 
-        private static string Run(string[] projects, JsonObject extra, bool trims = true)
+        public string Families { get; private set; } = "";
+
+        private static string Run(string[] projects, JsonObject extra, bool trims = true, string[]? push = null)
         {
             string directory = Path.Combine(Path.GetTempPath(), "repo-conventions-props-" + Guid.NewGuid().ToString("N"));
             try
@@ -274,6 +303,10 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                     config[key] = value?.DeepClone();
                 }
                 Write(directory, ".github/repository.json", config.ToJsonString());
+                if (push is not null)
+                {
+                    Write(directory, "packages.push", string.Join('\n', push) + "\n");
+                }
 
                 (int initExit, string initOutput) = Execute("git", directory, "init", "-q");
                 Assert.True(initExit == 0, initOutput);
@@ -308,6 +341,11 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
             // Correct in Release, as every rule reads it; only the Debug evaluation can see this.
             "DebugWithoutSymbols" => Sdk("<IsPackable>true</IsPackable>",
                 "<PropertyGroup Condition=\"'$(Configuration)' == 'Debug'\"><DebugType>none</DebugType></PropertyGroup>"),
+            "Beta" => Sdk("<IsPackable>true</IsPackable>", "<ItemGroup><ProjectReference Include=\"../Good/Good.csproj\" /></ItemGroup>"),
+            "Gamma" => Sdk("<IsPackable>true</IsPackable>", "<ItemGroup><ProjectReference Include=\"../Beta/Beta.csproj\" /></ItemGroup>"),
+            // Packs nothing, so it may reference any family.
+            "FamilyTests" => Sdk("<IsPackable>false</IsPackable><IsTestProject>true</IsTestProject><OutputType>Exe</OutputType>",
+                "<ItemGroup><ProjectReference Include=\"../Good/Good.csproj\" /><ProjectReference Include=\"../Beta/Beta.csproj\" /></ItemGroup>"),
             _ => Sdk("<IsPackable>true</IsPackable>"),
         };
 
