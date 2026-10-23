@@ -31,6 +31,19 @@ internal static class ConventionsScript
     public static (int ExitCode, string Output) Run(string workingDirectory, params string[] arguments) =>
         Execute("dotnet", workingDirectory, [Built.Value, .. arguments]);
 
+    /// <summary>The script's output, a trimmed line each, as a person reads it.</summary>
+    /// <remarks>
+    /// ⛔ Under GitHub Actions the script prefixes a failing finding with <c>::error::</c>, so CI's tests
+    /// see <c>::error::FAIL …</c>. Stripped here, or an assertion that a line starts with <c>FAIL</c>
+    /// matches nothing in CI, and one that no such line exists passes whatever the script found.
+    /// </remarks>
+    public static IEnumerable<string> Lines(string output) =>
+        output.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n')
+            .Select(l => l.Trim())
+            .Select(l => l.StartsWith(ErrorPrefix, StringComparison.Ordinal) ? l[ErrorPrefix.Length..] : l);
+
+    private const string ErrorPrefix = "::error::";
+
     public static string RepoRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

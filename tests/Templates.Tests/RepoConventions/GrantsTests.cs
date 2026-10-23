@@ -149,8 +149,7 @@ public sealed class GrantsTests : IClassFixture<GrantsTests.Runs>
         Assert.Contains("grants writes into a checkout", output, StringComparison.Ordinal);
     }
 
-    private static IEnumerable<string> Lines(string text) =>
-        text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Select(l => l.Trim());
+    private static IEnumerable<string> Lines(string text) => ConventionsScript.Lines(text);
 
     /// <summary>The runs, each over its own repository, shared by every test in the class.</summary>
     public sealed class Runs

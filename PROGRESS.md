@@ -1275,6 +1275,20 @@ at once. One test, `The_script_runs_as_a_person_runs_it`, still launches it with
 `plans/00008` step 1 ran a stale build. With the pre-no-glob script copied in under a January
 timestamp, the forced build read it as it was and the two glob tests failed, as they should.
 
+## "No FAIL" assertions that could not fail in CI — outside the plans
+
+Found 2026-10-23, when `plans/00009` step 3's first CI run went red: under GitHub Actions
+`repo-conventions.cs` prefixes a failing finding with `::error::`, so a test line reading
+`::error::FAIL …` never `StartsWith("FAIL …")`. A positive assertion of that form failed, which is how
+it was noticed; the 15 `DoesNotContain(…StartsWith("FAIL …"))` in `PropsTests` and `GrantsTests`
+instead passed whatever the script found, in CI only. `ConventionsScript.Lines` now strips the prefix,
+and both classes read lines through it.
+
+Proven 2026-10-23 with two defects planted that only those assertions guard (the grant list always
+stale; `AssemblyCompany` wanted as another value), the suite run with `GITHUB_ACTIONS=true`: **0 of
+157 failed on `main`**, 9 failed with the fix, each an absence or "not blamed" assertion. Clean, 157 of
+157 pass with and without the variable.
+
 ## AssemblyQuality in every template — outside the plans
 
 The maintainer's decision of 2026-10-09, for the next release. `bbpkg`, `bbweb`, `bbapi` and `bbconsole`
