@@ -7,7 +7,8 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 ## Resume
 
 *Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
-2026.4.1022` was released and verified from nuget.org (its section below).*
+2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-23
+after `2026.4.1023`.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
@@ -27,10 +28,12 @@ decisions):
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
    remote, no script copy). Each `Bennewitz.Ninja.*` library also starts failing `Trimming` on its next
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
-2. **[`plans/00009`](plans/00009-package-consolidation.md) step 3, multi-family support, is on `main`
-   and unreleased.** It ships in the next Templates release, on the maintainer's word; then
-   `verify-release --published`. Inspections (steps 5–7) follows, each irreversible action on the
-   maintainer's word; step 4 waits on DiffView's own session. Its own section below tracks it.
+2. **[`plans/00009`](plans/00009-package-consolidation.md) steps 5–7, Inspections**, now that step 3
+   shipped in `2026.4.1023`: rename XamlQuality, import AssemblyQuality and CodeQuality with the
+   canonical files of that release, then the policy and the archives. Each irreversible action (the
+   rename, the policy, each archive) waits on the maintainer's word at that step, and no repository is
+   imported while it has an open pull request. Step 4 waits on DiffView's own session. Its own section
+   below tracks it.
 3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
@@ -1335,7 +1338,7 @@ accepted with the plan.
 |---|---|---|
 | 1 · AutoVersioning: `packages.push`, no glob push | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.AutoVersioning#5, merged as `aa0b9bd`, `build` and `conventions` green. The queued release's no-glob rule confirms it on the next sync. The preflight has not been run |
 | 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
-| 3 · Templates: multi-family support | **done** 2026-10-22, on `main`, unreleased | Below. Ships in the next Templates release, on the maintainer's word; `verify-release --published` after it |
+| 3 · Templates: multi-family support | **done**, released 2026-10-23 as `2026.4.1023` | Below; [JanusMael/Bennewitz.Ninja.Templates#41](https://github.com/JanusMael/Bennewitz.Ninja.Templates/pull/41). `verify-release --published 2026.4.1023` passed |
 | 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
 | 5–7 · Inspections: rename, import, policy, archive | after step 3 | Each irreversible action on the maintainer's word |
 | 8 · AppKit | after Inspections | |
@@ -1382,6 +1385,20 @@ repository's own build properties.
   GitHub Packages holds `Bennewitz.Ninja.AgentForge.*`. The catalog read only each `.csproj` and the
   root props, so it reported the bare ids and a collision with `subhajitlabs`' `AgentForge.*` on
   nuget.org that does not exist. Nothing was changed in ClaudeForge; the catalog is corrected.
+
+## Release `2026.4.1023`
+
+✅ **Released as `Bennewitz.Ninja.Templates 2026.4.1023`**, 2026-10-23, tag `v2026.4.1023` at
+`d1ae2e2`, on the maintainer's word. It carries `plans/00009` step 3: package families in `bbpkg`'s
+release (`release-target.cs`, `assert-packages --family`, `<family>/v…` tags) and the families rules
+in `repo-conventions.cs`, which reach each family repository on its next sync of the script.
+
+Before the tag: `verify-release` passed locally on `d1ae2e2`, CI on `main` was green, and the release
+pushed the one id in `packages.push` under the unchanged policy and `NUGET_USER`. The `release` run
+passed, and the GitHub release carries one asset, `Bennewitz.Ninja.Templates.2026.4.1023.nupkg`.
+Verified from the feed: the flat container listed `2026.4.1023` about a minute after the run, and
+`verify-release --published 2026.4.1023` installed it from nuget.org; all six generated repositories
+built, passed their tests and published for win-x64.
 
 ## Release `2026.4.1022`
 
