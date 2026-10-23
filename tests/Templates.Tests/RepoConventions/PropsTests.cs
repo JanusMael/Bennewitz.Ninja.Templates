@@ -180,13 +180,11 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     public void A_reference_within_a_family_or_from_a_project_that_packs_nothing_passes()
     {
         // Gamma references Beta, its own family's; FamilyTests references both families and packs nothing.
-        // ⚠ Contains, not StartsWith: under GitHub Actions the script prefixes a FAIL with ::error::.
-        string failure = Assert.Single(Lines(_runs.Families), l => l.Contains("FAIL families", StringComparison.Ordinal));
-        Assert.Contains("FAIL families: Beta,", failure, StringComparison.Ordinal);
+        string failure = Assert.Single(Lines(_runs.Families), l => l.StartsWith("FAIL families", StringComparison.Ordinal));
+        Assert.StartsWith("FAIL families: Beta,", failure, StringComparison.Ordinal);
     }
 
-    private static IEnumerable<string> Lines(string text) =>
-        text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Select(l => l.Trim());
+    private static IEnumerable<string> Lines(string text) => ConventionsScript.Lines(text);
 
     /// <summary>The seven runs, each over its own repository, shared by every test in the class.</summary>
     /// <remarks>Each run's output is assigned once, from its own thread, before any test reads it.</remarks>
