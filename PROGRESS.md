@@ -8,7 +8,7 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 *Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
 2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-26
-when `plans/00009` step 5's branch was built and verified.*
+when `plans/00009` step 5 merged.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
@@ -28,17 +28,14 @@ decisions):
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
    remote, no script copy). Each `Bennewitz.Ninja.*` library also starts failing `Trimming` on its next
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
-2. **[`plans/00009`](plans/00009-package-consolidation.md) step 5, Inspections: built and verified
-   on a local branch, waiting on the maintainer.** `feat/inspections`, in a clone of XamlQuality, not
-   pushed; its section below. Two questions come before the rename. XamlQuality's `main` takes squash
-   and rebase merges only, and either would drop the two imported histories off `main`, so the merge
-   needs a merge commit allowed for that one pull request, or a direct push. And the maintainer called
-   for a XamlQuality release on 2026-10-26, after the branch was cut; releasing first, under the old
-   name, then merging XamlQuality's `main` into the branch, keeps the rename off that release's path.
-   Then, on the word: rename `JanusMael/Bennewitz.Ninja.XamlQuality` to `Bennewitz.Ninja.Inspections`,
-   push the branch, open its pull request there; the maintainer runs `repo-conventions.cs apply` from
-   the branch, and it merges with every check passing. Then step 6, the policy, and step 7, the
-   archives, each on its own word. Step 4 waits on DiffView's own session.
+2. **[`plans/00009`](plans/00009-package-consolidation.md) steps 6 and 7, Inspections, each on the
+   maintainer's word.** Step 5 merged on 2026-10-26 (its section below):
+   `JanusMael/Bennewitz.Ninja.Inspections` exists, renamed from XamlQuality, with AssemblyQuality and
+   CodeQuality in it. Step 6: XamlQuality's trusted-publishing policy edited to name Inspections and
+   gain the AssemblyQuality and CodeQuality patterns, never a second policy; `NUGET_USER`; a
+   blank-version preflight; the policy page read. Step 7: AssemblyQuality and CodeQuality archived,
+   their open issues transferred, a final README commit naming Inspections, CodeQuality's keeping its
+   rule sections for the help links `2026.3.928` shipped. Step 4 waits on DiffView's own session.
 3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
@@ -1345,9 +1342,9 @@ accepted with the plan.
 | 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
 | 3 · Templates: multi-family support | **done**, released 2026-10-23 as `2026.4.1023` | Below; [JanusMael/Bennewitz.Ninja.Templates#41](https://github.com/JanusMael/Bennewitz.Ninja.Templates/pull/41). `verify-release --published 2026.4.1023` passed |
 | 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
-| 5 · Inspections: rename, import | **branch built and verified** 2026-10-26, not pushed | Below. Waits on the maintainer: the rename, how the branch merges, and XamlQuality's release called for that day |
-| 6 · Inspections: the policy | after step 5 | On the maintainer's word |
-| 7 · Archive AssemblyQuality and CodeQuality | after step 5 | On the maintainer's word |
+| 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
+| 6 · Inspections: the policy | next | On the maintainer's word |
+| 7 · Archive AssemblyQuality and CodeQuality | next | On the maintainer's word |
 | 8 · AppKit | after Inspections | |
 | 9 · Each family's first release from its new home | when it next changes | |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
@@ -1378,8 +1375,7 @@ repository's own build properties.
 ### Step 5, as built
 
 Begun 2026-10-26, when AssemblyQuality#17, the last open pull request among the three, had merged.
-Built in a fresh clone of XamlQuality, on a local branch, `feat/inspections`; nothing is pushed and
-nothing is renamed. Its commits: AssemblyQuality's history and CodeQuality's, each imported whole by
+Built in a fresh clone of XamlQuality, on a branch, `feat/inspections`. Its commits: AssemblyQuality's history and CodeQuality's, each imported whole by
 `git filter-repo` with its tags renamed `<family>/v…` and AssemblyQuality's plans moved to
 `plans/assemblyquality/`; then the merge itself, by the plan's *Merging* table, with this
 repository's canonical files from `2026.4.1023`; then the documents. Its `PROGRESS.md` holds the
@@ -1407,6 +1403,26 @@ Verified on the branch, 2026-10-26, against the plan's step 5 and the release's 
 - **XamlQuality's `main` moved after the branch was cut**: PR #96, docs, and the maintainer's call
   for a release, on 2026-10-26. The branch takes it by a merge of XamlQuality's `main`, regenerating
   `PROGRESS.md`, before it is pushed.
+
+### How step 5 landed, 2026-10-26
+
+On the maintainer's word, in this order:
+
+1. XamlQuality released `2026.4.1026` under its own name first, and its `main` after the release,
+   with XamlQuality#97, was merged into the branch; the verification above passed again on it.
+2. `JanusMael/Bennewitz.Ninja.XamlQuality` renamed `Bennewitz.Ninja.Inspections`. The branch and the
+   six `assemblyquality/v…` and `codequality/v…` tags pushed, the tags before `apply` put
+   `refs/tags/*/v*` under the release-tags ruleset.
+3. Inspections#98 opened, and `repo-conventions.cs apply --root <branch>` run: the description, the
+   topics, the `main` ruleset's required checks renamed to the merged CI's jobs, and the family tag
+   include. The `conventions` runs that started before it failed on exactly those four settings and
+   passed when rerun.
+4. A merge commit allowed on the repository, and the pull request merged by one with the admin
+   bypass, since the `main` ruleset's `pull_request` rule also allows only squash and rebase. Merged
+   as `a18a303`, every check green.
+5. `apply` run again from `main`, disallowing merge commits; `check --admin` conforms. On `main`,
+   `IAssemblyRule.cs`'s history reaches `bd44084`, and `assemblyquality/v2026.3.929` and
+   `codequality/v2026.3.928` are ancestors of `main`.
 
 ### What step 5 found for the templates
 
