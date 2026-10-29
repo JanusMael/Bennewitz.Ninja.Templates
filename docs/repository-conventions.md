@@ -64,7 +64,8 @@ release publishes one family's ids, at that family's version.
 | Dispatched release | the version | the version and the family |
 | Published | every id in `packages.push` | the family's ids |
 | Packed | the solution | the projects whose evaluated `PackageId` is one of the family's ids |
-| GitHub release notes | from the previous release | from the family's previous tag |
+| GitHub release notes | GitHub's, from the previous release | the family's own commits since its previous tag, written by `release-target.cs notes` |
+| GitHub's "Latest" | GitHub's choice | taken unless a tag of any family is newer |
 | `release-tags` ruleset | `refs/tags/v*` | `refs/tags/v*` and `refs/tags/*/v*` |
 
 **The release refuses what it cannot attribute.** `scripts/release-target.cs` resolves the tag or
@@ -73,7 +74,15 @@ dispatch without a family, and a family that is not declared; where there are no
 family tag and a dispatch that names a family. In both kinds of repository it refuses a version
 that is not `YYYY.Q.MMDD` with the quarter of its date.
 
-`check` holds a repository with families to three more rules, at every depth:
+**A family's notes are its own** (`plans/00011`). GitHub's generated notes list every pull request
+merged in the repository, whichever family it touched, so `release-target.cs notes` writes them
+instead: the commits since the family's previous tag that touched its projects, any project they
+reference that packs nothing, or `docs/<stem>.md`; and, under a heading of their own, those
+descending from that tag that touched a build input every package shares, such as
+`Directory.Build.props` or the generated friend grants. A repository grown from one family names it
+in `bareTags`, so that family's first release under its own tags starts from its last bare one.
+
+`check` holds a repository with families to these rules, at every depth:
 
 - **The families' ids are exactly `packages.push`'s.** `packages.push` says what publishes, and
   `families` what releases together. An id that no family names would never be released, and one
@@ -85,6 +94,7 @@ that is not `YYYY.Q.MMDD` with the quarter of its date.
   version of the other family that need not exist. Across families, reference the package at a
   published version. Both sides are read by their evaluated `PackageId`. A test project, or a
   tool or demo that packs nothing, may reference anything.
+- **`bareTags`, where present, names a declared family**, and is present only with `families`.
 
 A repository without `families` is unchanged by all of this.
 
@@ -327,6 +337,7 @@ Only what varies from one repository to the next:
 | `undocumented` | Top-level directories exempt from `AGENTS.md`, each mapped to its reason. An empty reason fails |
 | `props` | Per-project exemptions from the [build properties](#build-properties): `{ "<project>": { "<rule>": "<reason>" } }`. An empty reason fails |
 | `families` | Only in a repository that releases several [package families](#package-families): `{ "<stem>": ["<id>", …] }`. The ids together must be exactly `packages.push`'s |
+| `bareTags` | Only with `families`: the stem of the family whose releases the repository's bare `v…` tags were, before it had families. That family's notes then start from the newest of them. A stem that is not a declared family fails |
 | `trimming` | Retired: no longer read, and a NOTE while present. Whether a repository trims follows from its projects ([build properties](#build-properties)) |
 
 ## Commands

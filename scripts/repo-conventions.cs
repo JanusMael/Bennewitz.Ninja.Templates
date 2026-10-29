@@ -540,6 +540,9 @@ sealed record Config(
             findings.Add(Finding.Note("repository.json", "\"trimming\" is no longer read; remove it. A repository trims when one of its projects sets a trimming property."));
         }
 
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? families = json["families"] is { } declared ? ParseFamilies(declared, pushed, findings) : null;
+        CheckBareTags(json["bareTags"], families, findings);
+
         return new Config(
             description,
             json["homepage"]?.GetValue<string>() ?? "",
@@ -548,7 +551,30 @@ sealed record Config(
             [.. Strings(json["content"]).Select(p => p.TrimEnd('/') + "/")],
             undocumented,
             propsExempt,
-            json["families"] is { } declared ? ParseFamilies(declared, pushed, findings) : null);
+            families);
+    }
+
+    /// <summary>
+    /// <c>"bareTags": "&lt;stem&gt;"</c> (plans/00011 decision 7): the family whose releases a grown
+    /// repository's bare <c>v…</c> tags were, before it had families. The release counts them as that
+    /// family's when it finds the previous tag its notes start from, so it must name a declared family.
+    /// </summary>
+    private static void CheckBareTags(JsonNode? node, IReadOnlyDictionary<string, IReadOnlyList<string>>? families, List<Finding> findings)
+    {
+        if (node is null)
+        {
+            return;
+        }
+        if (families is null)
+        {
+            findings.Add(Finding.Fail("families", "\"bareTags\" names the family whose releases the bare v… tags were, but there are no families: every release is a bare tag's. Remove it."));
+            return;
+        }
+        string stem = node is JsonValue value && value.TryGetValue(out string? text) ? text.Trim().ToLowerInvariant() : "";
+        if (!families.ContainsKey(stem))
+        {
+            findings.Add(Finding.Fail("families", $"\"bareTags\" is {node.ToJsonString()}, which is not a declared family; the families are {string.Join(", ", families.Keys)}."));
+        }
     }
 
     /// <summary>
