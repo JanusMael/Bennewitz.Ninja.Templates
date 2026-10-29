@@ -11,7 +11,7 @@ namespace Templates.Tests.RepoConventions;
 /// ⭐ <b>Seven runs, several projects each.</b> A restore is the slow part, so each run carries several
 /// projects, each conforming or broken in exactly one way, and every test reads the run it needs. Three
 /// of them trim through nothing but the project the run is about (plans/00008), and one declares
-/// package families (plans/00009).
+/// two package families (plans/00009), each with its README and product (plans/00011).
 /// </para>
 /// <para>
 /// ⛔ <b>The cases the check exists for:</b> a csproj overriding a correct <c>Directory.Build.props</c>;
@@ -172,17 +172,103 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     [Fact]
     public void A_packable_project_referencing_another_family_s_project_fails()
     {
-        Assert.Contains("NOTE props: 4 projects evaluated after a restore", _runs.Families, StringComparison.Ordinal);
-        Assert.Contains("FAIL families: Beta, of the beta family, references Good, of the alpha family, as a project.", _runs.Families, StringComparison.Ordinal);
+        Assert.Contains("NOTE props: 5 projects evaluated after a restore", _runs.Families, StringComparison.Ordinal);
+        Assert.Contains("FAIL families: Beta, of the beta-kit family, references Good, of the alpha family, as a project.", _runs.Families, StringComparison.Ordinal);
     }
 
     [Fact]
     public void A_reference_within_a_family_or_from_a_project_that_packs_nothing_passes()
     {
         // Gamma references Beta, its own family's; FamilyTests references both families and packs nothing.
-        string failure = Assert.Single(Lines(_runs.Families), l => l.StartsWith("FAIL families", StringComparison.Ordinal));
+        string failure = Assert.Single(Lines(_runs.Families), l => l.StartsWith("FAIL families", StringComparison.Ordinal) && l.Contains(" as a project.", StringComparison.Ordinal));
         Assert.StartsWith("FAIL families: Beta,", failure, StringComparison.Ordinal);
     }
+
+    /// <summary>A family's README is packed as each of its packages' README.md, so it must be there to pack (plans/00011).</summary>
+    [Fact]
+    public void A_family_without_its_README_fails()
+    {
+        Assert.Contains("FAIL families: The beta-kit family has no docs/beta-kit.md.", _runs.Families, StringComparison.Ordinal);
+        Assert.DoesNotContain("has no docs/alpha.md", _runs.Families, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_family_package_naming_another_family_s_README_fails() =>
+        Assert.Contains("FAIL families: Beta, of the beta-kit family, has FamilyReadme \"docs/alpha.md\"; the family's is docs/beta-kit.md.", _runs.Families, StringComparison.Ordinal);
+
+    /// <remarks>Without one, the root props pack the repository's README into the family's package.</remarks>
+    [Fact]
+    public void A_family_package_without_a_FamilyReadme_fails() =>
+        Assert.Contains("FAIL families: Delta, of the beta-kit family, sets no FamilyReadme", _runs.Families, StringComparison.Ordinal);
+
+    [Fact]
+    public void A_family_package_with_another_product_fails() =>
+        Assert.Contains("FAIL families: Gamma, of the beta-kit family, has AssemblyProduct \"Fixture\"", _runs.Families, StringComparison.Ordinal);
+
+    /// <remarks>
+    /// Good's is <c>Alpha</c>, Beta's <c>BetaKit</c> and Delta's <c>Beta.Kit</c>, against the stems
+    /// <c>alpha</c> and <c>Beta-Kit</c>: a product is the stem without regard to case or its separators.
+    /// </remarks>
+    [Fact]
+    public void A_family_s_product_is_its_stem_without_case_or_separators()
+    {
+        string failure = Assert.Single(Lines(_runs.Families), l => l.StartsWith("FAIL families", StringComparison.Ordinal) && l.Contains("AssemblyProduct", StringComparison.Ordinal));
+        Assert.StartsWith("FAIL families: Gamma,", failure, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_family_package_that_conforms_is_not_blamed() =>
+        Assert.DoesNotContain(Lines(_runs.Families), l => l.StartsWith("FAIL families: Good,", StringComparison.Ordinal));
+
+    /// <summary>
+    /// A family's README is a nuget.org page, where a relative link goes nowhere: inline, an image, a
+    /// reference definition and an HTML attribute each fail; an absolute link, an anchor, and a link
+    /// shown inside code do not.
+    /// </summary>
+    [Fact]
+    public void A_relative_link_in_a_family_README_fails()
+    {
+        string[] links = [.. Lines(_runs.Families)
+            .Where(l => l.StartsWith("FAIL families: docs/alpha.md:", StringComparison.Ordinal))
+            .Select(l => l["FAIL families: ".Length..l.IndexOf(", relatively", StringComparison.Ordinal)])];
+
+        Assert.Equal(
+            [
+                "docs/alpha.md:4 links to \"../README.md\"",
+                "docs/alpha.md:4 links to \"images/logo.png\"",
+                "docs/alpha.md:6 links to \"docs/other.md\"",
+                "docs/alpha.md:8 links to \"CONTRIBUTING.md\"",
+                "docs/alpha.md:8 links to \"img/badge.png\"",
+            ],
+            links);
+    }
+
+    /// <summary>The alpha family's README: every way of linking, line by line, as the relative-link test reads them.</summary>
+    private const string AlphaReadme =
+        """
+        # Alpha
+
+        [Absolute](https://example.com/alpha), [an anchor](#install), <https://example.com/autolink> and [mail](mailto:someone@example.com).
+        [Inline](../README.md) and ![an image](images/logo.png).
+
+        [defined]: docs/other.md
+        [absolute definition]: https://example.com/defined
+        <a href="CONTRIBUTING.md">html</a> <img src='img/badge.png'> <a href="https://example.com/html">absolute html</a>
+
+        Inline code is text: `[shown](relative.md)`, and so is ``[this](`odd`.md)``.
+
+        ```markdown
+        [in a fence](relative.md)
+        <img src="fenced.png">
+        ```
+
+        ~~~
+        [in a tilde fence](relative.md)
+        ~~~
+
+        ## Install
+
+        """;
 
     private static IEnumerable<string> Lines(string text) => ConventionsScript.Lines(text);
 
@@ -215,11 +301,21 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                 () => PublishTrimmed = Run(["Good", "GoodApp", "TrimmedApp"], new JsonObject(), trims: false),
                 () => PublishAot = Run(["Good", "GoodApp", "AotApp"], new JsonObject(), trims: false),
 
-                // Good is the alpha family; Beta references it, and Gamma references Beta, its own family's.
-                () => Families = Run(["Good", "Beta", "Gamma", "FamilyTests"], new JsonObject
+                // Good is the alpha family, and conforms; Beta references it, and Gamma references Beta,
+                // its own family's. Beta names alpha's README, Gamma has another product, Delta names no
+                // README, and the beta-kit family has none to name.
+                () => Families = Run(["Good", "Beta", "Gamma", "Delta", "FamilyTests"], new JsonObject
                 {
-                    ["families"] = new JsonObject { ["alpha"] = new JsonArray("Good"), ["Beta"] = new JsonArray("Beta", "Gamma") },
-                }, push: ["Good", "Beta", "Gamma"]));
+                    ["families"] = new JsonObject { ["alpha"] = new JsonArray("Good"), ["Beta-Kit"] = new JsonArray("Beta", "Gamma", "Delta") },
+                }, push: ["Good", "Beta", "Gamma", "Delta"],
+                properties: new Dictionary<string, string>
+                {
+                    ["Good"] = Family("docs/alpha.md", "Alpha"),
+                    ["Beta"] = Family("docs/alpha.md", "BetaKit"),
+                    ["Gamma"] = Family("docs/beta-kit.md", "Fixture"),
+                    ["Delta"] = Family("", "Beta.Kit"),
+                },
+                files: new Dictionary<string, string> { ["docs/alpha.md"] = AlphaReadme }));
 
         public string Conforming { get; private set; } = "";
 
@@ -235,7 +331,11 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
 
         public string Families { get; private set; } = "";
 
-        private static string Run(string[] projects, JsonObject extra, bool trims = true, string[]? push = null)
+        private static string Family(string readme, string product) =>
+            $"<FamilyReadme>{readme}</FamilyReadme><AssemblyProduct>{product}</AssemblyProduct>";
+
+        private static string Run(string[] projects, JsonObject extra, bool trims = true, string[]? push = null,
+            IReadOnlyDictionary<string, string>? properties = null, IReadOnlyDictionary<string, string>? files = null)
         {
             string directory = Path.Combine(Path.GetTempPath(), "repo-conventions-props-" + Guid.NewGuid().ToString("N"));
             try
@@ -288,7 +388,17 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                     "<Solution>\n" + string.Concat(projects.Select(p => $"  <Project Path=\"src/{p}/{p}.csproj\" />\n")) + "</Solution>\n");
                 foreach (string project in projects)
                 {
-                    Write(directory, $"src/{project}/{project}.csproj", Csproj(project));
+                    string csproj = Csproj(project);
+                    if (properties?.GetValueOrDefault(project) is { } added)
+                    {
+                        int end = csproj.IndexOf("</PropertyGroup>", StringComparison.Ordinal);
+                        csproj = csproj[..end] + added + csproj[end..];
+                    }
+                    Write(directory, $"src/{project}/{project}.csproj", csproj);
+                }
+                foreach ((string path, string text) in files ?? new Dictionary<string, string>())
+                {
+                    Write(directory, path, text);
                 }
 
                 JsonObject config = new()

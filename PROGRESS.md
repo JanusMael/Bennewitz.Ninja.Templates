@@ -9,8 +9,8 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
 2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-29
 when AssemblyQuality released from Inspections and Inspections' links were repointed, when
-`plans/00011` was approved, and when AssemblyQuality's old policy was deleted and the last link pull
-requests merged.*
+`plans/00011` was approved, when AssemblyQuality's old policy was deleted and the last link pull
+requests merged, and as `plans/00011`'s steps were done.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
@@ -32,9 +32,9 @@ decisions):
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
 2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7, and
    AssemblyQuality released from it** (their sections below). Next, in order:
-   - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: step 1
-     done; steps 2 and 3 next, then a Templates release on the maintainer's word, then Inspections' sync (its section
-     below). AppKit merges onto that release. The `Pkcs` pin goes to `plans/00010`; a single-family
+   - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1
+     to 3 done; next, a Templates release on the maintainer's word, then Inspections' sync (its
+     section below). AppKit merges onto that release. The `Pkcs` pin goes to `plans/00010`; a single-family
      repository's packed README to `plans/00012`, drafted after `00011` is released.
    - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
    - **CodeQuality's old policy on nuget.org** is deleted after its first release from Inspections
@@ -1565,9 +1565,9 @@ family's previous tag: this gives AssemblyQuality `2026.4.1029` exactly `7e82d76
 | Step | State | Notes |
 |---|---|---|
 | 1 · The `notes` verb, `bareTags` and `LATEST` | **done** 2026-10-29 | Below |
-| 2 · `FamilyReadme`, the `AssemblyProduct` and README rules, the packed README compared | next | |
-| 3 · `docs/repository-conventions.md` and the shipped files' comments | after step 2 | Step 1's part is done: `bareTags`, the notes and "Latest" are documented with it, as the conventions checklist asks |
-| 4 · A Templates release | on the maintainer's word | |
+| 2 · `FamilyReadme`, the `AssemblyProduct` and README rules, the packed README compared | **done** 2026-10-29 | Below |
+| 3 · `docs/repository-conventions.md` and the shipped files' comments | **done** 2026-10-29 | With steps 1 and 2, each in its own change, as the conventions checklist asks |
+| 4 · A Templates release | **next**, on the maintainer's word | |
 | 5 · Inspections syncs, with `"bareTags": "xamlquality"` | after step 4 | |
 
 ### Step 1, as built
@@ -1588,9 +1588,28 @@ either, as a guard. Run on Inspections at `assemblyquality/v2026.4.1029`, `notes
 `assemblyquality/v2026.3.929` lists `7e5236f`, `1701070` and `7e82d76` as the family's and
 `ed5544b`, #17, as the shared build's, and nothing else.
 
+### Steps 2 and 3, as built
+
+| Part | What it does |
+|---|---|
+| `bbpkg`'s root `Directory.Build.props` | Packs `$(FamilyReadme)` as `README.md` when a project sets it, and the root `README.md` otherwise. A comment on its `AssemblyProduct` says a family's packages set their own |
+| `repo-conventions.cs` | With families, FAILS a family without `docs/<stem>.md`; a relative link in one (inline, image, reference definition, HTML `href` or `src`; not in fenced or inline code; `#…`, a scheme and `//` are absolute), with its line; and a family package, by evaluated `PackageId`, whose evaluated `FamilyReadme` is not `docs/<stem>.md` or whose `AssemblyProduct` is not the stem without case or separators. The README rules read the tree, so `check --repo` reaches them too |
+| `assert-packages.cs --family` | Fails when `docs/<family>.md` is missing, or a package's README, the file its `.nuspec` names, is not that file byte for byte, or there is none |
+| Documents | `docs/repository-conventions.md`'s *Package families*; `bbpkg`'s `AGENTS.md` (an invariant), `scripts/AGENTS.md` and `docs/publishing.md` |
+
+Tests: 189, from 173. Against today's scripts and props, the 14 new tests failed, each for its own
+missing behaviour, and the reshaped families fixture's existing tests passed. `PropsTests`' families
+run now has two families, `alpha` and `Beta-Kit`, so a stem's separator is compared; the real pack,
+`FamilyPackTests`, packs three projects through the template's own build files and also runs the
+guard over each family's package. `check --offline --root` against Inspections conforms, and the same
+check against a copy with a relative link in `docs/codequality.md` and `AssemblyProduct` set to
+`Inspections` in `CodeQuality.csproj` FAILS exactly those two. `verify-release` passed: the generated
+`bbpkg` has no families and packs its root README as before.
+
 ### Drift from `plans/00011`
 
-None yet.
+- **Step 3 was done with steps 1 and 2, not after them.** The conventions checklist asks for the
+  document in the same change as the script, and the rest was four lines of `bbpkg`'s documents.
 
 ## Release `2026.4.1023`
 

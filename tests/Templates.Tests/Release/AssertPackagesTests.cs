@@ -69,7 +69,55 @@ public sealed class AssertPackagesTests
         Assert.Contains("--family gadgets, but .github/repository.json declares no families.", output, StringComparison.Ordinal);
     }
 
+    /// <summary>A family's packages carry its README, docs/&lt;stem&gt;.md, which nuget.org shows (plans/00011).</summary>
+    [Fact]
+    public void A_family_pack_says_its_packages_carry_the_family_s_README()
+    {
+        using Packed packed = new("Fixture.Gadget", "Fixture.Gizmo");
+
+        (int exit, string output) = packed.Assert("--family", "gadgets");
+
+        Assert.True(exit == 0, output);
+        Assert.Contains("Each carries docs/gadgets.md as its README.md.", output, StringComparison.Ordinal);
+    }
+
+    /// <remarks>What a family package packs when its project names no FamilyReadme.</remarks>
+    [Fact]
+    public void A_family_pack_carrying_the_repository_s_README_fails()
+    {
+        using Packed packed = new(families: true, new Dictionary<string, string?> { ["Fixture.Gizmo"] = "README.md" }, "Fixture.Gadget", "Fixture.Gizmo");
+
+        (int exit, string output) = packed.Assert("--family", "gadgets");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("The gadgets family's packages carry docs/gadgets.md as their README.md, byte for byte: Fixture.Gizmo's is another file.", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_family_pack_without_a_README_fails()
+    {
+        using Packed packed = new(families: true, new Dictionary<string, string?> { ["Fixture.Gadget"] = null }, "Fixture.Gadget", "Fixture.Gizmo");
+
+        (int exit, string output) = packed.Assert("--family", "gadgets");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("byte for byte: Fixture.Gadget packs none.", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_family_without_its_README_document_fails()
+    {
+        using Packed packed = new("Fixture.Gadget", "Fixture.Gizmo");
+        packed.Delete("docs/gadgets.md");
+
+        (int exit, string output) = packed.Assert("--family", "gadgets");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("docs/gadgets.md is missing: it is the gadgets family's README, which each of its packages carries.", output, StringComparison.Ordinal);
+    }
+
     /// <summary>Without a family the guard is as it was: everything packed is in one of the two lists, and everything listed is packed.</summary>
+    /// <remarks>Without a family, no README is compared (plans/00011 decision 5).</remarks>
     [Fact]
     public void Without_a_family_the_whole_pack_matches_the_two_lists()
     {
@@ -79,6 +127,7 @@ public sealed class AssertPackagesTests
 
         Assert.True(exit == 0, output);
         Assert.Contains("Packages check out: 4 packed, all declared in packages.push or packages.local.", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("README", output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -92,7 +141,10 @@ public sealed class AssertPackagesTests
         Assert.Contains("Packed but declared nowhere: Fixture.Stray.", output, StringComparison.Ordinal);
     }
 
-    /// <summary>A repository with two families, packages.push and packages.local, and a folder of packages.</summary>
+    /// <summary>
+    /// A repository with two families, each with its README, a root README, packages.push and
+    /// packages.local, and a folder of packages, each carrying its family's README unless told otherwise.
+    /// </summary>
     private sealed class Packed : IDisposable
     {
         private readonly string _directory = Path.Combine(Path.GetTempPath(), "assert-packages-" + Guid.NewGuid().ToString("N"));
@@ -103,6 +155,12 @@ public sealed class AssertPackagesTests
         }
 
         public Packed(bool families, params string[] ids)
+            : this(families, new Dictionary<string, string?>(), ids)
+        {
+        }
+
+        /// <param name="readmes">The file a package carries as its README, by id; null for none.</param>
+        public Packed(bool families, IReadOnlyDictionary<string, string?> readmes, params string[] ids)
         {
             JsonObject config = new() { ["description"] = "Fixture." };
             if (families)
@@ -116,20 +174,42 @@ public sealed class AssertPackagesTests
             Write(".github/repository.json", config.ToJsonString());
             Write("packages.push", "Fixture.Widget\nFixture.Gadget\nFixture.Gizmo\n");
             Write("packages.local", "# Packed, never published.\nFixture.Private\n");
+            Write("README.md", "# The repository\n\nHow to build it, and how to release it.\n");
+            Write("docs/widgets.md", "# Widgets\n\nWhat a widget is.\n");
+            Write("docs/gadgets.md", "# Gadgets\n\nWhat a gadget is, and a gizmo.\n");
 
             string packages = Path.Combine(_directory, "packages", "Release");
             Directory.CreateDirectory(packages);
             for (int i = 0; i < ids.Length; i++)
             {
+                string? readme = readmes.TryGetValue(ids[i], out string? chosen) ? chosen : DefaultReadme(families, ids[i]);
                 using ZipArchive archive = ZipFile.Open(Path.Combine(packages, $"package{i}.2026.4.1022.nupkg"), ZipArchiveMode.Create);
                 ZipArchiveEntry nuspec = archive.CreateEntry($"package{i}.nuspec");
-                using StreamWriter writer = new(nuspec.Open());
-                writer.Write($"<?xml version=\"1.0\"?>\n<package xmlns=\"http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd\"><metadata><id>{ids[i]}</id><version>2026.4.1022</version></metadata></package>\n");
+                using (StreamWriter writer = new(nuspec.Open()))
+                {
+                    string element = readme is null ? "" : "<readme>README.md</readme>";
+                    writer.Write($"<?xml version=\"1.0\"?>\n<package xmlns=\"http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd\"><metadata><id>{ids[i]}</id><version>2026.4.1022</version>{element}</metadata></package>\n");
+                }
+                if (readme is not null)
+                {
+                    using Stream entry = archive.CreateEntry("README.md").Open();
+                    entry.Write(File.ReadAllBytes(Path.Combine(_directory, readme.Replace('/', Path.DirectorySeparatorChar))));
+                }
             }
         }
 
         public (int ExitCode, string Output) Assert(params string[] arguments) =>
             ShippedScript.AssertPackages.Run(_directory, [Path.Combine("packages", "Release"), .. arguments]);
+
+        public void Delete(string relative) => File.Delete(Path.Combine(_directory, relative.Replace('/', Path.DirectorySeparatorChar)));
+
+        // What the root props pack: a family's README for a family's package, the root's otherwise.
+        private static string DefaultReadme(bool families, string id) => (families, id) switch
+        {
+            (true, "Fixture.Widget") => "docs/widgets.md",
+            (true, "Fixture.Gadget" or "Fixture.Gizmo") => "docs/gadgets.md",
+            _ => "README.md",
+        };
 
         public void Dispose()
         {
