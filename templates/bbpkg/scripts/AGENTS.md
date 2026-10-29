@@ -5,8 +5,8 @@ File-based C# apps, run with `dotnet run`. Each is compiled with this repository
 
 | Script | What it does | Run by |
 |---|---|---|
-| `assert-packages.cs` | Checks that the packages `dotnet pack` actually produced are exactly the ones the two package lists declare; with `--family`, exactly that family's ids | CI's `pack` job, and the release before it publishes |
-| `release-target.cs` | Resolves what a release publishes: the tag or the dispatch, into the version, the tag, the family where `.github/repository.json` declares families, and the ids. Refuses a tag of the wrong kind and a version that is not `YYYY.Q.MMDD`. `projects` lists a family's projects for its pack | The release, first, before anything is built |
+| `assert-packages.cs` | Checks that the packages `dotnet pack` actually produced are exactly the ones the two package lists declare; with `--family`, exactly that family's ids, each carrying the family's README, `docs/<family>.md` | CI's `pack` job, and the release before it publishes |
+| `release-target.cs` | Resolves what a release publishes: the tag or the dispatch, into the version, the tag, the family where `.github/repository.json` declares families, and the ids. Refuses a tag of the wrong kind and a version that is not `YYYY.Q.MMDD`. `projects` lists a family's projects for its pack; `notes` writes a family's release notes from its own commits | The release, first, before anything is built |
 | `repo-conventions.cs` | Checks, and applies, the family's repository conventions: documentation, GitHub settings and rulesets | CI's `conventions` job, the release preflight, and the maintainer |
 
 ## Rules

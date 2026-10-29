@@ -64,6 +64,8 @@ release publishes one family's ids, at that family's version.
 | Dispatched release | the version | the version and the family |
 | Published | every id in `packages.push` | the family's ids |
 | Packed | the solution | the projects whose evaluated `PackageId` is one of the family's ids |
+| Each package's README | the root `README.md` | the family's, `docs/<stem>.md`, named in each project's `FamilyReadme` |
+| Each assembly's `AssemblyProduct` | the repository's | the family's, set in each project |
 | GitHub release notes | GitHub's, from the previous release | the family's own commits since its previous tag, written by `release-target.cs notes` |
 | GitHub's "Latest" | GitHub's choice | taken unless a tag of any family is newer |
 | `release-tags` ruleset | `refs/tags/v*` | `refs/tags/v*` and `refs/tags/*/v*` |
@@ -82,6 +84,21 @@ descending from that tag that touched a build input every package shares, such a
 `Directory.Build.props` or the generated friend grants. A repository grown from one family names it
 in `bareTags`, so that family's first release under its own tags starts from its last bare one.
 
+**A family's packages read as its own on nuget.org** (`plans/00011`). Each packable project of a
+family names the family's README, `docs/<stem>.md`, and sets the family's product beside it; the
+root `Directory.Build.props` packs that file as the package's `README.md`, and the root `README.md`
+for a project that names none:
+
+```xml
+<AssemblyProduct>Widgets</AssemblyProduct>
+<FamilyReadme>docs/widgets.md</FamilyReadme>
+```
+
+The root's own `AssemblyProduct` stays the repository's, for its tests, tools and scripts:
+AutoVersioning fails a project without one (`BAUTOVERSIONING03`). A family's README is a page on
+nuget.org, where a relative link resolves against nuget.org and goes nowhere, so it links
+absolutely, or to an `#anchor` on the page. A link shown as an example inside code is text.
+
 `check` holds a repository with families to these rules, at every depth:
 
 - **The families' ids are exactly `packages.push`'s.** `packages.push` says what publishes, and
@@ -95,6 +112,15 @@ in `bareTags`, so that family's first release under its own tags starts from its
   published version. Both sides are read by their evaluated `PackageId`. A test project, or a
   tool or demo that packs nothing, may reference anything.
 - **`bareTags`, where present, names a declared family**, and is present only with `families`.
+- **Each family has its README, `docs/<stem>.md`, and it links absolutely**: a relative link or
+  image fails, inline, as a reference definition (`[x]: target`) or as an HTML `href` or `src`,
+  outside fenced and inline code.
+- **Each of a family's packages names that README in `FamilyReadme`, and carries the family's
+  `AssemblyProduct`**: the stem without regard to case or separators, `AppServices` for
+  `app-services`. Both are read evaluated, as MSBuild builds the project.
+
+The release's last gate checks what pack did: `assert-packages.cs --family` fails a package whose
+packed `README.md` is not `docs/<stem>.md`, byte for byte.
 
 A repository without `families` is unchanged by all of this.
 

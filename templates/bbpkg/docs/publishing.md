@@ -127,8 +127,11 @@ git push origin widgets/v2026.3.920
 ```
 
 A dispatch fills in **family** beside the version. The release publishes only that family's ids,
-packs only the projects that produce them, and starts the GitHub release's notes from the family's
-previous tag. A bare `v…` tag, or a dispatch without a family, is refused before anything is built;
+packs only the projects that produce them, and writes the GitHub release's notes from the family's
+own commits since its previous tag, marking it "Latest" unless a tag of any family is newer. Each of
+the family's packages carries the family's README, `docs/<stem>.md`, which its project names in
+`FamilyReadme` beside the family's `AssemblyProduct`; the release fails a package that packed
+another. A bare `v…` tag, or a dispatch without a family, is refused before anything is built;
 so is a family tag in a repository that declares no families. The policy stays **one**, its Glob
 Patterns covering every family's ids. `docs/repository-conventions.md` in Bennewitz.Ninja.Templates
 lists what `check` adds for families.

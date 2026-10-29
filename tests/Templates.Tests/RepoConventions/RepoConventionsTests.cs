@@ -450,6 +450,10 @@ public sealed class RepoConventionsTests
     {
         Fixture fixture = Conforming();
         fixture.Config["families"] = new JsonObject { ["widgets"] = new JsonArray("Fixture.Widget") };
+        // The family's README (plans/00011), and the documents its directory needs.
+        fixture.Files["docs/widgets.md"] = "# Widgets\n\nWhat a widget is.\n";
+        fixture.Files["docs/AGENTS.md"] = "# docs\n\nEach family's README.\n";
+        fixture.Files["docs/CLAUDE.md"] = "@AGENTS.md\n";
 
         Result result = fixture.Run("check", "--admin");
 
