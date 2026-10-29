@@ -34,8 +34,8 @@ decisions):
    AssemblyQuality released from it** (their sections below). Next, in order:
    - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1
      to 5 done, released as `2026.4.1029` and Inspections synced: **complete** (its section
-     below). Next, `plans/00012`, every packed README fit for nuget.org: drafted 2026-10-29 and not yet
-     committed, awaiting the maintainer's review. AppKit merges onto that
+     below). Next, [`plans/00012`](plans/00012-every-packed-readme-is-a-nuget-page.md), every
+     packed README fit for nuget.org: approved 2026-10-29, step 1 next. AppKit merges onto that
      release. The `Pkcs` pin goes to `plans/00010`.
    - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
    - **CodeQuality's old policy on nuget.org** is deleted after its first release from Inspections
