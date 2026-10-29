@@ -8,7 +8,7 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 *Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
 2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-29
-when `plans/00009` steps 5 to 7, Inspections, were done.*
+when AssemblyQuality released from Inspections and Inspections' links were repointed.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
@@ -28,15 +28,20 @@ decisions):
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
    remote, no script copy). Each `Bennewitz.Ninja.*` library also starts failing `Trimming` on its next
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
-2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7**
-   (their sections below). `JanusMael/Bennewitz.Ninja.Inspections` holds the three families,
-   publishes through one edited policy, and AssemblyQuality and CodeQuality are archived. Next: step
-   8, AppKit, which waits on step 4, DiffView conforming, in DiffView's own session; it repeats steps
-   5 to 7, and its policy must be edited to the renamed repository's name before any release (step
-   6's finding). Step 9, each family's first release from its new home, comes when the family next
-   changes, on the maintainer's word; after AssemblyQuality's and CodeQuality's, their old policies
-   are deleted. Step 11, the links, last: this repository's own `AGENTS.md` still names
-   Bennewitz.Ninja.XamlQuality, which GitHub redirects.
+2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7, and
+   AssemblyQuality released from it** (their sections below). Next, in order:
+   - **The maintainer deletes AssemblyQuality's old policy on nuget.org**, now that
+     `assemblyquality/v2026.4.1029` is verified from the feed (decision 20). CodeQuality's stays until
+     its own first release from Inspections.
+   - **`plans/00011`, multi-family repositories in `bbpkg`**, drafted and approved before AppKit, by
+     the maintainer's decision of 2026-10-29: a root `AssemblyProduct`, a family's README packed as
+     its packages' README, a family's release notes scoped to the family (the defect below), and
+     whether a family release takes GitHub's "Latest". The `Pkcs` pin goes to `plans/00010`.
+   - **Step 11, Inspections' links**: this repository's are repointed; ClaudeForge#126 and
+     Bennewitz.Ninja.JsonC#5 wait on the maintainer's merge. DiffView's wait for step 8.
+   - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
+     note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
+     renamed repository's name before any release (step 6's finding).
 3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
@@ -452,7 +457,7 @@ of it blocking:
      resolves any `LE.*` key; every mention there is a comment.
 
    What was learned along the way is in XamlQuality's
-   [`docs/avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md)
+   [`docs/avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/blob/main/docs/avalonia-gotchas.md)
    (`d80e53b`): the library side of trim safety, and the four ways an `avares://` URI fails.
 3. ✅ **The trim fix is released as `Bennewitz.Ninja.Templates 2026.3.923`**, 2026-09-23, and
    verified from the feed rather than from the green run. `verify-release --published 2026.3.923`
@@ -1347,9 +1352,9 @@ accepted with the plan.
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
 | 8 · AppKit | after Inspections | |
-| 9 · Each family's first release from its new home | when it next changes | |
+| 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy is the maintainer's to delete. XamlQuality and CodeQuality when each next changes |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
-| 11 · Links | last | |
+| 11 · Links | **Inspections' in progress** 2026-10-29 | Below. Inspections' moved repositories now, AppKit's after step 8, by the maintainer's decision |
 
 ### Step 3, as built
 
@@ -1457,6 +1462,51 @@ Each README is kept whole below its notice: the help links CodeQuality `2026.3.9
 `#bncq…` sections, and its packed README at AssemblyQuality's `#bnaq…` ones. Then both archived;
 `gh api` reports `archived: true` for each, with no open issue or pull request on either. Their
 policies on nuget.org stay until each family's first release from Inspections, by decision 20.
+
+### After Inspections: the maintainer's decisions of 2026-10-29
+
+| Decision | Choice |
+|---|---|
+| Step 9 | Release AssemblyQuality now: it had a change of its own, its #17, unreleased since `2026.3.929`, so decision 21 does not hold it, and it proves the family release path end to end |
+| Its notes, once the defect below was found | Release anyway and replace the generated notes by hand; the packages, the permanent part, were right |
+| Step 11 | Inspections' moved repositories' links now, AppKit's after step 8 |
+| `bbpkg`'s gaps for families | A plan, `plans/00011`, before AppKit, so AppKit merges onto canonical files instead of repeating step 5's hand fixes; the `Pkcs` pin to `plans/00010` |
+| DiffView | One note about step 4, then left to its session |
+
+### Step 9: AssemblyQuality `2026.4.1029`, 2026-10-29
+
+Tagged `assemblyquality/v2026.4.1029` on Inspections' `3092aee`, CI green there; release run
+`40939268891` resolved the family, built, tested, packed and asserted it alone, logged in through
+the edited policy, and pushed `Bennewitz.Ninja.AssemblyQuality 2026.4.1029`, its one asset. Read back
+from nuget.org: the flat container lists it; the served nuspec's repository is Inspections at
+`3092aee`; its DLL is byte-identical to the release asset's; a project restoring from nuget.org alone
+gets it, version `2026.4.1029.1921`, and finds all six rules. Against `2026.3.929`, the package adds
+the friend grants of #17, sixteen, all to Inspections' own assemblies, names Inspections, and packs
+`docs/assemblyquality.md` as its README; no dependency, rule or public API changed.
+
+**A defect of step 3: a family's generated notes list the whole repository's pull requests.**
+`release.yml` passes `--generate-notes --notes-start-tag "$PREVIOUS_TAG"`, and GitHub lists every pull
+request merged between the two tags, whichever family it touched. For this release that was 95 of
+XamlQuality's, since the imported tag `assemblyquality/v2026.3.929` shares no history with them, and not
+#17, which merged in the archived repository. It would list other families' work in every later
+family release too. Found by previewing the notes through the API before tagging; the release's notes
+were replaced by hand after the run. The fix, notes scoped to the family's own paths, is
+`plans/00011`'s. **GitHub also marked the release "Latest"** for the whole repository, over
+XamlQuality's `v2026.4.1026`; with three families the marker means little, and whether a family
+release takes it is `plans/00011`'s to decide too.
+
+### Step 11, Inspections' links, 2026-10-29
+
+Every link naming Bennewitz.Ninja.XamlQuality now names Bennewitz.Ninja.Inspections: this
+repository's `AGENTS.md`, `docs/repository-conventions.md`, `PROGRESS.md`'s one link, and the
+`AGENTS.md` that `bbavalonia` and `bbpkg` generate, here; ClaudeForge's seven documents, 18 links,
+in ClaudeForge#126, and JsonC's `AGENTS.md` in Bennewitz.Ninja.JsonC#5, each changing nothing but the
+repository's name, since the documents kept their paths and headings. Bare references to a past pull
+request, such as `JanusMael/Bennewitz.Ninja.XamlQuality#94`, are left: GitHub redirects them, and
+they record where the work happened. AssemblyQuality and CodeQuality are linked from nothing outside
+their own and Inspections' documents, which carry the moved notices. DiffView's links wait for step 8,
+since a pull request there would hold up its import. TailBlazer's hit is a local `CLAUDE.md` in a
+checkout of another owner's repository, and not this family's.
 
 ### What step 5 found for the templates
 

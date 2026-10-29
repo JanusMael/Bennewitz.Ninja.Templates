@@ -123,7 +123,7 @@ keeping a copy, because two copies of a lesson drift and the reader cannot tell 
 
 | Topic | The one living copy | How to send to it |
 |---|---|---|
-| Avalonia foot-guns: symptom, cause and fix | `docs/avalonia-gotchas.md` in [JanusMael/Bennewitz.Ninja.XamlQuality](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality) | A message to the XamlQuality session, with the versions and the measurement or source behind it; an issue in that repository when no session is running |
+| Avalonia foot-guns: symptom, cause and fix | `docs/avalonia-gotchas.md` in [JanusMael/Bennewitz.Ninja.Inspections](https://github.com/JanusMael/Bennewitz.Ninja.Inspections) | A message to the XamlQuality session, with the versions and the measurement or source behind it; an issue in that repository when no session is running |
 | Making a desktop UI an agent can drive and verify | `docs/ai-drivable-ui.md` in the same repository | The same |
 
 XamlQuality checks each claim before it lands and replies with the outcome. Each repository's root
