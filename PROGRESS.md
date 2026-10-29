@@ -33,9 +33,9 @@ decisions):
 2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7, and
    AssemblyQuality released from it** (their sections below). Next, in order:
    - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1
-     to 3 done; next, a Templates release on the maintainer's word, then Inspections' sync (its
-     section below). AppKit merges onto that release. The `Pkcs` pin goes to `plans/00010`; a single-family
-     repository's packed README to `plans/00012`, drafted after `00011` is released.
+     to 4 done, released as `2026.4.1029`; next, Inspections' sync (its section below), then a
+     draft of `plans/00012`, a single-family repository's packed README. AppKit merges onto that
+     release. The `Pkcs` pin goes to `plans/00010`.
    - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
    - **CodeQuality's old policy on nuget.org** is deleted after its first release from Inspections
      (decision 20); AssemblyQuality's is gone.
@@ -1567,8 +1567,8 @@ family's previous tag: this gives AssemblyQuality `2026.4.1029` exactly `7e82d76
 | 1 · The `notes` verb, `bareTags` and `LATEST` | **done** 2026-10-29 | Below |
 | 2 · `FamilyReadme`, the `AssemblyProduct` and README rules, the packed README compared | **done** 2026-10-29 | Below |
 | 3 · `docs/repository-conventions.md` and the shipped files' comments | **done** 2026-10-29 | With steps 1 and 2, each in its own change, as the conventions checklist asks |
-| 4 · A Templates release | **next**, on the maintainer's word | |
-| 5 · Inspections syncs, with `"bareTags": "xamlquality"` | after step 4 | |
+| 4 · A Templates release | **done** 2026-10-29 | `2026.4.1029`, its section below |
+| 5 · Inspections syncs, with `"bareTags": "xamlquality"` | **next** | With the template's README item in its root props |
 
 ### Step 1, as built
 
@@ -1610,6 +1610,29 @@ check against a copy with a relative link in `docs/codequality.md` and `Assembly
 
 - **Step 3 was done with steps 1 and 2, not after them.** The conventions checklist asks for the
   document in the same change as the script, and the rest was four lines of `bbpkg`'s documents.
+
+### The maintainer's decisions after step 3
+
+Taken through `choices` on 2026-10-29: release this day; in step 5, Inspections replaces its own
+README item in `Directory.Build.props` with the template's, which falls back to the root README, so
+it matches the template as AppKit will; no note to the other family repositories, since only
+Inspections declares families and the new rules are inert elsewhere; and after step 5, draft
+`plans/00012`.
+
+## Release `2026.4.1029`
+
+✅ **Released as `Bennewitz.Ninja.Templates 2026.4.1029`**, 2026-10-29, tag `v2026.4.1029` at
+`a21bd4c`, on the maintainer's word. It carries `plans/00011` steps 1 to 3: a family's release notes,
+`bareTags` and "Latest" from `release-target.cs`, a family's packed README and `AssemblyProduct`, and
+the conventions rules and the guard that check them.
+
+Before the tag: `verify-release` passed locally on `a21bd4c`, and CI on `main` was green. The release
+pushed the one id in `packages.push` under the unchanged policy and `NUGET_USER`, so no preflight was
+run. The `release` run passed, and the GitHub release carries one asset,
+`Bennewitz.Ninja.Templates.2026.4.1029.nupkg`. Verified from the feed: `verify-release --published
+2026.4.1029` installed it from nuget.org, and all six generated repositories built, passed their tests
+and published for win-x64. The flat container's version list did not show it yet at that point; the
+install is the stronger evidence.
 
 ## Release `2026.4.1023`
 
