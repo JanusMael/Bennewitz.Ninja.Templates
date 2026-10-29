@@ -8,8 +8,9 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 *Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
 2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-29
-when AssemblyQuality released from Inspections and Inspections' links were repointed, and when
-`plans/00011` was approved.*
+when AssemblyQuality released from Inspections and Inspections' links were repointed, when
+`plans/00011` was approved, and when AssemblyQuality's old policy was deleted and the last link pull
+requests merged.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
@@ -31,15 +32,13 @@ decisions):
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
 2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7, and
    AssemblyQuality released from it** (their sections below). Next, in order:
-   - **The maintainer deletes AssemblyQuality's old policy on nuget.org**, now that
-     `assemblyquality/v2026.4.1029` is verified from the feed (decision 20). CodeQuality's stays until
-     its own first release from Inspections.
    - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1–3
      next, then a Templates release on the maintainer's word, then Inspections' sync (its section
      below). AppKit merges onto that release. The `Pkcs` pin goes to `plans/00010`; a single-family
      repository's packed README to `plans/00012`, drafted after `00011` is released.
-   - **Step 11, Inspections' links**: this repository's are repointed; ClaudeForge#126 and
-     Bennewitz.Ninja.JsonC#5 wait on the maintainer's merge. DiffView's wait for step 8.
+   - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
+   - **CodeQuality's old policy on nuget.org** is deleted after its first release from Inspections
+     (decision 20); AssemblyQuality's is gone.
    - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
      note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
      renamed repository's name before any release (step 6's finding).
@@ -1353,9 +1352,9 @@ accepted with the plan.
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
 | 8 · AppKit | after Inspections | |
-| 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy is the maintainer's to delete. XamlQuality and CodeQuality when each next changes |
+| 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy deleted by the maintainer the same day. XamlQuality and CodeQuality when each next changes |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
-| 11 · Links | **Inspections' in progress** 2026-10-29 | Below. Inspections' moved repositories now, AppKit's after step 8, by the maintainer's decision |
+| 11 · Links | **Inspections' done** 2026-10-29 | Below. AppKit's after step 8, by the maintainer's decision |
 
 ### Step 3, as built
 
@@ -1507,7 +1506,9 @@ request, such as `JanusMael/Bennewitz.Ninja.XamlQuality#94`, are left: GitHub re
 they record where the work happened. AssemblyQuality and CodeQuality are linked from nothing outside
 their own and Inspections' documents, which carry the moved notices. DiffView's links wait for step 8,
 since a pull request there would hold up its import. TailBlazer's hit is a local `CLAUDE.md` in a
-checkout of another owner's repository, and not this family's.
+checkout of another owner's repository, and not this family's. The maintainer merged ClaudeForge#126
+(`7482f4b`) and Bennewitz.Ninja.JsonC#5 (`e7b75af`) the same day, and deleted AssemblyQuality's old
+policy on nuget.org.
 
 ### What step 5 found for the templates
 
