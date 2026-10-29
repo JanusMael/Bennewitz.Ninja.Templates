@@ -8,7 +8,7 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 *Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
 2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-29
-when `plans/00009` step 6 was done.*
+when `plans/00009` steps 5 to 7, Inspections, were done.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
@@ -28,14 +28,15 @@ decisions):
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
    remote, no script copy). Each `Bennewitz.Ninja.*` library also starts failing `Trimming` on its next
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
-2. **[`plans/00009`](plans/00009-package-consolidation.md) step 7, Inspections, on the maintainer's
-   word.** Step 5 merged on 2026-10-26 and step 6 was done on 2026-10-29 (their sections below):
-   `JanusMael/Bennewitz.Ninja.Inspections` exists, with AssemblyQuality and CodeQuality in it, and
-   publishes through the one edited policy. Step 7: AssemblyQuality and CodeQuality archived, their
-   open issues transferred or closed as done (CodeQuality#3 asks for conventions Inspections already
-   carries), a final README commit in each naming Inspections, both keeping their rule sections: the
-   help links CodeQuality `2026.3.928` shipped point at its own, and its packed README at
-   AssemblyQuality's. Step 4 waits on DiffView's own session.
+2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7**
+   (their sections below). `JanusMael/Bennewitz.Ninja.Inspections` holds the three families,
+   publishes through one edited policy, and AssemblyQuality and CodeQuality are archived. Next: step
+   8, AppKit, which waits on step 4, DiffView conforming, in DiffView's own session; it repeats steps
+   5 to 7, and its policy must be edited to the renamed repository's name before any release (step
+   6's finding). Step 9, each family's first release from its new home, comes when the family next
+   changes, on the maintainer's word; after AssemblyQuality's and CodeQuality's, their old policies
+   are deleted. Step 11, the links, last: this repository's own `AGENTS.md` still names
+   Bennewitz.Ninja.XamlQuality, which GitHub redirects.
 3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
@@ -1344,7 +1345,7 @@ accepted with the plan.
 | 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
 | 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
-| 7 · Archive AssemblyQuality and CodeQuality | next | On the maintainer's word |
+| 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
 | 8 · AppKit | after Inspections | |
 | 9 · Each family's first release from its new home | when it next changes | |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
@@ -1440,6 +1441,22 @@ policy must be edited before its first release, and step 8 has the same edit to 
 AppServices. Inspections' `docs/publishing.md` gains the cause in its 401 checklist
 (JanusMael/Bennewitz.Ninja.Inspections#100); `bbpkg`'s runbook has no rename in it, and does not need
 one until a repository it generated is renamed.
+
+### Step 7, 2026-10-29
+
+By the maintainer's decisions of that day, taken one at a time:
+
+| Decision | Choice |
+|---|---|
+| When | Archive both now: nothing blocked it once steps 5 and 6 were done |
+| CodeQuality#3, its one open issue | Closed as done rather than transferred, as the plan's letter had it: it asked for the conventions of `2026.4.1022`, and Inspections carries `2026.4.1023`'s |
+| The final README commits | Pushed straight to each `main` with the admin bypass, not through pull requests: a notice under the title naming Inspections, its README there, the unchanged ids and the `<family>/v…` tags, above the README as it was |
+| The AssemblyQuality session | Not messaged; the maintainer's to tell |
+
+Each README is kept whole below its notice: the help links CodeQuality `2026.3.928` shipped point at its
+`#bncq…` sections, and its packed README at AssemblyQuality's `#bnaq…` ones. Then both archived;
+`gh api` reports `archived: true` for each, with no open issue or pull request on either. Their
+policies on nuget.org stay until each family's first release from Inspections, by decision 20.
 
 ### What step 5 found for the templates
 
