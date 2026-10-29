@@ -33,8 +33,9 @@ decisions):
 2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7, and
    AssemblyQuality released from it** (their sections below). Next, in order:
    - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1
-     to 4 done, released as `2026.4.1029`; next, Inspections' sync (its section below), then a
-     draft of `plans/00012`, a single-family repository's packed README. AppKit merges onto that
+     to 5 done, released as `2026.4.1029` and Inspections synced: **complete** (its section
+     below). Next, `plans/00012`, every packed README fit for nuget.org: drafted 2026-10-29 and not yet
+     committed, awaiting the maintainer's review. AppKit merges onto that
      release. The `Pkcs` pin goes to `plans/00010`.
    - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
    - **CodeQuality's old policy on nuget.org** is deleted after its first release from Inspections
@@ -1568,7 +1569,7 @@ family's previous tag: this gives AssemblyQuality `2026.4.1029` exactly `7e82d76
 | 2 · `FamilyReadme`, the `AssemblyProduct` and README rules, the packed README compared | **done** 2026-10-29 | Below |
 | 3 · `docs/repository-conventions.md` and the shipped files' comments | **done** 2026-10-29 | With steps 1 and 2, each in its own change, as the conventions checklist asks |
 | 4 · A Templates release | **done** 2026-10-29 | `2026.4.1029`, its section below |
-| 5 · Inspections syncs, with `"bareTags": "xamlquality"` | **next** | With the template's README item in its root props |
+| 5 · Inspections syncs, with `"bareTags": "xamlquality"` | **done** 2026-10-29 | Below |
 
 ### Step 1, as built
 
@@ -1618,6 +1619,19 @@ README item in `Directory.Build.props` with the template's, which falls back to 
 it matches the template as AppKit will; no note to the other family repositories, since only
 Inspections declares families and the new rules are inert elsewhere; and after step 5, draft
 `plans/00012`.
+
+### Step 5, Inspections' sync
+
+[JanusMael/Bennewitz.Ninja.Inspections#104](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/104),
+merged as `8bfa11f` with every check green. It takes the three scripts of `2026.4.1029`, the release
+workflow's notes and `--latest`, the template's README items in its root props, and `"bareTags":
+"xamlquality"`, with its documents and `PROGRESS.md`. Verified before the pull request: build with
+warnings as errors, 916/916, each family packed alone and passed by `assert-packages --family`, which
+now compares the packed README, and the conventions offline. `resolve` for `xamlquality/v2026.4.1030`
+gives `PREVIOUS_TAG` `v2026.4.1026`, and for `codequality/v…` `codequality/v2026.3.928`, `LATEST`
+true for both. `notes` lists, for xamlquality and for codequality, the merge's own commits
+`7e82d76`, `1701070` and `7e5236f`, and none of another family's history; for assemblyquality, that
+nothing changed since its release.
 
 ## Release `2026.4.1029`
 
