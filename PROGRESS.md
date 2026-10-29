@@ -8,7 +8,8 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 *Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
 2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-29
-when AssemblyQuality released from Inspections and Inspections' links were repointed.*
+when AssemblyQuality released from Inspections and Inspections' links were repointed, and when
+`plans/00011` was approved.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
@@ -33,10 +34,10 @@ decisions):
    - **The maintainer deletes AssemblyQuality's old policy on nuget.org**, now that
      `assemblyquality/v2026.4.1029` is verified from the feed (decision 20). CodeQuality's stays until
      its own first release from Inspections.
-   - **`plans/00011`, multi-family repositories in `bbpkg`**, drafted and approved before AppKit, by
-     the maintainer's decision of 2026-10-29: a root `AssemblyProduct`, a family's README packed as
-     its packages' README, a family's release notes scoped to the family (the defect below), and
-     whether a family release takes GitHub's "Latest". The `Pkcs` pin goes to `plans/00010`.
+   - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1–3
+     next, then a Templates release on the maintainer's word, then Inspections' sync (its section
+     below). AppKit merges onto that release. The `Pkcs` pin goes to `plans/00010`; a single-family
+     repository's packed README to `plans/00012`, drafted after `00011` is released.
    - **Step 11, Inspections' links**: this repository's are repointed; ClaudeForge#126 and
      Bennewitz.Ninja.JsonC#5 wait on the maintainer's merge. DiffView's wait for step 8.
    - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
@@ -1541,6 +1542,36 @@ Each is a candidate for `bbpkg`, not yet a change here:
   GitHub Packages holds `Bennewitz.Ninja.AgentForge.*`. The catalog read only each `.csproj` and the
   root props, so it reported the bare ids and a collision with `subhajitlabs`' `AgentForge.*` on
   nuget.org that does not exist. Nothing was changed in ClaudeForge; the catalog is corrected.
+
+## `plans/00011` — package families, completed
+
+[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29 and frozen. It
+supersedes `plans/00009` decision 13's release notes only. It answers what Inspections had to fix by
+hand, so AppKit merges onto canonical files: a family's README packed into its packages, its
+`AssemblyProduct`, conventions checks for both, release notes scoped to the family, and GitHub's
+"Latest". The maintainer chose, through `choices`: `"bareTags"`, so a grown repository's bare `v…`
+tags count as its first family's previous releases; a family release marked "Latest" when no tag is
+newer; and a single-family repository's packed README, which has the same relative links, left to a
+plan of its own, `plans/00012`, drafted after this one is released. A `step-back` review added a
+real pack through `bbpkg`'s root props to step 2, made the link rule precise, counted unpacked
+projects a package references among its family's paths, and made "Latest" depend on the tags.
+
+The notes rule was measured on Inspections before the plan was written. A family's own paths are
+read across the whole range, and the shared build inputs only on commits descending from the
+family's previous tag: this gives AssemblyQuality `2026.4.1029` exactly `7e82d76`, `1701070`,
+`7e5236f` and `ed5544b`, #17, which changed only root files and tests.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · The `notes` verb, `bareTags` and `LATEST` | next | |
+| 2 · `FamilyReadme`, the `AssemblyProduct` and README rules, the packed README compared | after step 1 | |
+| 3 · `docs/repository-conventions.md` and the shipped files' comments | after step 2 | |
+| 4 · A Templates release | on the maintainer's word | |
+| 5 · Inspections syncs, with `"bareTags": "xamlquality"` | after step 4 | |
+
+### Drift from `plans/00011`
+
+None yet.
 
 ## Release `2026.4.1023`
 
