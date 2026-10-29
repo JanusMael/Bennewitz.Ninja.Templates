@@ -32,8 +32,8 @@ decisions):
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
 2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7, and
    AssemblyQuality released from it** (their sections below). Next, in order:
-   - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1–3
-     next, then a Templates release on the maintainer's word, then Inspections' sync (its section
+   - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: step 1
+     done; steps 2 and 3 next, then a Templates release on the maintainer's word, then Inspections' sync (its section
      below). AppKit merges onto that release. The `Pkcs` pin goes to `plans/00010`; a single-family
      repository's packed README to `plans/00012`, drafted after `00011` is released.
    - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
@@ -1564,11 +1564,29 @@ family's previous tag: this gives AssemblyQuality `2026.4.1029` exactly `7e82d76
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · The `notes` verb, `bareTags` and `LATEST` | next | |
-| 2 · `FamilyReadme`, the `AssemblyProduct` and README rules, the packed README compared | after step 1 | |
-| 3 · `docs/repository-conventions.md` and the shipped files' comments | after step 2 | |
+| 1 · The `notes` verb, `bareTags` and `LATEST` | **done** 2026-10-29 | Below |
+| 2 · `FamilyReadme`, the `AssemblyProduct` and README rules, the packed README compared | next | |
+| 3 · `docs/repository-conventions.md` and the shipped files' comments | after step 2 | Step 1's part is done: `bareTags`, the notes and "Latest" are documented with it, as the conventions checklist asks |
 | 4 · A Templates release | on the maintainer's word | |
 | 5 · Inspections syncs, with `"bareTags": "xamlquality"` | after step 4 | |
+
+### Step 1, as built
+
+`release-target.cs` gains a `notes` verb and two values from `resolve`; `release.yml` passes the
+notes file and `--latest=$LATEST` for a family, and keeps `--generate-notes` without families;
+`repo-conventions.cs` checks `bareTags`, copied to `scripts/` and every template.
+
+| Part | What it does |
+|---|---|
+| `resolve` | `PREVIOUS_TAG` counts the bare `v…` tags as the `bareTags` family's; refuses a `bareTags` that is no declared family. `LATEST` is `false` when a tag of any family, or a bare one, has a higher version; empty without families |
+| `notes` | The family's projects, any unpacked project they reference (followed by evaluated `ProjectReference`), and `docs/<stem>.md`, read across `<previous>..HEAD`; the shared build inputs only with `--ancestry-path`; merges left out. No previous tag: "The first release of the … family." |
+| `repo-conventions.cs` | `bareTags` without `families`, or naming no declared family, FAILS |
+
+Tests: 173, from 157. Against today's scripts, 18 of the new and changed tests failed, each for its
+own missing behaviour; one new test, a family's own newer tag beating the bare ones, passes against
+either, as a guard. Run on Inspections at `assemblyquality/v2026.4.1029`, `notes` from
+`assemblyquality/v2026.3.929` lists `7e5236f`, `1701070` and `7e82d76` as the family's and
+`ed5544b`, #17, as the shared build's, and nothing else.
 
 ### Drift from `plans/00011`
 

@@ -493,6 +493,40 @@ public sealed class RepoConventionsTests
         Assert.Contains("FAIL families: The family \"wid gets\" cannot be part of a tag", result.Output, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// <c>bareTags</c> names the family whose releases a grown repository's bare tags were (plans/00011
+    /// decision 7), so it must be one of the families, and there must be families at all.
+    /// </summary>
+    [Fact]
+    public void Bare_tags_must_name_a_declared_family()
+    {
+        Fixture fixture = Conforming();
+        fixture.Config["families"] = new JsonObject { ["widgets"] = new JsonArray("Fixture.Widget") };
+        fixture.Config["bareTags"] = "gadgets";
+
+        Result result = fixture.Run("check", "--offline");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL families: \"bareTags\" is \"gadgets\", which is not a declared family; the families are widgets.", result.Output, StringComparison.Ordinal);
+
+        fixture.Config["bareTags"] = "widgets";
+        Result named = fixture.Run("check", "--offline");
+
+        Assert.DoesNotContain("bareTags", named.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Bare_tags_without_families_fail()
+    {
+        Fixture fixture = Conforming();
+        fixture.Config["bareTags"] = "widgets";
+
+        Result result = fixture.Run("check", "--offline");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL families: \"bareTags\" names the family whose releases the bare v… tags were, but there are no families", result.Output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_copy_of_the_script_that_differs_from_the_template_fails()
     {

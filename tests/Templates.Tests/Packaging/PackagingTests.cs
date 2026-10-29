@@ -100,7 +100,8 @@ public sealed class PackagingTests
     /// <summary>
     /// The shipped release publishes what <c>scripts/release-target.cs</c> resolves (plans/00009): the
     /// ids of <c>packages.push</c>, or of the family the tag names. The push and the GitHub release
-    /// both iterate those ids, and the guard checks a family's pack against that family.
+    /// both iterate those ids, and the guard checks a family's pack against that family. A family's
+    /// notes and its "Latest" are the script's too (plans/00011), never GitHub's generated notes.
     /// </summary>
     /// <remarks>
     /// The script itself is tested by <c>ReleaseTargetTests</c>; this holds the workflow to using it,
@@ -117,7 +118,9 @@ public sealed class PackagingTests
         Assert.Contains("--github-env \"$GITHUB_ENV\"", workflow, StringComparison.Ordinal);
         Assert.Contains("dotnet run scripts/release-target.cs -- projects --family \"$FAMILY\"", workflow, StringComparison.Ordinal);
         Assert.Contains("assert-packages.cs -- ./packages/Release ${FAMILY:+--family \"$FAMILY\"}", workflow, StringComparison.Ordinal);
-        Assert.Contains("--notes-start-tag \"$PREVIOUS_TAG\"", workflow, StringComparison.Ordinal);
+        Assert.Contains("dotnet run scripts/release-target.cs -- notes --family \"$FAMILY\" --previous \"$PREVIOUS_TAG\" --out family-notes.md", workflow, StringComparison.Ordinal);
+        Assert.Contains("notes=(--notes-file family-notes.md \"--latest=$LATEST\")", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("--notes-start-tag", workflow, StringComparison.Ordinal);
 
         int idReads = workflow.Split("read -ra ids <<< \"$IDS\"").Length - 1;
         Assert.True(idReads == 2, $"The push and the GitHub release should each read IDS; found {idReads}.");
