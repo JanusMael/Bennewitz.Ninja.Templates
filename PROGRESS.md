@@ -7,8 +7,8 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 ## Resume
 
 *Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
-2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-26
-when `plans/00009` step 5 merged.*
+2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-29
+when `plans/00009` step 6 was done.*
 
 **Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
 decisions):
@@ -28,14 +28,14 @@ decisions):
    `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
    remote, no script copy). Each `Bennewitz.Ninja.*` library also starts failing `Trimming` on its next
    sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
-2. **[`plans/00009`](plans/00009-package-consolidation.md) steps 6 and 7, Inspections, each on the
-   maintainer's word.** Step 5 merged on 2026-10-26 (its section below):
-   `JanusMael/Bennewitz.Ninja.Inspections` exists, renamed from XamlQuality, with AssemblyQuality and
-   CodeQuality in it. Step 6: XamlQuality's trusted-publishing policy edited to name Inspections and
-   gain the AssemblyQuality and CodeQuality patterns, never a second policy; `NUGET_USER`; a
-   blank-version preflight; the policy page read. Step 7: AssemblyQuality and CodeQuality archived,
-   their open issues transferred, a final README commit naming Inspections, CodeQuality's keeping its
-   rule sections for the help links `2026.3.928` shipped. Step 4 waits on DiffView's own session.
+2. **[`plans/00009`](plans/00009-package-consolidation.md) step 7, Inspections, on the maintainer's
+   word.** Step 5 merged on 2026-10-26 and step 6 was done on 2026-10-29 (their sections below):
+   `JanusMael/Bennewitz.Ninja.Inspections` exists, with AssemblyQuality and CodeQuality in it, and
+   publishes through the one edited policy. Step 7: AssemblyQuality and CodeQuality archived, their
+   open issues transferred or closed as done (CodeQuality#3 asks for conventions Inspections already
+   carries), a final README commit in each naming Inspections, both keeping their rule sections: the
+   help links CodeQuality `2026.3.928` shipped point at its own, and its packed README at
+   AssemblyQuality's. Step 4 waits on DiffView's own session.
 3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
    repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
@@ -1343,7 +1343,7 @@ accepted with the plan.
 | 3 · Templates: multi-family support | **done**, released 2026-10-23 as `2026.4.1023` | Below; [JanusMael/Bennewitz.Ninja.Templates#41](https://github.com/JanusMael/Bennewitz.Ninja.Templates/pull/41). `verify-release --published 2026.4.1023` passed |
 | 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
 | 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
-| 6 · Inspections: the policy | next | On the maintainer's word |
+| 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | next | On the maintainer's word |
 | 8 · AppKit | after Inspections | |
 | 9 · Each family's first release from its new home | when it next changes | |
@@ -1423,6 +1423,23 @@ On the maintainer's word, in this order:
 5. `apply` run again from `main`, disallowing merge commits; `check --admin` conforms. On `main`,
    `IAssemblyRule.cs`'s history reaches `bd44084`, and `assemblyquality/v2026.3.929` and
    `codequality/v2026.3.928` are ancestors of `main`.
+
+### Step 6, 2026-10-29
+
+The maintainer edited XamlQuality's policy on nuget.org rather than adding one, by decision 20:
+named `Bennewitz.Ninja.Inspections — release.yml`, patterns `Bennewitz.Ninja.XamlQuality*`,
+`Bennewitz.Ninja.AssemblyQuality*` and `Bennewitz.Ninja.CodeQuality*`, workflow `release.yml`, no
+environment. `NUGET_USER` carried over the rename.
+
+**Decision 20's open question is answered: nuget.org matches the repository by name.** The policy
+records the repository's id beside its name, `#1378633436`, which the rename did not change, yet the
+first blank-version preflight failed with a 401, *"No matching trust policy owned by user
+'JanusMael'"*, while the policy still showed `Bennewitz.Ninja.XamlQuality`. Edited to
+`Bennewitz.Ninja.Inspections`, the next one logged in (run `40933076378`). So a renamed repository's
+policy must be edited before its first release, and step 8 has the same edit to make for
+AppServices. Inspections' `docs/publishing.md` gains the cause in its 401 checklist
+(JanusMael/Bennewitz.Ninja.Inspections#100); `bbpkg`'s runbook has no rename in it, and does not need
+one until a repository it generated is renamed.
 
 ### What step 5 found for the templates
 
