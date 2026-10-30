@@ -39,9 +39,10 @@ decisions):
      (its section below). JsonC#6, AppServices#17, ScopedEditors#13 and AutoVersioning#7 say what
      each fixes when it syncs. AppKit merges onto that release. The `Pkcs` pin goes to
      `plans/00010`.
-   - **Then `plans/00008` step 3**, side 2 of the trimming enforcement, written from here in
-     Inspections as a pull request of its own (the maintainer, 2026-10-30). Nobody else holds it, and
-     Inspections' `PROGRESS.md` still says it waits for side 1, which merged long ago.
+   - **`plans/00008` step 3**, side 2 of the trimming enforcement, written from here (the
+     maintainer, 2026-10-30), in the canonical `repo-conventions.cs` as the plan places it: **done**,
+     its row in that plan's section below. Released with the next Templates release; each repository
+     takes it when it syncs.
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path,
      so such an image is dropped and only the package's owners see a warning. `plans/00012` checks
      links, not images; no family README carries an image today. A plan follows only when one first
@@ -1202,7 +1203,7 @@ plan is unblocked the same day.
 |---|---|---|
 | 1 · The predicate, the library rule and the retired key's NOTE, with the documentation | **done** 2026-10-22 | `Trimming.Trims` and `Trimming.Reasons` in the canonical script, over the four properties, now in `Projects.Names`. The rule is `Trimming` among the library rules, so its exemption and the stale-exemption NOTE come from the shared path; the FAIL names up to three projects that make the repository trim. `TrimmingRequired` is gone, and `"trimming"` present is a `repository.json` NOTE. `PropsTests` gains three runs over a `Directory.Build.props` that sets no trimming property: one trimming through nothing, one through an app's `PublishTrimmed`, one through `PublishAot`. Six new tests, each failing against the previous script while the other 17 pass; 23 of 23 with the new one, 112 of 112 root tests. This repository's own `check` conforms |
 | 2 · The templates drop `"trimming"` | **done** 2026-10-22 | All five templates' `repository.json`. `ConventionsWorkflowTests.The_template_requires_trimming` becomes `No_template_ships_the_retired_trimming_key`, over every template. `verify-release` passes, every generated repository's offline check showing only the intended gaps. Canaried with `IsTrimmable` removed from `bbpkg`'s `src/Directory.Build.props`: `verify-release` fails on `bbpkg` alone, and the generated repository's own `check --offline`, with no `"trimming"` key, fails `Widget (library): is not trimmable, and the repository trims (Widget: EnableTrimAnalyzer)` |
-| 3 · Side 2, XamlQuality's patch, behind the same predicate | waits for the patch | Does not block the release. XamlQuality's design (its message of 2026-10-10): walk `project.assets.json` and read `[AssemblyMetadata("IsTrimmable", "True")]` from each `Bennewitz.Ninja.*` package's assemblies with System.Reflection.Metadata. It calls `Trimming.Trims` |
+| 3 · Side 2, behind the same predicate | **done** 2026-10-30 | Written here, not by XamlQuality: below. `TrimmablePackages`, a rule for libraries and apps, run only when `Trimming.Trims`. It reads `ProjectAssetsFile`, now among the evaluated properties, and each `Bennewitz.Ninja.*` package's runtime assemblies in it, transitive ones included, for `[AssemblyMetadata("IsTrimmable", "True")]`, with System.Reflection.Metadata, loading nothing; the FAIL names each package with its version. `PropsTests` gains two runs over the same six projects from nuget.org, one trimming and one not; seven new tests, the three of new behaviour failing against the previous script; 203 of 203 root tests, this repository's `check` conforms, and `verify-release` passes. Measured on every family repository's `main` with a `packages.push`, and DiffView: no finding, since only test projects there take a family package that adds an assembly |
 
 ### Drift from `plans/00008`
 
@@ -1213,6 +1214,19 @@ plan is unblocked the same day.
   `bbpkg`'s trimming FAIL; the generated repository's own `TrimmableTests` fails first, at its test
   step, so the conventions step never runs. The FAIL was shown instead by running that repository's
   `check --offline` on the tree `--keep` left. Two guards for one loss, and the earlier one wins.
+- **Side 2 was written here, on 2026-10-30, not sent by XamlQuality.** Nobody held the patch, and the
+  maintainer chose to have it written from this session. The plan left its design to XamlQuality;
+  the design of 2026-10-10 is what was built, and three choices it did not make were made here:
+  - *Libraries' and apps' graphs only.* A test runs untrimmed, a tool on the installed framework and
+    an analyzer in the compiler, as decision 3 says of a repository's own projects; Inspections
+    records that XamlQuality, used only from tests, owes nothing.
+  - *A package that adds no runtime assembly is not read*: AutoVersioning, an analyzer, a
+    source-only package. There is nothing of it to trim.
+  - *A `TrimmablePackages` exemption*, per project with its reason, as every property rule has; a
+    stale one is a NOTE.
+- **Inspections' `XamlQuality` exemption does not go with side 2.** Its `PROGRESS.md` says the
+  `Trimming` exemption on its own library goes "when side 2 lands for it", but side 2 checks what a
+  project takes, not the repository's own libraries, which side 1 still holds to `IsTrimmable`.
 
 ⚠ **A script canary must touch the file it swaps in.** `Copy-Item` keeps the source's timestamp, and
 `dotnet run --file` then reused its cached build of the newer script: the first canary of step 1 passed

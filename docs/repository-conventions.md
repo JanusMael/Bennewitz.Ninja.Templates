@@ -264,10 +264,19 @@ not held to it: a `dotnet tool` runs on the installed framework, and an app's tr
 by its kind. The `"trimming"` key `repository.json` once carried is no longer read; a NOTE asks for
 it to be removed.
 
+What a trimming repository takes from the family must be trimmable too: every `Bennewitz.Ninja.*`
+package in a library's or an app's restore graph, transitive ones included, carries
+`[assembly: AssemblyMetadata("IsTrimmable", "True")]` in each assembly it adds, or that project
+fails, the finding naming each package with its version. It is read from `project.assets.json` and
+the assemblies' metadata. A package that adds no assembly, an analyzer or an MSBuild package, has
+nothing to trim, and a test's, a tool's or an analyzer's graph owes nothing: none of them is
+trimmed. The fix is a version of the package that is trimmable.
+
 **A rule can be exempted for one project**, under `props` in `repository.json`, with its reason. The
-rule names are the ones in the table above, plus `Trimming`. An exemption the project no longer
-needs is reported, so it is removed rather than left to hide a later regression; a `Trimming`
-exemption in a repository that does not trim is one of those.
+rule names are the ones in the table above, plus `Trimming` and `TrimmablePackages`. An exemption
+the project no longer needs is reported, so it is removed rather than left to hide a later
+regression; a `Trimming` or `TrimmablePackages` exemption in a repository that does not trim is one
+of those.
 
 ## Friend grants
 
