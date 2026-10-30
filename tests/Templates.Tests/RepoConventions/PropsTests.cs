@@ -8,10 +8,11 @@ namespace Templates.Tests.RepoConventions;
 /// </summary>
 /// <remarks>
 /// <para>
-/// ⭐ <b>Seven runs, several projects each.</b> A restore is the slow part, so each run carries several
+/// ⭐ <b>Nine runs, several projects each.</b> A restore is the slow part, so each run carries several
 /// projects, each conforming or broken in exactly one way, and every test reads the run it needs. Three
-/// of them trim through nothing but the project the run is about (plans/00008), and one declares
-/// two package families (plans/00009), each with its README and product (plans/00011).
+/// of them trim through nothing but the project the run is about (plans/00008), one declares
+/// two package families (plans/00009), each with its README and product (plans/00011), and two take
+/// the same family packages from nuget.org, one trimming and one not (plans/00008 step 3).
 /// </para>
 /// <para>
 /// ⛔ <b>The cases the check exists for:</b> a csproj overriding a correct <c>Directory.Build.props</c>;
@@ -22,7 +23,7 @@ namespace Templates.Tests.RepoConventions;
 /// </para>
 /// <para>
 /// ⓘ The script is built once and launched as a program (<see cref="ConventionsScript"/>), so this
-/// class runs in parallel with the other conventions classes, and its seven runs with each other.
+/// class runs in parallel with the other conventions classes, and its nine runs with each other.
 /// </para>
 /// </remarks>
 public sealed class PropsTests : IClassFixture<PropsTests.Runs>
@@ -113,6 +114,51 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
     {
         Assert.DoesNotContain(Lines(_runs.Exempted), l => l.StartsWith("FAIL props: NotTrimmable", StringComparison.Ordinal));
         Assert.Contains("NOTE props: Good: the exemption for Trimming is no longer needed", _runs.Exempted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The other side (plans/00008 step 3): where the repository trims, a library that takes a
+    /// <c>Bennewitz.Ninja.*</c> package without IsTrimmable fails, the package named with its version.
+    /// </summary>
+    /// <remarks>⛔ The first assertion is the vacuity guard: every project was evaluated.</remarks>
+    [Fact]
+    public void A_library_taking_an_untrimmable_family_package_fails_where_the_repository_trims()
+    {
+        Assert.Contains("NOTE props: 6 projects evaluated after a restore", _runs.Packages, StringComparison.Ordinal);
+        Assert.Contains("FAIL props: TakesOld (library): takes Bennewitz.Ninja.AppServices.Abstractions 2026.3.923, without IsTrimmable, and the repository trims (", _runs.Packages, StringComparison.Ordinal);
+    }
+
+    /// <remarks>AppServices.Abstractions reaches the app only through AppServices.</remarks>
+    [Fact]
+    public void An_app_fails_on_a_transitive_untrimmable_family_package_too() =>
+        Assert.Contains("FAIL props: AppTakesOld (app): takes Bennewitz.Ninja.AppServices 2026.3.923, Bennewitz.Ninja.AppServices.Abstractions 2026.3.923, without IsTrimmable", _runs.Packages, StringComparison.Ordinal);
+
+    /// <remarks>
+    /// Good takes AutoVersioning, an MSBuild package that adds no assembly, so there is nothing of it to
+    /// trim; TakesNew takes the version of AppServices.Abstractions that is trimmable.
+    /// </remarks>
+    [Theory]
+    [InlineData("Good")]
+    [InlineData("TakesNew")]
+    public void A_project_whose_family_packages_are_trimmable_or_add_no_assembly_passes(string project) =>
+        Assert.DoesNotContain(Lines(_runs.Packages), l => l.StartsWith($"FAIL props: {project} ", StringComparison.Ordinal));
+
+    /// <remarks>A test runs untrimmed: its restore graph owes nothing, as XamlQuality's is used only from tests.</remarks>
+    [Fact]
+    public void A_test_project_s_family_packages_are_not_held_to_it() =>
+        Assert.DoesNotContain(Lines(_runs.Packages), l => l.StartsWith("FAIL props: TestsTakeOld", StringComparison.Ordinal));
+
+    [Fact]
+    public void A_TrimmablePackages_exemption_excuses_the_project() =>
+        Assert.DoesNotContain(Lines(_runs.Packages), l => l.StartsWith("FAIL props: ExemptTakesOld", StringComparison.Ordinal));
+
+    /// <summary>The same graphs where nothing trims: no finding about a package, and the exemption is stale.</summary>
+    [Fact]
+    public void Untrimmable_family_packages_are_not_reported_where_the_repository_does_not_trim()
+    {
+        Assert.Contains("NOTE props: 6 projects evaluated after a restore", _runs.UntrimmedPackages, StringComparison.Ordinal);
+        Assert.DoesNotContain(Lines(_runs.UntrimmedPackages), l => l.StartsWith("FAIL", StringComparison.Ordinal) && l.Contains("IsTrimmable", StringComparison.Ordinal));
+        Assert.Contains("NOTE props: ExemptTakesOld: the exemption for TrimmablePackages is no longer needed", _runs.UntrimmedPackages, StringComparison.Ordinal);
     }
 
     /// <summary>The retired key is a NOTE, never a FAIL, so a repository still carrying it stays green.</summary>
@@ -238,7 +284,7 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
 
     private static IEnumerable<string> Lines(string text) => ConventionsScript.Lines(text);
 
-    /// <summary>The seven runs, each over its own repository, shared by every test in the class.</summary>
+    /// <summary>The nine runs, each over its own repository, shared by every test in the class.</summary>
     /// <remarks>Each run's output is assigned once, from its own thread, before any test reads it.</remarks>
     public sealed class Runs
     {
@@ -281,7 +327,21 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                     ["Gamma"] = Family("docs/beta-kit.md", "Fixture"),
                     ["Delta"] = Family("", "Beta.Kit"),
                 },
-                files: new Dictionary<string, string> { ["docs/alpha.md"] = LinkCases.Markdown }));
+                files: new Dictionary<string, string> { ["docs/alpha.md"] = LinkCases.Markdown }),
+
+                // The family packages a project takes (plans/00008 step 3), from nuget.org, whose
+                // versions never change: AppServices.Abstractions 2026.3.923 carries no IsTrimmable
+                // and 2026.3.924 does; AppServices 2026.3.923 takes the first. The same graphs twice,
+                // in a repository that trims and in one that does not.
+                () => Packages = Run(PackageTakers, PackageExemption),
+                () => UntrimmedPackages = Run(PackageTakers, PackageExemption, trims: false));
+
+        private static readonly string[] PackageTakers = ["Good", "TakesOld", "TakesNew", "AppTakesOld", "TestsTakeOld", "ExemptTakesOld"];
+
+        private static JsonObject PackageExemption => new()
+        {
+            ["props"] = new JsonObject { ["ExemptTakesOld"] = new JsonObject { ["TrimmablePackages"] = "The fixture's reason." } },
+        };
 
         public string Conforming { get; private set; } = "";
 
@@ -296,6 +356,10 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
         public string PublishAot { get; private set; } = "";
 
         public string Families { get; private set; } = "";
+
+        public string Packages { get; private set; } = "";
+
+        public string UntrimmedPackages { get; private set; } = "";
 
         private static string Family(string readme, string product) =>
             $"<FamilyReadme>{readme}</FamilyReadme><AssemblyProduct>{product}</AssemblyProduct>";
@@ -347,6 +411,8 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                     <Project>
                       <ItemGroup>
                         <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.916" />
+                        <PackageVersion Include="Bennewitz.Ninja.AppServices" Version="2026.3.923" />
+                        <PackageVersion Include="Bennewitz.Ninja.AppServices.Abstractions" Version="2026.3.923" />
                       </ItemGroup>
                     </Project>
                     """);
@@ -421,6 +487,15 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
             // Packs nothing, so it may reference any family.
             "FamilyTests" => Sdk("<IsPackable>false</IsPackable><IsTestProject>true</IsTestProject><OutputType>Exe</OutputType>",
                 "<ItemGroup><ProjectReference Include=\"../Good/Good.csproj\" /><ProjectReference Include=\"../Beta/Beta.csproj\" /></ItemGroup>"),
+            "TakesOld" or "ExemptTakesOld" => Sdk("<IsPackable>true</IsPackable>",
+                "<ItemGroup><PackageReference Include=\"Bennewitz.Ninja.AppServices.Abstractions\" /></ItemGroup>"),
+            "TakesNew" => Sdk("<IsPackable>true</IsPackable>",
+                "<ItemGroup><PackageReference Include=\"Bennewitz.Ninja.AppServices.Abstractions\" VersionOverride=\"2026.3.924\" /></ItemGroup>"),
+            // Takes AppServices, which takes AppServices.Abstractions: the second only transitively.
+            "AppTakesOld" => Sdk("<IsPackable>false</IsPackable><OutputType>Exe</OutputType><PackageReadmeFile></PackageReadmeFile>",
+                "<ItemGroup><PackageReference Include=\"Bennewitz.Ninja.AppServices\" /></ItemGroup>"),
+            "TestsTakeOld" => Sdk("<IsPackable>false</IsPackable><IsTestProject>true</IsTestProject><OutputType>Exe</OutputType>",
+                "<ItemGroup><PackageReference Include=\"Bennewitz.Ninja.AppServices.Abstractions\" /></ItemGroup>"),
             _ => Sdk("<IsPackable>true</IsPackable>"),
         };
 
