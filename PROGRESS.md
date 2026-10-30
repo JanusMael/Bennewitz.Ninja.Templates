@@ -35,8 +35,9 @@ decisions):
    - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1
      to 5 done, released as `2026.4.1029` and Inspections synced: **complete** (its section
      below). Next, [`plans/00012`](plans/00012-every-packed-readme-is-a-nuget-page.md), every
-     packed README fit for nuget.org: approved 2026-10-29; steps 1 and 2 done (its section below),
-     step 3, the release, on the maintainer's word. AppKit merges onto that release. The `Pkcs` pin goes to
+     packed README fit for nuget.org: approved 2026-10-29, released as `2026.4.1030`: **complete**
+     (its section below). JsonC#6, AppServices#17, ScopedEditors#13 and AutoVersioning#7 say what
+     each fixes when it syncs. AppKit merges onto that release. The `Pkcs` pin goes to
      `plans/00010`.
    - **Then `plans/00008` step 3**, side 2 of the trimming enforcement, written from here in
      Inspections as a pull request of its own (the maintainer, 2026-10-30). Nobody else holds it, and
@@ -1644,8 +1645,8 @@ dismissal's reason that decision 4 contradicted.
 |---|---|---|
 | 1 · The link check in `assert-packages.cs`, with and without `--family` | **done** 2026-10-30 | Below |
 | 2 · `bbpkg`'s `README.md`, and the documents that describe it | **done** 2026-10-30 | With step 1: below |
-| 3 · A Templates release | on the maintainer's word | |
-| 4 · Which family repositories' packed READMEs the rule fails | after step 3 | |
+| 3 · A Templates release | **done** 2026-10-30 | `2026.4.1030`, its section below |
+| 4 · Which family repositories' packed READMEs the rule fails | **done** 2026-10-30 | Below |
 
 ### Steps 1 and 2, as built
 
@@ -1666,6 +1667,41 @@ packs its new README, and its own guard prints "Each README of packages.push lin
 
 - **Steps 1 and 2 landed in one change.** `verify-release` runs the generated `bbpkg`'s own guard,
   which fails the template's old README, so step 1 alone would have left `main` failing it.
+
+### The maintainer's decisions after step 2
+
+Taken through `choices` on 2026-10-30: release this day; and after step 4, one issue in each family
+repository the rule fails, naming the file, the lines, the links and the fix, since unlike
+`plans/00011`'s rules this one fails everywhere.
+
+### Step 4, measured
+
+Each repository whose `main` has a `packages.push`, cloned, packed whole with `dotnet pack -c
+Release`, and checked by the released `assert-packages.cs` without `--family`, on 2026-10-30.
+DiffView has no `packages.push`, so it publishes nothing this way yet.
+
+| Repository | `main` | Packages | Result | Issue |
+|---|---|---|---|---|
+| Inspections | `8bfa11f` | 5, each family's README | passes | |
+| FileServer | `4a24295` | 1, `src/Bennewitz.Ninja.FileServer/README.md` | passes | |
+| JsonC | `e7b75af` | 1, the root README | fails: lines 16, 21 (×2), 32, the template's four links | [JsonC#6](https://github.com/JanusMael/Bennewitz.Ninja.JsonC/issues/6) |
+| AppServices | `41dd953` | 5, the root README | fails: lines 93, 99 (×2), 110, the template's four links | [AppServices#17](https://github.com/JanusMael/Bennewitz.Ninja.AppServices/issues/17) |
+| ScopedEditors | `8ff7363` | 3, the root README | fails: lines 113, 119 (×2), 130, the template's four links | [ScopedEditors#13](https://github.com/JanusMael/Bennewitz.Ninja.ScopedEditors/issues/13) |
+| AutoVersioning | `aa0b9bd` | 1, the root README | fails: lines 36, 164, 166 (×2), its own templates and `docs/MultiProjectBuildTimestamps.md` | [AutoVersioning#7](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/issues/7) |
+
+In JsonC, AppServices and ScopedEditors the first three links are under *Releasing* and the fourth
+under *Licence*, so each issue asks for the template's fix: drop *Releasing*, link the licence
+absolutely. AutoVersioning's are its own documents, linked absolutely or kept as anchors.
+
+## Release `2026.4.1030`
+
+`plans/00012`: every published package's README links only absolutely, and `bbpkg`'s README is a
+nuget.org page. Tagged on `5baf898`, whose tree is the one `verify-release` passed on before the tag.
+The release run, [41075161047](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/41075161047),
+passed every step and pushed through trusted publishing. `verify-release --published 2026.4.1030`
+passed: installed from nuget.org, all six generated repositories build and pass their tests, every
+app publishes for win-x64, and the generated `bbpkg`'s guard prints "Each README of packages.push
+links only absolutely."
 
 ## Release `2026.4.1029`
 
