@@ -51,8 +51,8 @@ decisions):
      links, not images; no family README carries an image today. A plan follows only when one first
      does (the maintainer, 2026-10-30).
    - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
-   - **CodeQuality's old policy on nuget.org** is deleted after its first release from Inspections
-     (decision 20); AssemblyQuality's is gone.
+   - **Both old policies on nuget.org are gone.** AssemblyQuality's after its first release from
+     Inspections; CodeQuality's on 2026-10-30, by the maintainer, without one (its drift entry below).
    - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
      note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
      renamed repository's name before any release (step 6's finding).
@@ -1557,6 +1557,12 @@ Each is a candidate for `bbpkg`, not yet a change here:
 
 ### Drift from `plans/00009`
 
+- **CodeQuality's old policy went before its first release from Inspections**, which decision 20
+  waited for. Chosen by the maintainer on 2026-10-30, through `choices`: the policy named the
+  archived CodeQuality repository, which can run no workflow, so it could never publish again and
+  was no fallback for Inspections' one policy, which carries `Bennewitz.Ninja.CodeQuality*`.
+  Decision 21 stands, so CodeQuality had nothing to release. Inspections records it in
+  [JanusMael/Bennewitz.Ninja.Inspections#107](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/107).
 - **The release also checks the version**, in every repository, families or not: `YYYY.Q.MMDD`,
   three parts, the quarter of the date. Decision 13 moved the resolution into a script; refusing a
   malformed version there costs nothing, and it would have refused `2026.3.1001`.
