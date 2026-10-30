@@ -221,9 +221,8 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
         Assert.DoesNotContain(Lines(_runs.Families), l => l.StartsWith("FAIL families: Good,", StringComparison.Ordinal));
 
     /// <summary>
-    /// A family's README is a nuget.org page, where a relative link goes nowhere: inline, an image, a
-    /// reference definition and an HTML attribute each fail; an absolute link, an anchor, and a link
-    /// shown inside code do not.
+    /// A family's README is a nuget.org page, where a relative link goes nowhere: each of
+    /// <see cref="LinkCases.Relative"/> fails, and nothing else in <see cref="LinkCases.Markdown"/> does.
     /// </summary>
     [Fact]
     public void A_relative_link_in_a_family_README_fails()
@@ -233,42 +232,9 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
             .Select(l => l["FAIL families: ".Length..l.IndexOf(", relatively", StringComparison.Ordinal)])];
 
         Assert.Equal(
-            [
-                "docs/alpha.md:4 links to \"../README.md\"",
-                "docs/alpha.md:4 links to \"images/logo.png\"",
-                "docs/alpha.md:6 links to \"docs/other.md\"",
-                "docs/alpha.md:8 links to \"CONTRIBUTING.md\"",
-                "docs/alpha.md:8 links to \"img/badge.png\"",
-            ],
+            [.. LinkCases.Relative.Select(link => $"docs/alpha.md:{link.Line} links to \"{link.Target}\"")],
             links);
     }
-
-    /// <summary>The alpha family's README: every way of linking, line by line, as the relative-link test reads them.</summary>
-    private const string AlphaReadme =
-        """
-        # Alpha
-
-        [Absolute](https://example.com/alpha), [an anchor](#install), <https://example.com/autolink> and [mail](mailto:someone@example.com).
-        [Inline](../README.md) and ![an image](images/logo.png).
-
-        [defined]: docs/other.md
-        [absolute definition]: https://example.com/defined
-        <a href="CONTRIBUTING.md">html</a> <img src='img/badge.png'> <a href="https://example.com/html">absolute html</a>
-
-        Inline code is text: `[shown](relative.md)`, and so is ``[this](`odd`.md)``.
-
-        ```markdown
-        [in a fence](relative.md)
-        <img src="fenced.png">
-        ```
-
-        ~~~
-        [in a tilde fence](relative.md)
-        ~~~
-
-        ## Install
-
-        """;
 
     private static IEnumerable<string> Lines(string text) => ConventionsScript.Lines(text);
 
@@ -315,7 +281,7 @@ public sealed class PropsTests : IClassFixture<PropsTests.Runs>
                     ["Gamma"] = Family("docs/beta-kit.md", "Fixture"),
                     ["Delta"] = Family("", "Beta.Kit"),
                 },
-                files: new Dictionary<string, string> { ["docs/alpha.md"] = AlphaReadme }));
+                files: new Dictionary<string, string> { ["docs/alpha.md"] = LinkCases.Markdown }));
 
         public string Conforming { get; private set; } = "";
 

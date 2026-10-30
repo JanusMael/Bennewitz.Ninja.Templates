@@ -144,7 +144,8 @@ gh run watch --repo REPO_OWNER/PKG_ID --exit-status
 
 Every gate runs **before** the push, because the push is the irreversible part: build, the full
 suite, pack, and `assert-packages`, which compares what pack actually produced against what the two
-lists declare.
+lists declare, and fails a published package whose README links relatively: that README is the
+package's page on nuget.org, where a relative link goes nowhere.
 
 ### 6 · Verify against the feed, not against the workflow
 

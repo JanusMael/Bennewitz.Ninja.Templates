@@ -35,8 +35,8 @@ decisions):
    - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1
      to 5 done, released as `2026.4.1029` and Inspections synced: **complete** (its section
      below). Next, [`plans/00012`](plans/00012-every-packed-readme-is-a-nuget-page.md), every
-     packed README fit for nuget.org: approved 2026-10-29; steps 1 and 2 under way, then step 3, the
-     release, on the maintainer's word. AppKit merges onto that release. The `Pkcs` pin goes to
+     packed README fit for nuget.org: approved 2026-10-29; steps 1 and 2 done (its section below),
+     step 3, the release, on the maintainer's word. AppKit merges onto that release. The `Pkcs` pin goes to
      `plans/00010`.
    - **Then `plans/00008` step 3**, side 2 of the trimming enforcement, written from here in
      Inspections as a pull request of its own (the maintainer, 2026-10-30). Nobody else holds it, and
@@ -1632,6 +1632,40 @@ gives `PREVIOUS_TAG` `v2026.4.1026`, and for `codequality/v…` `codequality/v20
 true for both. `notes` lists, for xamlquality and for codequality, the merge's own commits
 `7e82d76`, `1701070` and `7e5236f`, and none of another family's history; for assemblyquality, that
 nothing changed since its release.
+
+## `plans/00012` — every packed README is a nuget.org page
+
+[plans/00012-every-packed-readme-is-a-nuget-page.md](plans/00012-every-packed-readme-is-a-nuget-page.md),
+approved 2026-10-29 and frozen. A step-back review before approval limited the link check to
+`packages.push`, added a test holding the two copies of the link reader identical, and dropped a
+dismissal's reason that decision 4 contradicted.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · The link check in `assert-packages.cs`, with and without `--family` | **done** 2026-10-30 | Below |
+| 2 · `bbpkg`'s `README.md`, and the documents that describe it | **done** 2026-10-30 | With step 1: below |
+| 3 · A Templates release | on the maintainer's word | |
+| 4 · Which family repositories' packed READMEs the rule fails | after step 3 | |
+
+### Steps 1 and 2, as built
+
+| Part | What it does |
+|---|---|
+| `assert-packages.cs` | After the existing checks, reads the README each package of `packages.push` carries, the file its `.nuspec` names whatever it is called, and fails each relative link with the package, the file, the line and the link. A package of `packages.local` is not read. It carries `repo-conventions.cs`'s `Links` class, with its documentation, character for character |
+| `bbpkg`'s `README.md` | *Releasing* is gone, `AGENTS.md` already pointing at `docs/publishing.md`; the licence links to `https://github.com/REPO_OWNER/PKG_ID/blob/main/LICENSE`; the description marker says the file is a nuget.org page |
+| Documents | `docs/repository-conventions.md`, the `README.md` row and the families section's last paragraphs; `bbpkg`'s `AGENTS.md` (an invariant), `scripts/AGENTS.md` (the script's row and a rule on `Links`) and `docs/publishing.md` |
+| Tests | `LinkCases`, the markdown and its five relative links, shared by `PropsTests` (repo-conventions) and `AssertPackagesTests`; five new guard tests and one changed; `TemplateCopiesTests` compares the two `Links`; `FamilyPackTests`' root README gains a relative link, which the guard fails over the real pack |
+
+Tests: 196, from 189. Against today's script, the five tests of new behaviour failed, each for its
+own reason, and the two that must pass already did: links shown only inside code, and a
+`packages.local` package's. Changing one character of `assert-packages.cs`'s `Links` fails the copy
+test. This repository's `check --offline` conforms. `verify-release` passed: the generated `bbpkg`
+packs its new README, and its own guard prints "Each README of packages.push links only absolutely."
+
+### Drift from `plans/00012`
+
+- **Steps 1 and 2 landed in one change.** `verify-release` runs the generated `bbpkg`'s own guard,
+  which fails the template's old README, so step 1 alone would have left `main` failing it.
 
 ## Release `2026.4.1029`
 
