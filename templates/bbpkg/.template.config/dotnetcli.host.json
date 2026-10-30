@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/dotnetcli.host",
+  "symbolInfo": {
+    "Analyzer": {
+      "longName": "analyzer",
+      "shortName": ""
+    },
+    "RulePrefix": {
+      "longName": "rule-prefix",
+      "shortName": ""
+    }
+  }
+}

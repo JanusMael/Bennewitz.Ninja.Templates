@@ -8,4 +8,16 @@
     <!-- AssemblyQuality's rules, run over the library's compiled assembly. -->
     <PackageReference Include="Bennewitz.Ninja.AssemblyQuality" />
   </ItemGroup>
+<!--#if (Analyzer) -->
+
+  <ItemGroup>
+    <!-- Compiles test sources in memory and runs an analyzer over them, with {|BNXX1001:span|}
+         markup for the expected diagnostics. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" />
+    <!-- ⚠ Named here so the tests run on the analyzer's own Roslyn pin from Directory.Packages.props,
+         which is the oldest compiler the package claims to support. The testing package itself
+         floors Workspaces at 1.0.1 and leaves the version to the test project. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+  </ItemGroup>
+<!--#endif -->
 </Project>
