@@ -70,13 +70,17 @@ decisions):
    `dotnet new bbpkg --analyzer` rather than a sixth template, `--rule-prefix` defaulting to `BNXX`,
    and a sample rule in place of `Greeting`. Drawn from `git diff e457b5d v2026.3.925` in
    JanusMael/Bennewitz.Ninja.CodeQuality and that code as it lives in Inspections.
-5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
-   [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
-   runs the check green. DiffView is not watched from this session (the maintainer's word,
-   2026-09-28).
+5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's
+   conformance reaches its `main` and its CI runs the check green. DiffView is not watched from this
+   session (the maintainer's word, 2026-09-28). [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2)
+   is superseded and will be closed, not merged (DiffView's session, 2026-10-30, on the maintainer's
+   word): its replacement is DiffView's item 24, `77b844c`, on a local branch stacked behind another,
+   which stays local until the maintainer says push. Its script copy is the template's at
+   `v2026.4.1030`, and locally it conforms at every depth.
 
 **Waiting on others:**
-- DiffView#2 stays red on `conventions` until DiffView's session writes its `AGENTS.md` set.
+- DiffView conforms only locally: item 24 waits for the maintainer's word to push its stack, then its
+  merge, `apply`, the `conventions` job made required, and DiffView#2 closed.
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
   passed to its session on 2026-10-09.
 
@@ -1376,7 +1380,7 @@ accepted with the plan.
 | 1 · AutoVersioning: `packages.push`, no glob push | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.AutoVersioning#5, merged as `aa0b9bd`, `build` and `conventions` green. The queued release's no-glob rule confirms it on the next sync. The preflight has not been run |
 | 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
 | 3 · Templates: multi-family support | **done**, released 2026-10-23 as `2026.4.1023` | Below; [JanusMael/Bennewitz.Ninja.Templates#41](https://github.com/JanusMael/Bennewitz.Ninja.Templates/pull/41). `verify-release --published 2026.4.1023` passed |
-| 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. DiffView#2 is open; no import while it is. Blocks AppKit only |
+| 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. Blocks AppKit only. DiffView#2 is superseded by DiffView's local item 24 and will be closed (2026-10-30, above); the step's check is unchanged: `conventions` green in DiffView itself, and `gh pr list` empty |
 | 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
