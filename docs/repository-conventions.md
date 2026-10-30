@@ -16,7 +16,7 @@ not generated from the template adopts the same files by hand; see
 
 | File | Where | What it is | Checked by |
 |---|---|---|---|
-| `README.md` | root | For humans. In a package repository it is packed, so it is also the nuget.org description | `check` |
+| `README.md` | root | For humans. In a package repository without families it is packed, so it is also each package's page on nuget.org: what the package does, how to install and use it, and its licence, linked absolutely. A maintainer's instructions go in `docs/publishing.md` and `AGENTS.md` | `check`; `assert-packages`, for its links |
 | `PROGRESS.md` | root | The work state: what is published, what is on `main` and not released, what is next. Updated in the same change as the work it describes | `check` |
 | `AGENTS.md` | root **and every top-level directory** | For agents: the invariants a change must not break, the commands, and the checklists for recurring work | `check` |
 | `CLAUDE.md` | beside every `AGENTS.md` | The single line `@AGENTS.md` | `check` |
@@ -120,9 +120,11 @@ absolutely, or to an `#anchor` on the page. A link shown as an example inside co
   `app-services`. Both are read evaluated, as MSBuild builds the project.
 
 The release's last gate checks what pack did: `assert-packages.cs --family` fails a package whose
-packed `README.md` is not `docs/<stem>.md`, byte for byte.
+packed `README.md` is not `docs/<stem>.md`, byte for byte. With or without a family, it also fails a
+package of `packages.push` whose packed README, whatever the file is called, links relatively, by
+the same rule as a family's README.
 
-A repository without `families` is unchanged by all of this.
+Apart from that last rule, a repository without `families` is unchanged by all of this.
 
 ## The AI-facing documents
 

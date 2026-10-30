@@ -72,6 +72,38 @@ public sealed class TemplateCopiesTests
         Assert.True(missing.Length == 0, "Add to \"content\" in .github/repository.json: " + string.Join(", ", missing));
     }
 
+    /// <summary>
+    /// The link reader is one rule in two scripts (plans/00012 decision 3): <c>assert-packages.cs</c>
+    /// carries <c>repo-conventions.cs</c>'s <c>Links</c>, with its documentation, character for
+    /// character. Each script is copied into a repository on its own, so neither can reference the other.
+    /// </summary>
+    [Fact]
+    public void Assert_packages_carries_the_conventions_link_reader_unchanged()
+    {
+        string scripts = Path.Combine(RepoRoot(), "templates", "bbpkg", "scripts");
+
+        string conventions = LinksClass(File.ReadAllText(Path.Combine(scripts, "repo-conventions.cs")));
+        string packages = LinksClass(File.ReadAllText(Path.Combine(scripts, "assert-packages.cs")));
+
+        Assert.True(conventions == packages, "Copy repo-conventions.cs's Links class, with its documentation, over assert-packages.cs's.");
+    }
+
+    // The Links class with the documentation above it, to the brace that closes it at the start of a line.
+    private static string LinksClass(string source)
+    {
+        string[] lines = source.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        int start = Array.IndexOf(lines, "static class Links");
+        Assert.True(start >= 0, "No `static class Links` at the start of a line.");
+        int first = start;
+        while (first > 0 && lines[first - 1].StartsWith("///", StringComparison.Ordinal))
+        {
+            first--;
+        }
+        int end = Array.IndexOf(lines, "}", start);
+        Assert.True(end > start, "`static class Links` never closes at the start of a line.");
+        return string.Join('\n', lines[first..(end + 1)]);
+    }
+
     private static string RepoRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

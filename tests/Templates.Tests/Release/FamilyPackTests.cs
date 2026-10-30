@@ -46,6 +46,20 @@ public sealed class FamilyPackTests : IClassFixture<FamilyPackTests.Pack>
         Assert.Contains($"Each carries docs/{family}.md as its README.md.", output, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A package that names no <c>FamilyReadme</c> packs the root README, a nuget.org page like any
+    /// other (plans/00012): its relative link fails, and the families' absolute READMEs do not.
+    /// </summary>
+    [Fact]
+    public void The_guard_fails_the_root_README_s_relative_link_in_a_real_pack()
+    {
+        (int exit, string output) = _pack.GuardAll();
+
+        Assert.Equal(1, exit);
+        string error = Assert.Single(output.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'), line => line.Contains(", relatively.", StringComparison.Ordinal));
+        Assert.StartsWith("::error::Fixture.Plain's README, README.md:3, links to \"docs/publishing.md\", relatively.", error, StringComparison.Ordinal);
+    }
+
     /// <summary>The repository, packed once.</summary>
     public sealed class Pack : IDisposable
     {
@@ -67,7 +81,8 @@ public sealed class FamilyPackTests : IClassFixture<FamilyPackTests.Pack>
                 File.Copy(Path.Combine(template, file.Replace('/', Path.DirectorySeparatorChar)), target);
             }
 
-            Write("README.md", "# The repository\n\nHow to build it, and how to release it.\n");
+            Write("README.md", "# The repository\n\nHow to build it, and [how to release it](docs/publishing.md).\n");
+            Write("packages.push", "Fixture.Alpha\nFixture.Beta\nFixture.Plain\n");
             Write("docs/alpha.md", "# Alpha\n\nWhat the alpha family does.\n");
             Write("docs/beta.md", "# Beta\n\nWhat the beta family does, at more length.\n");
             Write(".github/repository.json", new JsonObject
@@ -117,6 +132,10 @@ public sealed class FamilyPackTests : IClassFixture<FamilyPackTests.Pack>
             File.Copy(Package(id), Path.Combine(folder, Path.GetFileName(Package(id))), overwrite: true);
             return ShippedScript.AssertPackages.Run(_directory, folder, "--family", family);
         }
+
+        /// <summary>The guard over the whole pack, as CI's <c>pack</c> job runs it.</summary>
+        public (int ExitCode, string Output) GuardAll() =>
+            ShippedScript.AssertPackages.Run(_directory, Path.Combine(_directory, "packed"));
 
         public void Dispose()
         {
