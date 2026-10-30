@@ -41,8 +41,8 @@ decisions):
      `plans/00010`.
    - **`plans/00008` step 3**, side 2 of the trimming enforcement, written from here (the
      maintainer, 2026-10-30), in the canonical `repo-conventions.cs` as the plan places it: **done**,
-     its row in that plan's section below. Released with the next Templates release that carries a
-     change of its own, not alone (the maintainer, 2026-10-30): it fails no family repository today.
+     its row in that plan's section below. Released with the release item 3 names, not alone (the
+     maintainer, 2026-10-30): it fails no family repository today.
      Each repository takes it when it syncs.
      [Inspections#106](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/issues/106) says its
      XamlQuality `Trimming` exemption stays: side 2 does not cover a repository's own libraries.
@@ -59,11 +59,15 @@ decisions):
 3. **xunit.v3 4.x, part 1: done here, unreleased** (its section below; the maintainer's scope of
    2026-10-30 from [docs/xunit-v3-4.md](docs/xunit-v3-4.md)): this repository and every template on
    `4.0.2`, TrxReport removed, the `Parallelization` attribute in `bbavalonia` and `mstest-to-xunit`.
-   It is the change side 2 waits for; both are released on the maintainer's word. Part 2 follows as
-   each family repository syncs, AppServices and ScopedEditors with the attribute. Part 3 is not
-   taken: Inspections and DiffView stay on `3.2.2` until Avalonia supports 4.x.
-4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
-   v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
+   Part 2 follows as each family repository syncs, AppServices and ScopedEditors with the attribute.
+   Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia supports 4.x.
+   **The release waits for `plans/00010`** (the maintainer, 2026-10-30, through `choices`): one
+   Templates release carries side 2, this move and the analyzer option, on the maintainer's word.
+4. **`plans/00010`, an analyzer package from the template: drafted 2026-10-30, awaiting approval.**
+   Its open points were settled through `choices` the same day, as the draft already has them:
+   `dotnet new bbpkg --analyzer` rather than a sixth template, `--rule-prefix` defaulting to `BNXX`,
+   and a sample rule in place of `Greeting`. Drawn from `git diff e457b5d v2026.3.925` in
+   JanusMael/Bennewitz.Ninja.CodeQuality and that code as it lives in Inspections.
 5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
    [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) merges and DiffView's CI
    runs the check green. DiffView is not watched from this session (the maintainer's word,
