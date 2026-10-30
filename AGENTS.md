@@ -9,7 +9,7 @@
 The family's `dotnet new` templates, shipped as one NuGet package, `Bennewitz.Ninja.Templates`, and
 only that way: the repository stopped being a GitHub template on 2026-09-28. `bbpkg` generates a
 repository that publishes .NET packages to nuget.org through trusted publishing, with the two-list
-packaging guard; `bbavalonia`, `bbweb`, `bbapi` and `bbconsole` generate apps released on GitHub
+packaging guard: a library, or with `--analyzer` a Roslyn analyzer package; `bbavalonia`, `bbweb`, `bbapi` and `bbconsole` generate apps released on GitHub
 Releases, each starting through the shared entry point in Bennewitz.Ninja.AppServices.EntryPoint.
 Every generated repository carries CI, a release workflow, and the family's documentation and
 conventions.

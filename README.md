@@ -11,7 +11,7 @@ dotnet new install Bennewitz.Ninja.Templates
 
 | Template | Generates | Releases to |
 |---|---|---|
-| `bbpkg` | A class library and its tests, packed and guarded | nuget.org, through trusted publishing |
+| `bbpkg` | A class library and its tests, packed and guarded; `--analyzer` makes it a Roslyn analyzer package instead, with a sample rule, the analyzer's guard tests, and `--rule-prefix` for its rules' IDs | nuget.org, through trusted publishing |
 | `bbavalonia` | An Avalonia desktop app: MVVM, the Semi theme, named controls and headless UI tests, published trimmed and single-file against a warning baseline | GitHub Releases, one binary per runtime |
 | `bbweb` | A Kestrel web site on MVC views, with `/healthz` and `/version`; `--blazor` adds interactive server components | GitHub Releases, single-file per runtime; a container image built in CI |
 | `bbapi` | A Kestrel API on minimal APIs with OpenAPI, compiled with native AOT | GitHub Releases, native per runtime; a chiseled container image built in CI |
@@ -19,6 +19,7 @@ dotnet new install Bennewitz.Ninja.Templates
 
 ```bash
 dotnet new bbpkg -n Widget --RepoOwner JanusMael
+dotnet new bbpkg -n Linter --RepoOwner JanusMael --analyzer --rule-prefix BNLN
 dotnet new bbavalonia -n Notebook --RepoOwner JanusMael
 dotnet new bbweb -n Gallery --RepoOwner JanusMael --blazor
 dotnet new bbapi -n Catalog --RepoOwner JanusMael

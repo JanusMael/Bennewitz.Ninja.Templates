@@ -64,7 +64,8 @@ decisions):
    **The release waits for `plans/00010`** (the maintainer, 2026-10-30, through `choices`): one
    Templates release carries side 2, this move and the analyzer option, on the maintainer's word.
 4. **[`plans/00010`](plans/00010-an-analyzer-package.md), an analyzer package from the template:
-   approved 2026-10-30**; steps 1 to 3 done, step 4, the documents, next (its section below). Its open points were settled through
+   approved 2026-10-30**; steps 1 to 4 done; step 5, the release, waits for the maintainer's word
+   (its section below). Its open points were settled through
    `choices` the same day, before approval, as the plan has them:
    `dotnet new bbpkg --analyzer` rather than a sixth template, `--rule-prefix` defaulting to `BNXX`,
    and a sample rule in place of `Greeting`. Drawn from `git diff e457b5d v2026.3.925` in
@@ -1731,8 +1732,8 @@ also carries `plans/00008` side 2 and the xunit.v3 4.x move, on the maintainer's
 | 1 · The option, the analyzer project, its package pins, the conditionals in the shared files | **done** 2026-10-30 | With step 2, in one change: below |
 | 2 · The base, `Catalog`, the sample rule and the guard tests | **done** 2026-10-30 | Below |
 | 3 · The `verify-release` case | **done** 2026-10-30 | Below |
-| 4 · The documents | next | |
-| 5 · A Templates release, on the maintainer's word | | |
+| 4 · The documents | **done** 2026-10-30 | The package README's table and examples, the package's description and tags, this repository's `AGENTS.md`, and `docs/repository-conventions.md`'s steps and its analyzer role name the option. `bbpkg`'s own root `AGENTS.md` was the shared file the plan's list missed: its trimmable invariant named `TrimmableTests` in every form, and is conditional now. The plain form is still today's, file for file; the root tests and this repository's own `check` pass |
+| 5 · A Templates release, on the maintainer's word | next | It also carries `plans/00008` side 2 and the xunit.v3 4.x move |
 
 ### Steps 1 and 2, as built
 
