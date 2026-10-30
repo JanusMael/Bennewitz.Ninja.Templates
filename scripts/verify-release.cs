@@ -97,6 +97,36 @@ string[] app =
 
 string[] container = ["Dockerfile", ".dockerignore"];
 
+// bbpkg in its two forms (plans/00010): a library, or with --analyzer a Roslyn analyzer package. Each
+// carries what the other must not.
+string[] packageCommon =
+[
+    Path.Combine("scripts", "assert-packages.cs"),
+    Path.Combine("scripts", "release-target.cs"),
+    Path.Combine("docs", "publishing.md"),
+    // ⛔ Carries IsTrimmable. Its absence builds, tests and packs perfectly well, and ships
+    // every assembly unmarked, so a tree check is the earliest place it can fail loudly.
+    Path.Combine("src", "Directory.Build.props"),
+];
+
+string[] libraryOnly =
+[
+    Path.Combine("src", "{0}", "Greeting.cs"),
+    Path.Combine("tests", "{0}.Tests", "Packaging", "TrimmableTests.cs"),
+];
+
+string[] analyzerOnly =
+[
+    Path.Combine("src", "{0}", "ScopedAnalyzer.cs"),
+    Path.Combine("src", "{0}", "Catalog.cs"),
+    // Release tracking: without them every rule is RS2008 under -warnaserror.
+    Path.Combine("src", "{0}", "AnalyzerReleases.Shipped.md"),
+    Path.Combine("src", "{0}", "AnalyzerReleases.Unshipped.md"),
+    Path.Combine("tests", "{0}.Tests", "Packaging", "AnalyzerShapeTests.cs"),
+    Path.Combine("tests", "{0}.Tests", "AnalyzerConventionTests.cs"),
+    Path.Combine("tests", "{0}.Tests", "RulesCatalogTests.cs"),
+];
+
 string[] blazorOnly =
 [
     Path.Combine("src", "{0}", "Components", "Counter.razor"),
@@ -164,23 +194,42 @@ const string DesktopCrash = """
     }
     """;
 
+// The consumer an analyzer package is restored into: a library, so the sample rule is in scope, on
+// the local pack alone, with no other source to fall back on.
+const string ConsumerProject = """
+    <Project Sdk="Microsoft.NET.Sdk">
+      <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+      </PropertyGroup>
+      <ItemGroup>
+        <PackageReference Include="__ID__" Version="1.0.0" />
+      </ItemGroup>
+    </Project>
+    """;
+
+const string ConsumerNuGet = """
+    <?xml version="1.0" encoding="utf-8"?>
+    <configuration>
+      <packageSources>
+        <clear />
+        <add key="local" value="__SOURCE__" />
+      </packageSources>
+    </configuration>
+    """;
+
 // ⭐ One case per generated repository: every template, and bbweb in both variants. The packed-
 // content check below requires the package's templates to be exactly the ones named here, so a
 // template added without a case fails this script rather than shipping unverified.
 Case[] cases =
 [
     new("bbpkg", "bbpkg", "Widget", [], Packs: true,
-        Required:
-        [
-            .. common,
-            Path.Combine("scripts", "assert-packages.cs"),
-            Path.Combine("scripts", "release-target.cs"),
-            Path.Combine("docs", "publishing.md"),
-            // ⛔ Carries IsTrimmable. Its absence builds, tests and packs perfectly well, and ships
-            // every assembly unmarked, so a tree check is the earliest place it can fail loudly.
-            Path.Combine("src", "Directory.Build.props"),
-        ],
-        Forbidden: [], Publish: PublishKind.None),
+        Required: [.. common, .. packageCommon, .. libraryOnly],
+        Forbidden: analyzerOnly, Publish: PublishKind.None),
+    // The rule prefix is passed, so a BNXX left anywhere is a placeholder the engine missed.
+    new("bbpkg --analyzer", "bbpkg", "Linter", ["--analyzer", "--rule-prefix", "BNLN"], Packs: true,
+        Required: [.. common, .. packageCommon, .. analyzerOnly],
+        Forbidden: libraryOnly, Publish: PublishKind.None, Rule: "BNLN1001"),
     new("bbavalonia", "bbavalonia", "Notebook", [], Packs: false,
         Required:
         [
@@ -226,7 +275,7 @@ const string PublishedVersion = "2026.3.999";
 // No placeholder may survive, in a path or in a file: every template's stem, matched regardless of
 // case because the engine also substitutes the lowercase form (docker tags), and the symbols' tokens.
 string[] stemTokens = ["PkgStem", "AppStem", "SiteStem", "ApiStem", "CliStem"];
-string[] symbolTokens = ["PKG_ID", "REPO_OWNER", "REPO_NAME", "#if (", "#endif"];
+string[] symbolTokens = ["PKG_ID", "REPO_OWNER", "REPO_NAME", "BNXX", "bnxx", "#if (", "#endif"];
 
 bool keep = args.Contains("--keep", StringComparer.OrdinalIgnoreCase);
 
@@ -722,6 +771,11 @@ string? Verify(Case entry)
         }
 
         Console.WriteLine("  " + resolvedIds);
+
+        if (entry.Rule is not null && VerifyAnalyzer(entry, generated, Path.Combine(generated, generatedPackages), expectedId, entry.Rule) is { } analyzerProblem)
+        {
+            return analyzerProblem;
+        }
     }
 
     // ── The family conventions, as its own CI will check them ───────────────────────────────
@@ -776,6 +830,98 @@ string? Verify(Case entry)
     Console.WriteLine($"  only the intended gaps: the empty description and {markers} markers; every project's properties conform");
 
     return entry.Publish == PublishKind.None ? null : Publish(entry, generated);
+}
+
+// ⭐ An analyzer package is proved by a consumer's build, not by its tree (plans/00010 decision 7).
+// Its layout is read from the .nupkg first; then a throwaway project restores it from that folder
+// alone, with a package cache of its own, and must show the sample rule's warning. The generated
+// repository's own tests read the project file and the compiled assembly, and neither can show that
+// the compiler loads what was packed. Returns why it failed, or null.
+string? VerifyAnalyzer(Case entry, string generated, string packages, string expectedId, string rule)
+{
+    Step("Read the analyzer package");
+
+    string nupkg = Path.Combine(packages, $"{expectedId}.1.0.0.nupkg");
+
+    if (!File.Exists(nupkg))
+    {
+        return $"No {Path.GetFileName(nupkg)} in {packages}.";
+    }
+
+    string analyzer = $"analyzers/dotnet/cs/{entry.Stem}.dll";
+
+    using (ZipArchive archive = ZipFile.OpenRead(nupkg))
+    {
+        string[] entries = [.. archive.Entries.Select(item => item.FullName)];
+
+        if (!entries.Contains(analyzer, StringComparer.Ordinal))
+        {
+            return $"The package does not carry {analyzer}, where the compiler looks for an analyzer: " + string.Join(", ", entries);
+        }
+
+        // ⛔ Anything under lib/ is a runtime reference the consumer gets; the compiler never loads it.
+        string[] stray =
+        [
+            .. entries.Where(item => item.StartsWith("lib/", StringComparison.Ordinal)
+                || (item.StartsWith("analyzers/", StringComparison.Ordinal) && item != analyzer)),
+        ];
+
+        if (stray.Length > 0)
+        {
+            return $"The package carries more than {analyzer}: " + string.Join(", ", stray);
+        }
+
+        ZipArchiveEntry nuspec = archive.Entries.Single(item => item.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+        XDocument manifest;
+
+        using (Stream stream = nuspec.Open())
+        {
+            manifest = XDocument.Load(stream);
+        }
+
+        XNamespace ns = manifest.Root!.Name.Namespace;
+        XElement? metadata = manifest.Root.Element(ns + "metadata");
+
+        if ((string?)metadata?.Element(ns + "developmentDependency") != "true")
+        {
+            return "The package is not a development dependency, so it flows to whoever references the consumer.";
+        }
+
+        if (metadata?.Element(ns + "dependencies") is not null)
+        {
+            return "The package declares dependencies, which an analyzer cannot load: " + metadata.Element(ns + "dependencies");
+        }
+    }
+
+    Console.WriteLine($"  {analyzer} alone; a development dependency, with no dependencies");
+
+    Step("Build a consumer of the packed analyzer");
+
+    string consumer = Path.Combine(Path.GetDirectoryName(generated)!, "Consumer");
+    Directory.CreateDirectory(consumer);
+
+    // Empty build files, so nothing above the scratch folder reaches the consumer.
+    File.WriteAllText(Path.Combine(consumer, "Directory.Build.props"), "<Project />\n");
+    File.WriteAllText(Path.Combine(consumer, "Directory.Build.targets"), "<Project />\n");
+    File.WriteAllText(Path.Combine(consumer, "Directory.Packages.props"), "<Project />\n");
+    File.WriteAllText(Path.Combine(consumer, "NuGet.config"), ConsumerNuGet.Replace("__SOURCE__", packages, StringComparison.Ordinal));
+    File.WriteAllText(Path.Combine(consumer, "Consumer.csproj"), ConsumerProject.Replace("__ID__", expectedId, StringComparison.Ordinal));
+    File.WriteAllText(Path.Combine(consumer, "StringHelper.cs"), "namespace Consumer;\n\npublic class StringHelper { }\n");
+
+    // ⛔ A package cache of its own: the global one would serve an earlier run's 1.0.0 of this id.
+    if (!Dotnet(["build", "Consumer.csproj", "--nologo", "-tl:off", "-p:RestorePackagesPath=" + Path.Combine(consumer, "packages")], consumer, out string consumerLog))
+    {
+        return "The consumer does not build against the packed analyzer:" + Environment.NewLine + consumerLog;
+    }
+
+    if (!consumerLog.Contains($"warning {rule}:", StringComparison.Ordinal))
+    {
+        return $"The consumer built, but {rule} never reported its public StringHelper, so the compiler did not run the packed analyzer:"
+            + Environment.NewLine + consumerLog;
+    }
+
+    Console.WriteLine($"  {rule} reported the consumer's StringHelper, from the package alone");
+    return null;
 }
 
 // Publishes one generated app for this machine's runtime identifier, with the arguments its own
@@ -1219,7 +1365,8 @@ static int Fail(string message)
 
 // One generated repository: which template, under which stem, with which arguments, and what its
 // tree must and must not hold. `{0}` in a path is the stem.
-record Case(string Label, string Template, string Stem, string[] Arguments, bool Packs, string[] Required, string[] Forbidden, PublishKind Publish, string? Crash = null);
+// Rule: for an analyzer package, the ID its sample rule reports, which a consumer's build must show.
+record Case(string Label, string Template, string Stem, string[] Arguments, bool Packs, string[] Required, string[] Forbidden, PublishKind Publish, string? Crash = null, string? Rule = null);
 
 // How an app's release publishes it: trimmed and held to its warning baseline (bbavalonia),
 // self-contained single-file (bbweb), compiled natively ahead of time (bbapi), or trimmed and
