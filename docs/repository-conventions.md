@@ -238,7 +238,8 @@ can be set, overridden or imported anywhere: a csproj, a nested `Directory.Build
 **A project's role** comes from the project itself, taking the first that matches: *template*
 (`PackageType` Template), *analyzer* (`IsRoslynComponent`), *test* (`IsTestProject`), *tool*
 (`PackAsTool`), *library* (packable), *app* (an executable that is not packable), *other*. The
-order matters: an xUnit v3 test project is a non-packable executable.
+order matters: an xUnit v3 test project is a non-packable executable. `bbpkg --analyzer` generates
+an analyzer project.
 
 | Rule | Every project | Libraries and tools |
 |---|---|---|
@@ -408,7 +409,8 @@ What generation does is marked ✅; the rest is yours.
 
 1. ✅ `dotnet new <template> -n <Stem> --RepoOwner <owner>`, with `bbpkg`, `bbavalonia`, `bbweb`,
    `bbapi` or `bbconsole`, writes every file in the table above. An app template also takes `--RepoName` when
-   the repository is not named after the app, and `bbweb` takes `--blazor`.
+   the repository is not named after the app, `bbweb` takes `--blazor`, and `bbpkg` takes
+   `--analyzer`, with `--rule-prefix`, for a Roslyn analyzer package.
 2. Create the GitHub repository and push `main`. CI goes red on the `conventions` job, listing
    every gap. That is expected.
 3. In `.github/repository.json`, write the description and add topics beyond the family's.

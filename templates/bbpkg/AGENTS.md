@@ -29,7 +29,12 @@
 | The release pushes the ids `scripts/release-target.cs` resolves from `packages.push`, or from the tagged family, and never globs `*.nupkg` | A new packable project is published by the next tag | `.github/workflows/release.yml`, steps `Resolve what this release publishes` and `Push to NuGet.org`; `repo-conventions check` |
 | Where `.github/repository.json` declares families, each family's packages carry its README, `docs/<stem>.md`, and its `AssemblyProduct` | nuget.org shows the repository's README on the family's page, and its assemblies name another product, permanently | `FamilyReadme` in each project, packed by the root `Directory.Build.props`; `repo-conventions check`; `scripts/assert-packages.cs --family` |
 | The README each package of `packages.push` carries links only absolutely, whatever the file is called | It is the package's page on nuget.org, where a relative link resolves against nuget.org and goes nowhere, permanently for that version | `scripts/assert-packages.cs`, in CI's `pack` job and the release |
+<!--#if (Analyzer) -->
+| The analyzer is packed under `analyzers/dotnet/cs` alone, a development dependency with no dependencies | Under `lib/` the compiler never loads it; a dependency is nowhere near it when the compiler does, and the rule goes quiet as `AD0001` | the analyzer's project file; `AnalyzerShapeTests` |
+| Every shipped library declares itself trimmable; the analyzer opts out | A consumer's trimmed publish keeps a library whole and outside its trim analysis, and says nothing. The SDK does not support the mark on netstandard2.0 | `src/Directory.Build.props`, the analyzer's project file; `AnalyzerShapeTests` |
+<!--#else -->
 | Every shipped assembly declares itself trimmable | A consumer's trimmed publish keeps it whole and outside its trim analysis, and says nothing | `src/Directory.Build.props`; `TrimmableTests` |
+<!--#endif -->
 | Packages resolve from nuget.org only | A second source added later silently starts supplying packages | `NuGet.config`, `packageSourceMapping` |
 | Versions are pinned centrally | Two projects drift to different versions of one dependency | `Directory.Packages.props` |
 | Warnings are errors | A warning ships | `Directory.Build.props`; `ci.yml` builds with `-warnaserror` |
