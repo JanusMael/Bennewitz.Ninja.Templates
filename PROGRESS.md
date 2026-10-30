@@ -63,8 +63,9 @@ decisions):
    Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia supports 4.x.
    **The release waits for `plans/00010`** (the maintainer, 2026-10-30, through `choices`): one
    Templates release carries side 2, this move and the analyzer option, on the maintainer's word.
-4. **`plans/00010`, an analyzer package from the template: drafted 2026-10-30, awaiting approval.**
-   Its open points were settled through `choices` the same day, as the draft already has them:
+4. **[`plans/00010`](plans/00010-an-analyzer-package.md), an analyzer package from the template:
+   approved 2026-10-30**; its steps in its section below. Its open points were settled through
+   `choices` the same day, before approval, as the plan has them:
    `dotnet new bbpkg --analyzer` rather than a sixth template, `--rule-prefix` defaulting to `BNXX`,
    and a sample rule in place of `Greeting`. Drawn from `git diff e457b5d v2026.3.925` in
    JanusMael/Bennewitz.Ninja.CodeQuality and that code as it lives in Inspections.
@@ -1717,6 +1718,21 @@ DiffView has no `packages.push`, so it publishes nothing this way yet.
 In JsonC, AppServices and ScopedEditors the first three links are under *Releasing* and the fourth
 under *Licence*, so each issue asks for the template's fix: drop *Releasing*, link the licence
 absolutely. AutoVersioning's are its own documents, linked absolutely or kept as anchors.
+
+## `plans/00010` — an analyzer package from the template
+
+[`plans/00010`](plans/00010-an-analyzer-package.md), approved 2026-10-30 and frozen. Its three open
+points were the maintainer's, through `choices` the same day: an option on `bbpkg` rather than a
+sixth template, `--rule-prefix` defaulting to `BNXX`, and a sample rule. The release that carries it
+also carries `plans/00008` side 2 and the xunit.v3 4.x move, on the maintainer's word.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · The option, the analyzer project, its package pins, the conditionals in the shared files | next | |
+| 2 · The base, `Catalog`, the sample rule and the guard tests | | |
+| 3 · The `verify-release` case | | |
+| 4 · The documents | | |
+| 5 · A Templates release, on the maintainer's word | | |
 
 ## xunit.v3 4.x, part 1 — outside the plans
 
