@@ -64,8 +64,7 @@ decisions):
    **The release waits for `plans/00010`** (the maintainer, 2026-10-30, through `choices`): one
    Templates release carries side 2, this move and the analyzer option, on the maintainer's word.
 4. **[`plans/00010`](plans/00010-an-analyzer-package.md), an analyzer package from the template:
-   approved 2026-10-30**; steps 1 and 2 done, step 3, the `verify-release` case, next (its section
-   below). Its open points were settled through
+   approved 2026-10-30**; steps 1 to 3 done, step 4, the documents, next (its section below). Its open points were settled through
    `choices` the same day, before approval, as the plan has them:
    `dotnet new bbpkg --analyzer` rather than a sixth template, `--rule-prefix` defaulting to `BNXX`,
    and a sample rule in place of `Greeting`. Drawn from `git diff e457b5d v2026.3.925` in
@@ -1731,8 +1730,8 @@ also carries `plans/00008` side 2 and the xunit.v3 4.x move, on the maintainer's
 |---|---|---|
 | 1 · The option, the analyzer project, its package pins, the conditionals in the shared files | **done** 2026-10-30 | With step 2, in one change: below |
 | 2 · The base, `Catalog`, the sample rule and the guard tests | **done** 2026-10-30 | Below |
-| 3 · The `verify-release` case | next | |
-| 4 · The documents | | |
+| 3 · The `verify-release` case | **done** 2026-10-30 | Below |
+| 4 · The documents | next | |
 | 5 · A Templates release, on the maintainer's word | | |
 
 ### Steps 1 and 2, as built
@@ -1768,6 +1767,26 @@ Verified on 2026-10-30, each form generated from the worktree into a private hiv
 | The rule's ID `BNYY1001`, release tracking to match | `Every_rule_has_an_id_in_the_scheme_and_says_where_it_comes_from`, with the README tests and the firing test |
 | The gate always null | `HelperNameTests.A_public_helper_in_a_library_is_reported` alone |
 
+### Step 3, as built
+
+`verify-release`'s seventh case, `bbpkg --analyzer`, generates `Linter` with `--rule-prefix BNLN`, so
+a `BNXX` or `bnxx` left anywhere is a placeholder the engine missed, and both are now among the
+tokens no generated file may carry. Each form of `bbpkg` requires its own files and forbids the
+other's. After the generated repository's build, tests, pack, `assert-packages` and tag resolution,
+the case reads the `.nupkg`: `analyzers/dotnet/cs/Linter.dll` and nothing else under `analyzers/` or
+`lib/`, `developmentDependency` true, no dependencies element. Then a throwaway library, fenced by
+empty build files, restores the package from the pack folder alone, into a package cache of its
+own, and its build must show `warning BNLN1001` on a public `StringHelper`.
+
+Verified on 2026-10-30: `verify-release` passes all seven cases, the new one 23 of 23 with
+`BNLN1001 reported the consumer's StringHelper, from the package alone`. Canaried on the analyzer
+case alone, in a copy holding `bbpkg` only, the generated repository's 23 tests passing each time:
+
+| Planted | Fails |
+|---|---|
+| A second file packed under `analyzers/dotnet/cs` | the package read: `carries more than analyzers/dotnet/cs/Linter.dll` |
+| The consumer expected to show `BNLN1002` | the consumer build: `never reported its public StringHelper` |
+
 ### Drift from `plans/00010`
 
 - **`repository.json`'s topics are not conditional.** Decision 1 named them among the shared files
@@ -1781,6 +1800,11 @@ Verified on 2026-10-30, each form generated from the worktree into a private hiv
 - **`--rule-prefix` needs a lowercase twin.** The README's anchors are the IDs in lower case, which a
   `replaces` of `BNXX` does not reach: a generated symbol, `RulePrefixLower`, replaces `bnxx`.
   Found by `RulesCatalogTests` on the first generation.
+
+- **Step 3's canary is not the plan's.** With `IncludeBuildOutput` `true` the case fails, but at
+  the generated repository's tests, where `AnalyzerShapeTests` reads the project file, so the
+  package read never runs (step 2's canary table). The new checks were canaried with defects the
+  tests do not see: a stray packed file, and a rule the consumer does not show.
 
 ## xunit.v3 4.x, part 1 — outside the plans
 
