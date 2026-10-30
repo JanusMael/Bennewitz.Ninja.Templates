@@ -41,8 +41,11 @@ decisions):
      `plans/00010`.
    - **`plans/00008` step 3**, side 2 of the trimming enforcement, written from here (the
      maintainer, 2026-10-30), in the canonical `repo-conventions.cs` as the plan places it: **done**,
-     its row in that plan's section below. Released with the next Templates release; each repository
-     takes it when it syncs.
+     its row in that plan's section below. Released with the next Templates release that carries a
+     change of its own, not alone (the maintainer, 2026-10-30): it fails no family repository today.
+     Each repository takes it when it syncs.
+     [Inspections#106](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/issues/106) says its
+     XamlQuality `Trimming` exemption stays: side 2 does not cover a repository's own libraries.
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path,
      so such an image is dropped and only the package's owners see a warning. `plans/00012` checks
      links, not images; no family README carries an image today. A plan follows only when one first
@@ -53,8 +56,11 @@ decisions):
    - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
      note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
      renamed repository's name before any release (step 6's finding).
-3. **Investigate xunit.v3 4.x** (4.0.1, with TrxReport 2.5.1): what it changes for the templates, this
-   repository's tests and `mstest-to-xunit`. Report; the maintainer decides the scope.
+3. **xunit.v3 4.x: reported**, [docs/xunit-v3-4.md](docs/xunit-v3-4.md), 2026-10-30; the
+   maintainer decides the scope. `4.0.2` with TrxReport `2.5.1`: this repository's tests pass as they
+   are; `bbavalonia` and `mstest-to-xunit` need the `Parallelization` attribute;
+   `Avalonia.Headless.XUnit` fails every test it runs on 4.x, which holds Inspections and DiffView
+   unless they drop it. The report also asks whether any `.trx` is written at all.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
    v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
 5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
