@@ -18,7 +18,7 @@ executable that is never packed.
 | Rule | Why | Guarded by |
 |---|---|---|
 | Tests run on Microsoft.Testing.Platform | `dotnet test` takes `--solution` and rejects VSTest-only switches | `global.json`, `test.runner` |
-| Tests in this assembly run one at a time | One headless session drives one dispatcher, which two tests must not drive at once | `[assembly: CollectionBehavior]` in `Headless/HeadlessTestApp.cs`; `HeadlessSessionTests` |
+| Tests in this assembly run one at a time | One headless session drives one dispatcher, which two tests must not drive at once | `[assembly: Parallelization]` in `Headless/HeadlessTestApp.cs`; `HeadlessSessionTests` |
 | **The body passed to `Session.Dispatch` is synchronous** | An `async` lambda becomes a task nothing awaits, and the test passes whatever it does | review |
 | Headless isolation stays per test until measured otherwise | With no `[AvaloniaTestIsolation]`, every dispatch builds the app afresh, so a warm-up proves nothing. Sharing one needs its own evidence | `Headless/HeadlessTestApp.cs`, remarks |
 | A rule test asserts how much it inspected, not only that it found nothing | A rule that inspected nothing finds nothing | each rule test |
