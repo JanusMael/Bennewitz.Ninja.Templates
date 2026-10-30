@@ -28,7 +28,7 @@
 //   [TestInitialize] void M()        a constructor calling M()     (class already has one: UNMAPPED)
 //   [TestCleanup] void M()           IDisposable, Dispose() calling M()
 //   [TestCleanup] async Task M()     IAsyncDisposable, DisposeAsync() awaiting M()
-//   [assembly: DoNotParallelize]     [assembly: CollectionBehavior(DisableTestParallelization = true)]
+//   [assembly: DoNotParallelize]     [assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]
 //   [DoNotParallelize] on a class    [Collection("DoNotParallelize")] — the definition is emitted
 //                                    by --emit-helpers
 //   [assembly: Parallelize(…)]       UNMAPPED: xUnit has no method-level parallelism; decide by hand
@@ -327,8 +327,8 @@ sealed class Pass1(string file, Report report, bool noUsing, bool hasXunitUsing)
             switch (AttributeName(a))
             {
                 case "DoNotParallelize":
-                    report.Converted("[assembly: DoNotParallelize] → CollectionBehavior");
-                    return Attr("CollectionBehavior(DisableTestParallelization = true)", a);
+                    report.Converted("[assembly: DoNotParallelize] → Parallelization");
+                    return Attr("Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)", a);
                 case "Parallelize":
                     report.Skip(file, a, "[assembly: Parallelize(…)]",
                         "xUnit parallelises by collection (per class by default) and has no method-level mode; choose the assembly's behaviour by hand");

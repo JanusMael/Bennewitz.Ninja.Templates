@@ -56,11 +56,12 @@ decisions):
    - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
      note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
      renamed repository's name before any release (step 6's finding).
-3. **xunit.v3 4.x: reported**, [docs/xunit-v3-4.md](docs/xunit-v3-4.md), 2026-10-30; the
-   maintainer decides the scope. `4.0.2` with TrxReport `2.5.1`: this repository's tests pass as they
-   are; `bbavalonia` and `mstest-to-xunit` need the `Parallelization` attribute;
-   `Avalonia.Headless.XUnit` fails every test it runs on 4.x, which holds Inspections and DiffView
-   unless they drop it. The report also asks whether any `.trx` is written at all.
+3. **xunit.v3 4.x, part 1: done here, unreleased** (its section below; the maintainer's scope of
+   2026-10-30 from [docs/xunit-v3-4.md](docs/xunit-v3-4.md)): this repository and every template on
+   `4.0.2`, TrxReport removed, the `Parallelization` attribute in `bbavalonia` and `mstest-to-xunit`.
+   It is the change side 2 waits for; both are released on the maintainer's word. Part 2 follows as
+   each family repository syncs, AppServices and ScopedEditors with the attribute. Part 3 is not
+   taken: Inspections and DiffView stay on `3.2.2` until Avalonia supports 4.x.
 4. **`plans/00010`, an analyzer template**, after the trimming enforcement. `git diff e457b5d
    v2026.3.925` in JanusMael/Bennewitz.Ninja.CodeQuality is the whole difference an analyzer needed.
 5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when
@@ -1712,6 +1713,32 @@ DiffView has no `packages.push`, so it publishes nothing this way yet.
 In JsonC, AppServices and ScopedEditors the first three links are under *Releasing* and the fourth
 under *Licence*, so each issue asks for the template's fix: drop *Releasing*, link the licence
 absolutely. AutoVersioning's are its own documents, linked absolutely or kept as anchors.
+
+## xunit.v3 4.x, part 1 — outside the plans
+
+Scoped by the maintainer through `choices` on 2026-10-30, from
+[docs/xunit-v3-4.md](docs/xunit-v3-4.md)'s three parts: **part 1 now**, here; part 2 as each family
+repository syncs; part 3 not taken, so Inspections and DiffView stay on `3.2.2` until Avalonia
+supports 4.x ([AvaloniaUI/Avalonia#22072](https://github.com/AvaloniaUI/Avalonia/issues/22072)).
+And **TrxReport goes** rather than moving to `2.5.1`: nothing passed `--report-trx`, so no `.trx`
+was ever written, and the package had to match xunit's platform version on every bump.
+
+| What | Where |
+|---|---|
+| `xunit.v3` `3.2.2` → `4.0.2`; the TrxReport pin and its warning removed | `Directory.Packages.props`, here and in all five templates |
+| The TrxReport reference removed | `tests/Directory.Build.props`, here and in all five templates |
+| `[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]` for `CollectionBehavior(DisableTestParallelization = true)`, now `CS0619` | `bbavalonia`'s `HeadlessTestApp.cs` and its `tests/AGENTS.md` row |
+| `[assembly: DoNotParallelize]` converts to that attribute | `scripts/mstest-to-xunit.cs`, its rules comment, and the `Rules.expected.cs.txt` fixture |
+
+Verified on 2026-10-30: the root tests 203 of 203, resolved as `xunit.v3` and `xunit.v3.mtp-v2`
+`4.0.2` and Microsoft.Testing.Platform `2.5.1`, with no TrxReport; `verify-release` passes all six
+cases, `bbavalonia` 17 of 17 with `HeadlessSessionTests`, `bbconsole` 13 of 14 with its Ctrl+C test
+skipped on Windows as written.
+
+Unreleased. It is the change of its own that side 2 of `plans/00008` waits to ship with, and both go
+out on the maintainer's word. AppServices and ScopedEditors also need the attribute in
+`tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
+so no repository fails for staying on `3.2.2`.
 
 ## Release `2026.4.1030`
 

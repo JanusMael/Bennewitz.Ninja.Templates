@@ -6,7 +6,7 @@ using Bennewitz.Ninja.AppStem.Tests.Headless;
 
 // Tests in this assembly run one at a time: one headless session drives one dispatcher, which two
 // tests must not drive at once. HeadlessSessionTests guards that premise.
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]
 
 namespace Bennewitz.Ninja.AppStem.Tests.Headless;
 
