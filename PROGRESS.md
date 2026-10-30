@@ -64,7 +64,8 @@ decisions):
    **The release waits for `plans/00010`** (the maintainer, 2026-10-30, through `choices`): one
    Templates release carries side 2, this move and the analyzer option, on the maintainer's word.
 4. **[`plans/00010`](plans/00010-an-analyzer-package.md), an analyzer package from the template:
-   approved 2026-10-30**; its steps in its section below. Its open points were settled through
+   approved 2026-10-30**; steps 1 and 2 done, step 3, the `verify-release` case, next (its section
+   below). Its open points were settled through
    `choices` the same day, before approval, as the plan has them:
    `dotnet new bbpkg --analyzer` rather than a sixth template, `--rule-prefix` defaulting to `BNXX`,
    and a sample rule in place of `Greeting`. Drawn from `git diff e457b5d v2026.3.925` in
@@ -1728,11 +1729,58 @@ also carries `plans/00008` side 2 and the xunit.v3 4.x move, on the maintainer's
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · The option, the analyzer project, its package pins, the conditionals in the shared files | next | |
-| 2 · The base, `Catalog`, the sample rule and the guard tests | | |
-| 3 · The `verify-release` case | | |
+| 1 · The option, the analyzer project, its package pins, the conditionals in the shared files | **done** 2026-10-30 | With step 2, in one change: below |
+| 2 · The base, `Catalog`, the sample rule and the guard tests | **done** 2026-10-30 | Below |
+| 3 · The `verify-release` case | next | |
 | 4 · The documents | | |
 | 5 · A Templates release, on the maintainer's word | | |
+
+### Steps 1 and 2, as built
+
+`dotnet new bbpkg --analyzer [--rule-prefix BNXX]`, the names given in `dotnetcli.host.json`, as
+`bbweb`'s `--blazor` is: without it the engine's options are `--Analyzer` and `--RulePrefix`.
+`sources.modifiers` drop `Greeting`, its tests and `TrimmableTests` from the analyzer, and the
+analyzer's files from the library; `PkgStem.csproj`, `PkgStem.Tests.csproj`,
+`Directory.Packages.props`, `README.md`, `src/AGENTS.md`, `tests/AGENTS.md` and
+`AssemblyQualityTests.cs` carry the conditionals. The sample rule is `BNXX1001`,
+`HelperNameAnalyzer`: a public type of a library named `…Helper`, gated on the compilation being a
+library. `AnalyzerShapeTests` reads every project under `src/`, so a library added beside the
+analyzer is still held to the trimmable mark.
+
+Verified on 2026-10-30, each form generated from the worktree into a private hive:
+
+- **The plain form is today's, file for file**: 44 files, every one byte-identical to what
+  `origin/main`'s `bbpkg` generates.
+- **The analyzer form**, `-n Widget --rule-prefix BNZZ`: no placeholder or conditional left; a
+  `-warnaserror` build; 23 of 23 tests, `AssemblyQualityTests` among them; packed as
+  `analyzers/dotnet/cs/Widget.dll` and `README.md` alone, `developmentDependency` true, no
+  dependencies element; `assert-packages` passes; the offline conventions check shows only the
+  intended gaps, the empty description and 8 markers, and classifies `Widget (analyzer)`.
+- **Canaried**, each planted in a copy of the generated repository:
+
+| Planted | Fails |
+|---|---|
+| The `Pkcs` pin removed | restore: `NU1902` and `NU1903` on `Pkcs` 9.0.6 |
+| `IncludeBuildOutput` `true` | `AnalyzerShapeTests.Every_analyzer_packs_only_itself_under_analyzers_dotnet_cs` |
+| `Catalog` made public | `AnalyzerConventionTests.The_assembly_exports_no_public_type_of_its_own` |
+| An analyzer outside the base, reporting the sample's rule | `Every_analyzer_derives_from_the_scoped_base`, and the two catalog tests the duplicate ID breaks |
+| The rule's `###` section removed from the README | `RulesCatalogTests.Every_rule_has_its_section_in_the_README` |
+| The rule's ID `BNYY1001`, release tracking to match | `Every_rule_has_an_id_in_the_scheme_and_says_where_it_comes_from`, with the README tests and the firing test |
+| The gate always null | `HelperNameTests.A_public_helper_in_a_library_is_reported` alone |
+
+### Drift from `plans/00010`
+
+- **`repository.json`'s topics are not conditional.** Decision 1 named them among the shared files
+  that would be. This repository's own tests parse every template's `repository.json` as strict
+  JSON, which a template conditional breaks; a topic is the repository's to add, as its
+  description is.
+- **Steps 1 and 2 are one change.** Without step 2's `Catalog`, step 1's analyzer had no type for
+  `AssemblyQualityTests` to read, and generating it was the verification of both.
+- **The analyzer keeps `AssemblyQualityTests`,** which the plan did not mention: BNAQ1004 and
+  BNAQ1005 read an analyzer's assembly as well as a library's, and all four pass on it.
+- **`--rule-prefix` needs a lowercase twin.** The README's anchors are the IDs in lower case, which a
+  `replaces` of `BNXX` does not reach: a generated symbol, `RulePrefixLower`, replaces `bnxx`.
+  Found by `RulesCatalogTests` on the first generation.
 
 ## xunit.v3 4.x, part 1 — outside the plans
 

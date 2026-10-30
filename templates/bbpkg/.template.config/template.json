@@ -38,6 +38,62 @@
           { "type": "ref", "value": "name" }
         ]
       }
+    },
+    "Analyzer": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "A Roslyn analyzer package instead of a library: netstandard2.0, packed under analyzers/dotnet/cs, with a sample rule to replace and the analyzer's guard tests."
+    },
+    "//RulePrefix": [
+      "BN and the product's initials, the family's scheme: BNCQ for CodeQuality. Every rule's ID",
+      "starts with it, and a consumer's suppressions name those IDs, so it never changes after the",
+      "first release. BNXX is visibly not a choice; the README's rules table shows it until one is made."
+    ],
+    "RulePrefix": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "With --analyzer: the prefix of every rule's ID, BN and the product's initials, e.g. BNCQ. It never changes after the first release.",
+      "replaces": "BNXX",
+      "defaultValue": "BNXX"
+    },
+    "//RulePrefixLower": "The README's anchors: a heading's anchor is its text in lower case.",
+    "RulePrefixLower": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": {
+        "source": "RulePrefix",
+        "toLower": true
+      },
+      "replaces": "bnxx"
     }
-  }
+  },
+
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "(Analyzer)",
+          "exclude": [
+            "src/PkgStem/Greeting.cs",
+            "tests/PkgStem.Tests/GreetingTests.cs",
+            "tests/PkgStem.Tests/Packaging/TrimmableTests.cs"
+          ]
+        },
+        {
+          "condition": "(!Analyzer)",
+          "exclude": [
+            "src/PkgStem/AnalyzerReleases.*.md",
+            "src/PkgStem/Catalog.cs",
+            "src/PkgStem/ScopedAnalyzer.cs",
+            "src/PkgStem/Rules/**",
+            "tests/PkgStem.Tests/AnalyzerConventionTests.cs",
+            "tests/PkgStem.Tests/RulesCatalogTests.cs",
+            "tests/PkgStem.Tests/Packaging/AnalyzerShapeTests.cs",
+            "tests/PkgStem.Tests/Rules/**"
+          ]
+        }
+      ]
+    }
+  ]
 }

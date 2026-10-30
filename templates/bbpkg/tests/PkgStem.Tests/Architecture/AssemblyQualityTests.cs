@@ -20,7 +20,11 @@ namespace PkgStem.Tests.Architecture;
 /// </remarks>
 public sealed class AssemblyQualityTests
 {
+#if (Analyzer)
+    private static readonly Assembly Shipped = typeof(Catalog).Assembly;
+#else
     private static readonly Assembly Shipped = typeof(Greeting).Assembly;
+#endif
 
     /// <summary>
     /// BNAQ1005: every grant compiled into the library names an assembly the repository's two grant
