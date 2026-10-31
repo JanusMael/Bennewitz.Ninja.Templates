@@ -32,11 +32,12 @@ section):
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
 4. **`release-target.cs` evaluates a level's projects together** (the maintainer, 2026-10-31,
-   through `choices`, for `ReleaseTargetTests`, 90 of the root suite's 155 s). Found first: seven tests
-   that evaluate projects take 35 of the class's 50 s alone, one `dotnet msbuild` process per project
-   at most of a second each. The change is on a local branch, `perf/release-target-parallel`, all 40 tests
-   passing, not merged: the class timings did not show a gain above their noise, serial 50, 52 and
-   72 s against parallel 39, 82 and 54 s. Next, time the script on one fixture, with fewer moving parts.
+   through `choices`, for `ReleaseTargetTests`, 90 of the root suite's 155 s): done, in the canonical
+   script, unreleased. Found first: seven tests that evaluate projects take 35 of the class's 50 s
+   alone, one `dotnet msbuild` process per project at most of a second each. On the tests'
+   four-project fixture, `projects` went from a median of 2,793 ms to 973 ms, six alternating rounds,
+   the ranges apart; the class's own timings, 50 to 72 s either way, were too noisy to show it. Each
+   family repository takes it when it next syncs.
 5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's
    conformance reaches its `main` and its CI runs the check green. DiffView is not watched from this
    session (the maintainer's word, 2026-09-28). [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2)
