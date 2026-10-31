@@ -6,81 +6,43 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-10-22 after `Bennewitz.Ninja.Templates
-2026.4.1022` was released and verified from nuget.org (its section below); item 2 updated 2026-10-29
-when AssemblyQuality released from Inspections and Inspections' links were repointed, when
-`plans/00011` was approved, when AssemblyQuality's old policy was deleted and the last link pull
-requests merged, and as `plans/00011`'s steps were done.*
+*Replaced, never appended, at each handoff. Rewritten 2026-10-31 after `Bennewitz.Ninja.Templates
+2026.4.1031` was released and verified from nuget.org, and the family synced to it (its section
+below).*
 
-**Next, in order** (the maintainer's decisions of 2026-10-09 and 2026-10-22, below among the locked
-decisions):
-1. **Sent 2026-10-22; follow up when each repository syncs.** The note to each family repository,
-   from `check --repo` run against each that day: issues AppServices#16, ScopedEditors#12,
-   AutoVersioning#6, FileServer#12, JsonC#4 and CodeQuality#3 (no session running), and messages to
-   the AssemblyQuality, XamlQuality and DiffView sessions. Every copy of the script was drifted; the
-   retired key remains in AppServices, ScopedEditors, AssemblyQuality, JsonC and CodeQuality; no
-   repository globs. TrueCourseCalculator, Geo.Core and GeoHash have no remote and no session, so
-   they had no note. What it was to carry, so each adopts the friend grants and the release's other
-   conventions on its next sync: FileServer and ScopedEditors (each documents "grants
-   to tests only"), AssemblyQuality (its BNAQ fixtures opt out with `SolutionFriendGrants=false`), and
-   TrueCourseCalculator, Geo.Core and GeoHash (multi-targeted, prefixed assemblies: a grant to them in
-   an External file needs the `// repo-conventions: assembly name` marker). AppServices has already
-   adopted the grants (JanusMael/Bennewitz.Ninja.AppServices#9). The same note says the `"trimming"`
-   key is retired: drop it from `repository.json`. TrueCourseCalculator, Geo.Core and GeoHash also push
-   `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script (local-only today: no
-   remote, no script copy). Each `Bennewitz.Ninja.*` library also starts failing `Trimming` on its next
-   sync if its repository trims and the library lacks `IsTrimmable` or `EnableTrimAnalyzer`.
-2. **[`plans/00009`](plans/00009-package-consolidation.md): Inspections is done, steps 5 to 7, and
-   AssemblyQuality released from it** (their sections below). Next, in order:
-   - **[`plans/00011`](plans/00011-package-families-completed.md), approved 2026-10-29**: steps 1
-     to 5 done, released as `2026.4.1029` and Inspections synced: **complete** (its section
-     below). Next, [`plans/00012`](plans/00012-every-packed-readme-is-a-nuget-page.md), every
-     packed README fit for nuget.org: approved 2026-10-29, released as `2026.4.1030`: **complete**
-     (its section below). JsonC#6, AppServices#17, ScopedEditors#13 and AutoVersioning#7 say what
-     each fixes when it syncs. AppKit merges onto that release. The `Pkcs` pin goes to
-     `plans/00010`.
-   - **`plans/00008` step 3**, side 2 of the trimming enforcement, written from here (the
-     maintainer, 2026-10-30), in the canonical `repo-conventions.cs` as the plan places it: **done**,
-     its row in that plan's section below. Released with the release item 3 names, not alone (the
-     maintainer, 2026-10-30): it fails no family repository today.
-     Each repository takes it when it syncs.
-     [Inspections#106](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/issues/106) says its
-     XamlQuality `Trimming` exemption stays: side 2 does not cover a repository's own libraries.
-   - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path,
-     so such an image is dropped and only the package's owners see a warning. `plans/00012` checks
-     links, not images; no family README carries an image today. A plan follows only when one first
-     does (the maintainer, 2026-10-30).
-   - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
-   - **Both old policies on nuget.org are gone.** AssemblyQuality's after its first release from
-     Inspections; CodeQuality's on 2026-10-30, by the maintainer, without one (its drift entry below).
+**Next, in order** (the maintainer's decisions, below among the locked decisions and in each
+section):
+1. **The family is synced to `2026.4.1031`** (2026-10-31, its release section): AutoVersioning,
+   JsonC, AppServices, ScopedEditors and FileServer, one pull request each, every sync issue closed,
+   and Inspections. AutoVersioning, JsonC, AppServices and ScopedEditors released `2026.4.1031`;
+   FileServer's package did not change. Left for the maintainer: `apply` then `check --admin` in each,
+   which need the maintainer's login. Not synced from here: DiffView, its own session's, and
+   TrueCourseCalculator, Geo.Core and GeoHash, which have no remote and push `artifacts/*.nupkg`,
+   which the no-glob rule fails once they adopt the script.
+2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is AppKit.
    - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
      note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
      renamed repository's name before any release (step 6's finding).
-3. **xunit.v3 4.x, part 1: done here, unreleased** (its section below; the maintainer's scope of
-   2026-10-30 from [docs/xunit-v3-4.md](docs/xunit-v3-4.md)): this repository and every template on
-   `4.0.2`, TrxReport removed, the `Parallelization` attribute in `bbavalonia` and `mstest-to-xunit`.
-   Part 2 follows as each family repository syncs, AppServices and ScopedEditors with the attribute.
-   Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia supports 4.x.
-   **The release waits for `plans/00010`** (the maintainer, 2026-10-30, through `choices`): one
-   Templates release carries side 2, this move and the analyzer option, on the maintainer's word.
-4. **[`plans/00010`](plans/00010-an-analyzer-package.md), an analyzer package from the template:
-   approved 2026-10-30**; steps 1 to 4 done; step 5, the release, under way on the maintainer's
-   word of 2026-10-31: its first run failed before any push, and the tag moves to the fix (its
-   section below). Its open points were settled through
-   `choices` the same day, before approval, as the plan has them:
-   `dotnet new bbpkg --analyzer` rather than a sixth template, `--rule-prefix` defaulting to `BNXX`,
-   and a sample rule in place of `Greeting`. Drawn from `git diff e457b5d v2026.3.925` in
-   JanusMael/Bennewitz.Ninja.CodeQuality and that code as it lives in Inspections.
+   - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
+   - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
+     `plans/00012` checks links, not images; no family README carries an image today. A plan follows
+     only when one first does (the maintainer, 2026-10-30).
+3. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
+   part 2 done in the syncs, AppServices, ScopedEditors, FileServer and JsonC on `4.0.2`, AutoVersioning
+   testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
+   supports 4.x.
+4. **`release-target.cs` evaluates a level's projects together** (the maintainer, 2026-10-31,
+   through `choices`, for `ReleaseTargetTests`, 90 of the root suite's 155 s). Found first: seven tests
+   that evaluate projects take 35 of the class's 50 s alone, one `dotnet msbuild` process per project
+   at most of a second each. The change is on a local branch, `perf/release-target-parallel`, all 40 tests
+   passing, not merged: the class timings did not show a gain above their noise, serial 50, 52 and
+   72 s against parallel 39, 82 and 54 s. Next, time the script on one fixture, with fewer moving parts.
 5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's
    conformance reaches its `main` and its CI runs the check green. DiffView is not watched from this
    session (the maintainer's word, 2026-09-28). [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2)
    is superseded and will be closed, not merged (DiffView's session, 2026-10-30, on the maintainer's
    word): its replacement is DiffView's item 24, `77b844c`, on a local branch stacked behind another,
-   which stays local until the maintainer says push. Its script copy is the template's at
-   `v2026.4.1030`, and locally it conforms at every depth.
-6. **The root suite's slowest class, `ReleaseTargetTests`, 90 of 155 s:** find why its `notes` and
-   `projects` tests take 3 to 10 s each before splitting it by verb (the maintainer, 2026-10-31,
-   through `choices`).
+   which stays local until the maintainer says push.
 
 **Waiting on others:**
 - DiffView conforms only locally: item 24 waits for the maintainer's word to push its stack, then its
@@ -1747,7 +1709,7 @@ also carries `plans/00008` side 2 and the xunit.v3 4.x move, on the maintainer's
 | 2 · The base, `Catalog`, the sample rule and the guard tests | **done** 2026-10-30 | Below |
 | 3 · The `verify-release` case | **done** 2026-10-30 | Below |
 | 4 · The documents | **done** 2026-10-30 | The package README's table and examples, the package's description and tags, this repository's `AGENTS.md`, and `docs/repository-conventions.md`'s steps and its analyzer role name the option. `bbpkg`'s own root `AGENTS.md` was the shared file the plan's list missed: its trimmable invariant named `TrimmableTests` in every form, and is conditional now. The plain form is still today's, file for file; the root tests and this repository's own `check` pass |
-| 5 · A Templates release, on the maintainer's word | **in progress** 2026-10-31 | It also carries `plans/00008` side 2 and the xunit.v3 4.x move. The first run failed before any push, on a defect of step 3's: below |
+| 5 · A Templates release, on the maintainer's word | **done** 2026-10-31 | `2026.4.1031`, its section below, verified from nuget.org with `verify-release --published`. It also carries `plans/00008` side 2 and the xunit.v3 4.x move. The first run failed before any push, on a defect of step 3's: below. **`plans/00010` is complete** |
 
 ### Steps 1 and 2, as built
 
@@ -1867,6 +1829,44 @@ Unreleased. It is the change of its own that side 2 of `plans/00008` waits to sh
 out on the maintainer's word. AppServices and ScopedEditors also need the attribute in
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
+
+## Release `2026.4.1031`
+
+Three changes, released together by the maintainer's decision of 2026-10-30, on the word given
+through `choices` on 2026-10-31: `plans/00010`, a Roslyn analyzer package from `dotnet new bbpkg
+--analyzer [--rule-prefix …]` (#63 to #65); `plans/00008` side 2, the `TrimmablePackages` rule (#58);
+and xunit.v3 `4.0.2` in this repository and every template, without TrxReport (#60).
+
+The first run, on `f39e165`, failed in `verify-release` before any push: the analyzer case looked for
+`1.0.0`, and a release packs at its own version (`plans/00010`'s section, *Step 5, the first run*).
+Fixed by #68, and the tag moved to its merge, `b708753`, by the maintainer's decision, since nothing
+had been published. The second run,
+[41215269649](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/41215269649),
+passed every gate, pushed `Bennewitz.Ninja.Templates 2026.4.1031` and made the GitHub release with
+it. Verified against the feed: the flat container lists `2026.4.1031`, and `verify-release --published
+2026.4.1031` installed it from nuget.org and passed all seven cases, the analyzer's `BNLN1001`
+reported in a consumer's build from the package alone, every app publishing for `win-x64`.
+
+### The family, synced the same day
+
+By the maintainer's decisions of 2026-10-31: driven from here, one pull request each, dependencies
+first, each merged when green; a repository releases after its sync only where its package changed,
+on the maintainer's word per tag.
+
+| Repository | Sync | Released |
+|---|---|---|
+| AutoVersioning | #8, `06bb660`: symbols embedded in Release, the friend grants (its root project kept off their files), the packed README's links absolute. Closes #6, #7 | `2026.4.1031` |
+| JsonC | #7, `48b7ccf`: the friend grants, its own grant gone, `PublicVersion` moved to `Directory.Build.targets`, the retired `"trimming"` key gone, the README's *Releasing* section dropped. Closes #4, #6. xunit part 2 followed alone, in #8, `765968e` | `2026.4.1031` |
+| AppServices | #18, `7fe414e`: the retired key gone, the README's *Releasing* section dropped, xunit.v3 `4.0.2` with the `Parallelization` attribute; the AOT jobs green on it. Closes #16, #17 | `2026.4.1031`, all five ids |
+| ScopedEditors | #14, `b8c6f69`: the friend grants, its own grant and its "tests only" rule gone, `PublicVersion` moved, the retired key gone, the README's *Releasing* section dropped, xunit.v3 `4.0.2` with the attribute. Closes #12, #13 | `2026.4.1031`, all three ids |
+| FileServer | #13, `b40a424`: the friend grants, the library opted out with `SolutionFriendGrants=false` so its CLI keeps to the public API, xunit.v3 `4.0.2`. Closes #12 | Not released: the package did not change |
+| Inspections | #112, `b3477cf`: the scripts; `release-target.cs` was already current | AssemblyQuality `2026.4.1031`, for #110, separately |
+
+Every release run passed and the flat container lists each id at `2026.4.1031`. Each sync was run as
+its CI runs it before the pull request: build, tests, pack, `assert-packages`, `check`; AppServices'
+AOT publish needs Visual Studio's C++ tools, missing here, so its CI ran it first. `apply` and
+`check --admin` read and write each repository's settings, which need the maintainer's login, and
+were not run. DiffView is its own session's; TrueCourseCalculator, Geo.Core and GeoHash have no remote.
 
 ## Release `2026.4.1030`
 
