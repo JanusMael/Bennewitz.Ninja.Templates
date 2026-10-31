@@ -64,8 +64,9 @@ decisions):
    **The release waits for `plans/00010`** (the maintainer, 2026-10-30, through `choices`): one
    Templates release carries side 2, this move and the analyzer option, on the maintainer's word.
 4. **[`plans/00010`](plans/00010-an-analyzer-package.md), an analyzer package from the template:
-   approved 2026-10-30**; steps 1 to 4 done; step 5, the release, waits for the maintainer's word
-   (its section below). Its open points were settled through
+   approved 2026-10-30**; steps 1 to 4 done; step 5, the release, under way on the maintainer's
+   word of 2026-10-31: its first run failed before any push, and the tag moves to the fix (its
+   section below). Its open points were settled through
    `choices` the same day, before approval, as the plan has them:
    `dotnet new bbpkg --analyzer` rather than a sixth template, `--rule-prefix` defaulting to `BNXX`,
    and a sample rule in place of `Greeting`. Drawn from `git diff e457b5d v2026.3.925` in
@@ -77,6 +78,9 @@ decisions):
    word): its replacement is DiffView's item 24, `77b844c`, on a local branch stacked behind another,
    which stays local until the maintainer says push. Its script copy is the template's at
    `v2026.4.1030`, and locally it conforms at every depth.
+6. **The root suite's slowest class, `ReleaseTargetTests`, 90 of 155 s:** find why its `notes` and
+   `projects` tests take 3 to 10 s each before splitting it by verb (the maintainer, 2026-10-31,
+   through `choices`).
 
 **Waiting on others:**
 - DiffView conforms only locally: item 24 waits for the maintainer's word to push its stack, then its
@@ -1743,7 +1747,7 @@ also carries `plans/00008` side 2 and the xunit.v3 4.x move, on the maintainer's
 | 2 · The base, `Catalog`, the sample rule and the guard tests | **done** 2026-10-30 | Below |
 | 3 · The `verify-release` case | **done** 2026-10-30 | Below |
 | 4 · The documents | **done** 2026-10-30 | The package README's table and examples, the package's description and tags, this repository's `AGENTS.md`, and `docs/repository-conventions.md`'s steps and its analyzer role name the option. `bbpkg`'s own root `AGENTS.md` was the shared file the plan's list missed: its trimmable invariant named `TrimmableTests` in every form, and is conditional now. The plain form is still today's, file for file; the root tests and this repository's own `check` pass |
-| 5 · A Templates release, on the maintainer's word | next | It also carries `plans/00008` side 2 and the xunit.v3 4.x move |
+| 5 · A Templates release, on the maintainer's word | **in progress** 2026-10-31 | It also carries `plans/00008` side 2 and the xunit.v3 4.x move. The first run failed before any push, on a defect of step 3's: below |
 
 ### Steps 1 and 2, as built
 
@@ -1797,6 +1801,27 @@ case alone, in a copy holding `bbpkg` only, the generated repository's 23 tests 
 |---|---|
 | A second file packed under `analyzers/dotnet/cs` | the package read: `carries more than analyzers/dotnet/cs/Linter.dll` |
 | The consumer expected to show `BNLN1002` | the consumer build: `never reported its public StringHelper` |
+
+### Step 5, the first run
+
+The maintainer's word came through `choices` on 2026-10-31, and `v2026.4.1031` was pushed on
+`f39e165`. Run `41211391382` failed in *Verify the template end to end*, before login, push or
+release, all three skipped: nothing reached nuget.org and there is no GitHub release.
+
+⛔ **The analyzer case looked for `1.0.0`, and a release packs at the version being released.** The
+release workflow puts `VERSION` in the job's environment, MSBuild reads an environment variable as a
+property, so the generated repository's `dotnet pack` inside `verify-release` produced
+`Bennewitz.Ninja.Linter.2026.4.1031.nupkg`, and `VerifyAnalyzer` reported `No
+Bennewitz.Ninja.Linter.1.0.0.nupkg`. Every run of step 3 was local, with no `VERSION` set, so none
+could see it. The other packing cases never name a version: `assert-packages` takes the folder.
+
+The fix reads the package's id and version from each `.nupkg`'s manifest, requires exactly one of the
+expected id, and restores the consumer at that version; the log line names the file it read.
+`verify-release` with `VERSION=2026.4.1031` in its environment then passed all 7 cases on this
+machine. The tag moves to the fix rather than the version moving to another day, by the maintainer's
+decision of 2026-10-31: the version was never published, so a tag on the commit actually built keeps
+the tag, the build and the release in agreement, where the rule against re-tagging guards a version
+that was.
 
 ### Drift from `plans/00010`
 
