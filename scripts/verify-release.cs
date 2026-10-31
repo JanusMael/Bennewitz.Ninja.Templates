@@ -203,7 +203,7 @@ const string ConsumerProject = """
         <Nullable>enable</Nullable>
       </PropertyGroup>
       <ItemGroup>
-        <PackageReference Include="__ID__" Version="1.0.0" />
+        <PackageReference Include="__ID__" Version="__VERSION__" />
       </ItemGroup>
     </Project>
     """;
@@ -841,12 +841,25 @@ string? VerifyAnalyzer(Case entry, string generated, string packages, string exp
 {
     Step("Read the analyzer package");
 
-    string nupkg = Path.Combine(packages, $"{expectedId}.1.0.0.nupkg");
+    // ⚠ Its version is whatever the pack was given, never assumed: the release workflow puts VERSION
+    // in the job's environment, and MSBuild reads an environment variable as a property, so in a
+    // release the generated repository packs at the version being released, not at 1.0.0.
+    (string Nupkg, string Version)[] packed =
+    [
+        .. Directory.EnumerateFiles(packages, "*.nupkg", SearchOption.TopDirectoryOnly)
+            .Where(path => !path.EndsWith(".snupkg", StringComparison.OrdinalIgnoreCase))
+            .Select(path => (Nupkg: path, Identity: PackageIdentity(path)))
+            .Where(item => string.Equals(item.Identity.Id, expectedId, StringComparison.OrdinalIgnoreCase))
+            .Select(item => (item.Nupkg, item.Identity.Version)),
+    ];
 
-    if (!File.Exists(nupkg))
+    if (packed.Length != 1)
     {
-        return $"No {Path.GetFileName(nupkg)} in {packages}.";
+        return $"Expected one {expectedId} package in {packages}, got {packed.Length}: "
+            + string.Join(", ", Directory.EnumerateFiles(packages).Select(Path.GetFileName));
     }
+
+    (string nupkg, string version) = packed[0];
 
     string analyzer = $"analyzers/dotnet/cs/{entry.Stem}.dll";
 
@@ -893,7 +906,7 @@ string? VerifyAnalyzer(Case entry, string generated, string packages, string exp
         }
     }
 
-    Console.WriteLine($"  {analyzer} alone; a development dependency, with no dependencies");
+    Console.WriteLine($"  {Path.GetFileName(nupkg)}: {analyzer} alone; a development dependency, with no dependencies");
 
     Step("Build a consumer of the packed analyzer");
 
@@ -905,10 +918,13 @@ string? VerifyAnalyzer(Case entry, string generated, string packages, string exp
     File.WriteAllText(Path.Combine(consumer, "Directory.Build.targets"), "<Project />\n");
     File.WriteAllText(Path.Combine(consumer, "Directory.Packages.props"), "<Project />\n");
     File.WriteAllText(Path.Combine(consumer, "NuGet.config"), ConsumerNuGet.Replace("__SOURCE__", packages, StringComparison.Ordinal));
-    File.WriteAllText(Path.Combine(consumer, "Consumer.csproj"), ConsumerProject.Replace("__ID__", expectedId, StringComparison.Ordinal));
+    File.WriteAllText(Path.Combine(consumer, "Consumer.csproj"), ConsumerProject
+        .Replace("__ID__", expectedId, StringComparison.Ordinal)
+        .Replace("__VERSION__", version, StringComparison.Ordinal));
     File.WriteAllText(Path.Combine(consumer, "StringHelper.cs"), "namespace Consumer;\n\npublic class StringHelper { }\n");
 
-    // ⛔ A package cache of its own: the global one would serve an earlier run's 1.0.0 of this id.
+    // ⛔ A package cache of its own: the global one would serve an earlier run's package of this id
+    // and version.
     if (!Dotnet(["build", "Consumer.csproj", "--nologo", "-tl:off", "-p:RestorePackagesPath=" + Path.Combine(consumer, "packages")], consumer, out string consumerLog))
     {
         return "The consumer does not build against the packed analyzer:" + Environment.NewLine + consumerLog;
@@ -922,6 +938,18 @@ string? VerifyAnalyzer(Case entry, string generated, string packages, string exp
 
     Console.WriteLine($"  {rule} reported the consumer's StringHelper, from the package alone");
     return null;
+}
+
+// The id and version a .nupkg's manifest declares.
+(string Id, string Version) PackageIdentity(string nupkg)
+{
+    using ZipArchive archive = ZipFile.OpenRead(nupkg);
+    ZipArchiveEntry nuspec = archive.Entries.Single(item => item.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+    using Stream stream = nuspec.Open();
+    XDocument manifest = XDocument.Load(stream);
+    XNamespace ns = manifest.Root!.Name.Namespace;
+    XElement? metadata = manifest.Root.Element(ns + "metadata");
+    return ((string?)metadata?.Element(ns + "id") ?? "", (string?)metadata?.Element(ns + "version") ?? "");
 }
 
 // Publishes one generated app for this machine's runtime identifier, with the arguments its own
