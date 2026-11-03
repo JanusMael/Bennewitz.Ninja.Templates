@@ -44,6 +44,12 @@ section):
    is superseded and will be closed, not merged (DiffView's session, 2026-10-30, on the maintainer's
    word): its replacement is DiffView's item 24, `77b844c`, on a local branch stacked behind another,
    which stays local until the maintainer says push.
+6. **Markdown checked out as LF** (the maintainer, 2026-11-03, its section below): a conventions
+   FAIL, in the canonical script, unreleased. AutoVersioning, the one repository without it, adds a
+   `.gitattributes` at its next sync.
+7. **`Microsoft.VisualStudio.Threading.Analyzers` with only `VSTHRD101` and `VSTHRD110` on**, family
+   wide (the maintainer, 2026-11-03, after Inspections measured it on DiffView: no defect in 49
+   sites, both rules silent), after item 6: a template change, then a sync.
 
 **Waiting on others:**
 - DiffView conforms only locally: item 24 waits for the maintainer's word to push its stack, then its
@@ -108,6 +114,10 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   - The family is told about the friend grants after that release, in one note per repository.
   - bleedink.com's `/version` defect goes to its session by message.
   - The previous session's leftover worktrees are removed once each is checked clean and merged.
+- Decided 2026-11-03, through `choices`:
+  - Markdown is checked out as LF in every repository, a conventions FAIL (DiffView's request), next.
+  - Then the family adopts `Microsoft.VisualStudio.Threading.Analyzers` with only `VSTHRD101` and
+    `VSTHRD110` on.
 
 ## Status
 
@@ -1268,6 +1278,31 @@ Who it reaches today, read from GitHub on 2026-10-22: no family repository. Auto
 glob that day (its `aa0b9bd`, PR #5), and FileServer already had; a stale local checkout of either
 still shows one. TrueCourseCalculator, Geo.Core and GeoHash glob, but are local-only and carry no
 script.
+
+## Markdown checked out as LF — outside the plans
+
+DiffView's request of 2026-11-01, on the maintainer's agreement of 2026-10-30 that agent-facing
+markdown is LF, placed next by the maintainer on 2026-11-03. On a Windows git with `core.autocrlf`
+true, a repository without an `eol=lf` rule checks its markdown out as CRLF: the maintainer's global
+`CLAUDE.md` was CRLF on all 528 of its lines (DiffView, measured 2026-10-30).
+
+`LineEndings.Check` reads the root `.gitattributes` as git does, for `README.md` and
+`docs/guide.md`, and fails when either is not `eol=lf`: a missing file, a pattern anchored to the
+root alone, a later `eol=crlf`, or `-text`. It runs in `check` and `check --offline`, not at
+`--release` depth, so a publish is not stopped for it. Documented as its own section of
+`docs/repository-conventions.md`, with a row in the table of what every repository carries and a
+step in bringing one in.
+
+`apply` does not write it, as DiffView asked: `apply` writes GitHub's settings through the API and
+never commits a file, so the finding names the line to add and the fix goes in a pull request.
+
+**Measured against git, 2026-11-03.** The check's verdict matched `git check-attr text eol` for both
+probes in all eight family checkouts at `main`. Seven conform, with `* text=auto eol=lf`, which a
+later `*.md text` does not undo, or FileServer's `*.md text eol=lf`; **AutoVersioning has no
+`.gitattributes` at all** and fails. The tests' eight cases are git's verdicts on the same text, and
+the four failing ones and the missing file each fail against the script without the check.
+
+Each family repository takes it at its next sync; AutoVersioning's sync adds the file.
 
 ## The root tests in 93 s instead of about 260 — outside the plans
 
