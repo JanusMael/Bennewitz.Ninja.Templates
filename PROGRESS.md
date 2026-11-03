@@ -6,19 +6,23 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-10-31 after `Bennewitz.Ninja.Templates
-2026.4.1031` was released and verified from nuget.org, and the family synced to it (its section
+*Replaced, never appended, at each handoff. Rewritten 2026-11-03 after `Bennewitz.Ninja.Templates
+2026.4.1103` was released and verified from nuget.org, and the family synced to it (its section
 below).*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **The family is synced to `2026.4.1031`** (2026-10-31, its release section): AutoVersioning,
-   JsonC, AppServices, ScopedEditors and FileServer, one pull request each, every sync issue closed,
-   and Inspections. AutoVersioning, JsonC, AppServices and ScopedEditors released `2026.4.1031`;
-   FileServer's package did not change. Left for the maintainer: `apply` then `check --admin` in each,
-   which need the maintainer's login. Not synced from here: DiffView, its own session's, and
+1. **The family is synced to `2026.4.1103`** (2026-11-03, its release section): AutoVersioning,
+   JsonC, AppServices, ScopedEditors, FileServer and Inspections, one pull request each.
+   **AppServices' and ScopedEditors' packages changed**: `VSTHRD101` reported four async lambdas
+   copying to the clipboard, now named handlers guarded whole, so each releases on the maintainer's
+   word. The others' packages did not change. Left for the maintainer: `apply` then `check --admin`
+   in each, which need the maintainer's login. Not synced from here: DiffView, its own session's, and
    TrueCourseCalculator, Geo.Core and GeoHash, which have no remote and push `artifacts/*.nupkg`,
    which the no-glob rule fails once they adopt the script.
+   - FileServer's `.gitignore` lacks the template's `packages/`, so packing into `./packages` locally,
+     as CI's `pack` step does, makes `check` fail on a missing `packages/AGENTS.md`. CI runs `check`
+     in a job of its own and never sees it; not changed in the sync.
 2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is AppKit.
    - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
      note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
@@ -31,25 +35,12 @@ section):
    part 2 done in the syncs, AppServices, ScopedEditors, FileServer and JsonC on `4.0.2`, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
-4. **`release-target.cs` evaluates a level's projects together** (the maintainer, 2026-10-31,
-   through `choices`, for `ReleaseTargetTests`, 90 of the root suite's 155 s): done, in the canonical
-   script, unreleased. Found first: seven tests that evaluate projects take 35 of the class's 50 s
-   alone, one `dotnet msbuild` process per project at most of a second each. On the tests'
-   four-project fixture, `projects` went from a median of 2,793 ms to 973 ms, six alternating rounds,
-   the ranges apart; the class's own timings, 50 to 72 s either way, were too noisy to show it. Each
-   family repository takes it when it next syncs.
-5. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's
+4. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's
    conformance reaches its `main` and its CI runs the check green. DiffView is not watched from this
    session (the maintainer's word, 2026-09-28). [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2)
    is superseded and will be closed, not merged (DiffView's session, 2026-10-30, on the maintainer's
    word): its replacement is DiffView's item 24, `77b844c`, on a local branch stacked behind another,
    which stays local until the maintainer says push.
-6. **Markdown checked out as LF** (the maintainer, 2026-11-03, its section below): a conventions
-   FAIL, in the canonical script, unreleased. AutoVersioning, the one repository without it, adds a
-   `.gitattributes` at its next sync.
-7. **`Microsoft.VisualStudio.Threading.Analyzers` with only `VSTHRD101` and `VSTHRD110` on**, family
-   wide (the maintainer, 2026-11-03, its section below): in every template and this repository,
-   unreleased. Each family repository takes it at its next sync.
 
 **Waiting on others:**
 - DiffView conforms only locally: item 24 waits for the maintainer's word to push its stack, then its
@@ -1302,7 +1293,8 @@ later `*.md text` does not undo, or FileServer's `*.md text eol=lf`; **AutoVersi
 `.gitattributes` at all** and fails. The tests' eight cases are git's verdicts on the same text, and
 the four failing ones and the missing file each fail against the script without the check.
 
-Each family repository takes it at its next sync; AutoVersioning's sync adds the file.
+Released in `2026.4.1103`, and the family synced to it the same day; AutoVersioning's sync added the
+file (that release's section).
 
 ## Two threading rules in every repository — outside the plans
 
@@ -1323,7 +1315,9 @@ async lambda given to `List.ForEach` and `VSTHRD110` on an unawaited call, and n
 `VSTHRD200`, which is off. This repository's own tests and scripts build and pass with the rules on,
 212 of 212, and `verify-release` builds and tests every generated repository with them.
 
-Nothing enforces the package in a repository yet: each family repository takes it at its next sync.
+Released in `2026.4.1103`, and the family synced to it the same day (that release's section).
+`VSTHRD101` reported four sites, AppServices' three copy handlers and ScopedEditors' one, and nothing
+else in the family; `VSTHRD110` reported nothing.
 
 ## The root tests in 93 s instead of about 260 — outside the plans
 
@@ -1886,6 +1880,44 @@ Unreleased. It is the change of its own that side 2 of `plans/00008` waits to sh
 out on the maintainer's word. AppServices and ScopedEditors also need the attribute in
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
+
+## Release `2026.4.1103`
+
+Two changes, released on the maintainer's word "Release templates" on 2026-11-03: markdown checked
+out as LF, a conventions FAIL (#71), and `Microsoft.VisualStudio.Threading.Analyzers` with only
+`VSTHRD101` and `VSTHRD110` on, in every template and this repository (#72), each its section above.
+`release-target.cs` evaluating a level's projects together, unreleased since 2026-10-31, went out with
+them.
+
+`verify-release` passed on `e1662c4`'s tree before the tag. The run,
+[41663041305](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/41663041305),
+passed every gate, pushed `Bennewitz.Ninja.Templates 2026.4.1103` and made the GitHub release with
+it. Verified against the feed: the flat container lists `2026.4.1103`, and `verify-release --published
+2026.4.1103` installed it from nuget.org and passed all seven cases, every app publishing for
+`win-x64`.
+
+### The family, synced the same day
+
+By the maintainer's decisions of 2026-10-31, as for `2026.4.1031`, and of 2026-11-03 for the four
+async lambdas `VSTHRD101` reported: each became a named handler whose whole body is one try/catch that
+reports the failure, with a suppression attribute rather than a pragma wherever one was needed. None
+was.
+
+| Repository | Sync | Released |
+|---|---|---|
+| AutoVersioning | #9, `c0ddb1d`: the scripts, the analyzers, and the template's `.gitattributes`, the one repository without it. Its index was already LF, so no file changed with it | Not released: the package did not change |
+| JsonC | #9, `e2561c4`: the scripts and the analyzers. Its PROGRESS gains the `2026.4.1031` row it lacked | Not released: the package did not change |
+| AppServices | #19, `0c2dfae`: the scripts and the analyzers. `VSTHRD101` reported three copy handlers in `.Avalonia`: `FatalErrorDialog`'s, `NonFatalNoticeDialog`'s, and the path glyph's in `AvaloniaDialogService`. Each now logs a failed copy through Serilog | Not yet: `.Avalonia` changed, so it releases on the maintainer's word |
+| ScopedEditors | #15, `8128f90`: the scripts and the analyzers. `VSTHRD101` reported `CopyValue`'s *Copy value* handler, which now reports a failed copy through Avalonia's logger, the repository having none of its own | Not yet: `.Avalonia` changed, so it releases on the maintainer's word |
+| FileServer | #14, `f3e3739`: the scripts and the analyzers, the build block closing a root props that has no AutoVersioning reference to sit beside | Not released: the package did not change |
+| Inspections | #121, `6fdd3cf`: the scripts, `release-target.cs` among them, and the analyzers. `projects --family` names the same projects as the old script for all three families, in a quarter to a half of the time | Not released: no family's package changed |
+
+Each sync was run as its CI runs it before the pull request: build with warnings as errors, tests,
+pack, `assert-packages`, `check`, and FileServer's sample and smoke test, ScopedEditors' trim check and
+Inspections' `real-code`. Where `VSTHRD101` reported, the old lambdas put back failed the build at
+exactly those sites. No packed nuspec gained a dependency. AppServices' AOT jobs and FileServer's
+container image ran only in their CI, which passed before each merge. `apply` and `check --admin` need
+the maintainer's login, and were not run.
 
 ## Release `2026.4.1031`
 
