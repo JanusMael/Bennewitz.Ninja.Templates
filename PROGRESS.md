@@ -48,8 +48,8 @@ section):
    FAIL, in the canonical script, unreleased. AutoVersioning, the one repository without it, adds a
    `.gitattributes` at its next sync.
 7. **`Microsoft.VisualStudio.Threading.Analyzers` with only `VSTHRD101` and `VSTHRD110` on**, family
-   wide (the maintainer, 2026-11-03, after Inspections measured it on DiffView: no defect in 49
-   sites, both rules silent), after item 6: a template change, then a sync.
+   wide (the maintainer, 2026-11-03, its section below): in every template and this repository,
+   unreleased. Each family repository takes it at its next sync.
 
 **Waiting on others:**
 - DiffView conforms only locally: item 24 waits for the maintainer's word to push its stack, then its
@@ -1303,6 +1303,27 @@ later `*.md text` does not undo, or FileServer's `*.md text eol=lf`; **AutoVersi
 the four failing ones and the missing file each fail against the script without the check.
 
 Each family repository takes it at its next sync; AutoVersioning's sync adds the file.
+
+## Two threading rules in every repository — outside the plans
+
+The maintainer's decision of 2026-11-03, after Inspections measured
+`Microsoft.VisualStudio.Threading.Analyzers` on DiffView, the family's most async code: 49 sites and
+no defect, and `VSTHRD101` and `VSTHRD110` silent. The family takes the package for those two alone:
+`VSTHRD101`, an async lambda given where a void delegate is expected, which makes it async void and
+ends the process on a throw, and `VSTHRD110`, a task nobody awaits, whose failure is lost. Both are
+the ground Inspections' plan 00005 left to this package.
+
+Every template, and this repository, references `18.12.1`, the newest stable, privately, in
+`Directory.Packages.props` and `Directory.Build.props`; `NoWarn` turns off the other 27 of the 29
+rules the package carries, read from its DLLs: the `JoinableTaskFactory` rules and the style ones. The
+two left are warnings, so errors under the family's warnings-as-errors.
+
+**Proven:** a probe built in this repository's tests, then deleted, failed with `VSTHRD101` on an
+async lambda given to `List.ForEach` and `VSTHRD110` on an unawaited call, and nothing for
+`VSTHRD200`, which is off. This repository's own tests and scripts build and pass with the rules on,
+212 of 212, and `verify-release` builds and tests every generated repository with them.
+
+Nothing enforces the package in a repository yet: each family repository takes it at its next sync.
 
 ## The root tests in 93 s instead of about 260 — outside the plans
 

@@ -8,6 +8,12 @@
     <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.928" />
   </ItemGroup>
 
+  <ItemGroup Label="Analysis">
+    <!-- Microsoft.VisualStudio.Threading.Analyzers, for two of its rules; Directory.Build.props
+         says which and turns the rest off. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
+  </ItemGroup>
+
   <ItemGroup Label="API">
     <!-- The OpenAPI document at /openapi/v1.json, generated at build time and AOT-safe. Keep it on
          the same 10.0 servicing line as the ASP.NET Core runtime. -->

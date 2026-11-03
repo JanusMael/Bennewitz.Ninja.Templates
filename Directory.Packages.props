@@ -8,6 +8,12 @@
     <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.928" />
   </ItemGroup>
 
+  <ItemGroup Label="Analysis">
+    <!-- Microsoft.VisualStudio.Threading.Analyzers, for two of its rules; Directory.Build.props
+         says which and turns the rest off. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
+  </ItemGroup>
+
   <ItemGroup Label="Tools">
     <!-- scripts/mstest-to-xunit.cs. File-based apps honour central package management, so the
          script's `#:package` carries no version (NU1008 otherwise) and the pin lives here.

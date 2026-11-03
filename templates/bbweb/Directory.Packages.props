@@ -8,6 +8,12 @@
     <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.928" />
   </ItemGroup>
 
+  <ItemGroup Label="Analysis">
+    <!-- Microsoft.VisualStudio.Threading.Analyzers, for two of its rules; Directory.Build.props
+         says which and turns the rest off. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
+  </ItemGroup>
+
   <ItemGroup Label="Family">
     <!-- The entry point: an unhandled exception reported on stderr and exit 1, and the version flag
          answered before the host is built. References nothing beyond the framework. -->
