@@ -543,6 +543,61 @@ public sealed class RepoConventionsTests
         Assert.Contains("FAIL drift: scripts/repo-conventions.cs differs from the template's", result.Output, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Markdown is checked out as LF, read from the root .gitattributes as git reads it, for a markdown
+    /// file at the root and one in a directory. Each verdict is git's own, from <c>git check-attr</c>
+    /// on the same text, measured 2026-11-03.
+    /// </summary>
+    [Theory]
+    [InlineData("* text=auto eol=lf\n", true)]
+    [InlineData("*.md text eol=lf\n", true)]
+    [InlineData("**/*.md text eol=lf\n", true)]
+    [InlineData("* text=auto\n", false)]
+    [InlineData("* text=auto eol=lf\n*.md -text\n", false)]
+    [InlineData("* text=auto eol=lf\n*.md eol=crlf\n", false)]
+    [InlineData("/*.md text eol=lf\n", false)]
+    public void Markdown_is_checked_out_as_LF_or_the_check_fails(string gitattributes, bool passes)
+    {
+        Fixture fixture = Conforming();
+        fixture.Files[".gitattributes"] = gitattributes;
+
+        Result result = fixture.Run("check", "--admin");
+
+        if (passes)
+        {
+            Assert.True(result.ExitCode == 0, result.Output);
+        }
+        else
+        {
+            Assert.Equal(1, result.ExitCode);
+            Assert.Contains("FAIL line-endings: .gitattributes gives ", result.Output, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_missing_gitattributes_fails_offline_too()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files.Remove(".gitattributes");
+
+        Result result = fixture.Run("check", "--offline");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL line-endings: .gitattributes is missing", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>A publish is not stopped for line endings, as it is not for any other drift.</summary>
+    [Fact]
+    public void Release_depth_does_not_stop_a_publish_for_line_endings()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files.Remove(".gitattributes");
+
+        Result result = fixture.Run("check", "--release");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+    }
+
     [Fact]
     public void Apply_writes_the_baseline_and_updates_an_existing_ruleset_in_place()
     {
@@ -624,6 +679,8 @@ public sealed class RepoConventionsTests
         {
             ["README.md"] = "# Fixture\n",
             ["PROGRESS.md"] = "# Progress\n",
+            // The family's own form: a later `*.md text` keeps the eol=lf the first line gives.
+            [".gitattributes"] = "* text=auto eol=lf\n*.md text\n",
             // Names an id, so this repository publishes to nuget.org and must carry the nuget topic.
             ["packages.push"] = "# Published ids.\n\nFixture.Widget\n",
             ["AGENTS.md"] = "# Fixture\n\nThe conventions are in docs/repository-conventions.md.\n",

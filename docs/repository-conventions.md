@@ -22,6 +22,7 @@ not generated from the template adopts the same files by hand; see
 | `CLAUDE.md` | beside every `AGENTS.md` | The single line `@AGENTS.md` | `check` |
 | `.github/copilot-instructions.md` | `.github/` | A pointer to the root `AGENTS.md` | `check` |
 | `.github/repository.json` | `.github/` | What varies per repository: description, topics, required checks, exemptions | `check` |
+| `.gitattributes` | root | [Markdown checked out as LF](#markdown-is-checked-out-as-lf) on every machine: `* text=auto eol=lf`, as the template's has, or at least `*.md text eol=lf` | `check` |
 | `scripts/repo-conventions.cs` | `scripts/` | The enforcer, identical to the template's copy | `check --repo`, run from this repository |
 | A `conventions` CI job | `.github/workflows/ci.yml` | Runs `check` on every push and pull request | the `main` ruleset requires it |
 | A preflight step | `.github/workflows/release.yml` | Runs `check --release` before anything is published | the release itself |
@@ -44,6 +45,21 @@ nuget.org version is permanent: one stray package is published for good.
 `action-gh-release` step. The whole workflow is read, not one step, so a glob on a continued or
 folded command line is caught. A workflow that publishes nothing may glob: CI listing its packages
 ships nothing. Comment lines are skipped.
+
+## Markdown is checked out as LF
+
+**Every repository's markdown is checked out with LF line endings, on every machine.** A Windows git
+with `core.autocrlf` true checks a text file out as CRLF unless `.gitattributes` says otherwise, and
+the documents agents read are markdown: the tools that hash, diff, match or edit them by exact text
+then see a `\r` the same file does not have on Linux or macOS. Markdown readers do not care, so
+nothing else shows it.
+
+The root `.gitattributes` says so with `* text=auto eol=lf`, as the template's does, or at least
+`*.md text eol=lf`. `check` reads it as git does, for a markdown file at the root and one in a
+directory, and fails when either is not `eol=lf`: a missing file, a pattern anchored to the root
+alone, a later `eol=crlf`, or `-text`. A later `*.md text` keeps the `eol=lf` an earlier line gave.
+It runs at every depth but `--release`: a publish is not stopped for it. `apply` writes GitHub's
+settings and never commits a file, so the fix is a change to `.gitattributes` in a pull request.
 
 ## Package families
 
@@ -390,10 +406,10 @@ dotnet run --file scripts/repo-conventions.cs -- grants
 
 | Command | Run by | What it does |
 |---|---|---|
-| `check` | CI, on every push and pull request | Documentation, markers, package globs, families, description, topics, homepage, feature toggles, rulesets, required checks |
+| `check` | CI, on every push and pull request | Documentation, markers, package globs, families, description, topics, homepage, feature toggles, rulesets, required checks, markdown line endings |
 | `check --release` | the release workflow | Only what is prescribed: the documents, the markers, the package globs, a non-empty description, the friend grants and, where there are families, the families' rules. A drifted setting does not stop a publish |
 | `check --admin` | the maintainer | Everything, including the merge options and security toggles; fails on anything unreadable |
-| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, the families, the required checks against the workflows, the build properties, the friend grants, and the script copy |
+| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, the families, the required checks against the workflows, the build properties, the friend grants, the script copy, and the markdown line endings |
 | `grants` | anyone, after adding, removing or renaming a project | Writes `AssemblyInfo.InternalsVisibleTo.cs` from the projects' assembly names, and an empty External file when there is none. Asks nothing of GitHub |
 | `apply --dry-run` | the maintainer | Prints every request `apply` would send |
 | `apply` | the maintainer | Writes the description, homepage, topics, baseline settings, security toggles and both rulesets |
@@ -431,7 +447,8 @@ What generation does is marked ✅; the rest is yours.
    every `.cs` beneath it, and the build fails with `CS9314` on the script's `#!` line. Add
    `scripts\**` to that project's `DefaultItemExcludes` in the same change, and run the
    repository's own build before pushing: `check` compiles the script alone and cannot see this.
-2. Write `.github/repository.json`, listing in `requiredChecks` only jobs that already exist.
+2. Write `.github/repository.json`, listing in `requiredChecks` only jobs that already exist, and
+   a root `.gitattributes` with [markdown checked out as LF](#markdown-is-checked-out-as-lf).
 3. Add the `conventions` job to CI and the preflight step to the release workflow, as the template's
    workflows have them.
 4. Write the documents. A directory that holds nothing written by hand, such as committed build
