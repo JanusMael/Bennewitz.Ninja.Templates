@@ -14,15 +14,11 @@ below).*
 section):
 1. **The family is synced to `2026.4.1103`** (2026-11-03, its release section): AutoVersioning,
    JsonC, AppServices, ScopedEditors, FileServer and Inspections, one pull request each.
-   **AppServices' and ScopedEditors' packages changed**: `VSTHRD101` reported four async lambdas
-   copying to the clipboard, now named handlers guarded whole, so each releases on the maintainer's
-   word. The others' packages did not change. Left for the maintainer: `apply` then `check --admin`
-   in each, which need the maintainer's login. Not synced from here: DiffView, its own session's, and
-   TrueCourseCalculator, Geo.Core and GeoHash, which have no remote and push `artifacts/*.nupkg`,
-   which the no-glob rule fails once they adopt the script.
-   - FileServer's `.gitignore` lacks the template's `packages/`, so packing into `./packages` locally,
-     as CI's `pack` step does, makes `check` fail on a missing `packages/AGENTS.md`. CI runs `check`
-     in a job of its own and never sees it; not changed in the sync.
+   AppServices and ScopedEditors released `2026.4.1103` the same day, on the maintainer's word, with
+   the four copy handlers `VSTHRD101` reported; the others' packages did not change. All six, and
+   this repository, conform to `check --admin`, so `apply` had nothing to write. Not synced from
+   here: DiffView, its own session's, and TrueCourseCalculator, Geo.Core and GeoHash, which have
+   no remote and push `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
 2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is AppKit.
    - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
      note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
@@ -1907,8 +1903,8 @@ was.
 |---|---|---|
 | AutoVersioning | #9, `c0ddb1d`: the scripts, the analyzers, and the template's `.gitattributes`, the one repository without it. Its index was already LF, so no file changed with it | Not released: the package did not change |
 | JsonC | #9, `e2561c4`: the scripts and the analyzers. Its PROGRESS gains the `2026.4.1031` row it lacked | Not released: the package did not change |
-| AppServices | #19, `0c2dfae`: the scripts and the analyzers. `VSTHRD101` reported three copy handlers in `.Avalonia`: `FatalErrorDialog`'s, `NonFatalNoticeDialog`'s, and the path glyph's in `AvaloniaDialogService`. Each now logs a failed copy through Serilog | Not yet: `.Avalonia` changed, so it releases on the maintainer's word |
-| ScopedEditors | #15, `8128f90`: the scripts and the analyzers. `VSTHRD101` reported `CopyValue`'s *Copy value* handler, which now reports a failed copy through Avalonia's logger, the repository having none of its own | Not yet: `.Avalonia` changed, so it releases on the maintainer's word |
+| AppServices | #19, `0c2dfae`: the scripts and the analyzers. `VSTHRD101` reported three copy handlers in `.Avalonia`: `FatalErrorDialog`'s, `NonFatalNoticeDialog`'s, and the path glyph's in `AvaloniaDialogService`. Each now logs a failed copy through Serilog | `2026.4.1103`, the same day, on the maintainer's word |
+| ScopedEditors | #15, `8128f90`: the scripts and the analyzers. `VSTHRD101` reported `CopyValue`'s *Copy value* handler, which now reports a failed copy through Avalonia's logger, the repository having none of its own | `2026.4.1103`, the same day, on the maintainer's word |
 | FileServer | #14, `f3e3739`: the scripts and the analyzers, the build block closing a root props that has no AutoVersioning reference to sit beside | Not released: the package did not change |
 | Inspections | #121, `6fdd3cf`: the scripts, `release-target.cs` among them, and the analyzers. `projects --family` names the same projects as the old script for all three families, in a quarter to a half of the time | Not released: no family's package changed |
 
@@ -1918,6 +1914,25 @@ Inspections' `real-code`. Where `VSTHRD101` reported, the old lambdas put back f
 exactly those sites. No packed nuspec gained a dependency. AppServices' AOT jobs and FileServer's
 container image ran only in their CI, which passed before each merge. `apply` and `check --admin` need
 the maintainer's login, and were not run.
+
+### AppServices and ScopedEditors released, and FileServer's `packages/`
+
+On the maintainer's word the same day, AppServices and ScopedEditors were tagged `v2026.4.1103` on
+the sync's merge commits. Neither repository's release workflow or `packages.push` had changed since
+`v2026.4.1031` published through the same policy, so no preflight was run. Both runs,
+[AppServices 41714321001](https://github.com/JanusMael/Bennewitz.Ninja.AppServices/actions/runs/41714321001)
+and [ScopedEditors 41714350564](https://github.com/JanusMael/Bennewitz.Ninja.ScopedEditors/actions/runs/41714350564),
+pushed every id. Verified against the feed: the flat container lists `2026.4.1103` for all eight ids,
+and a project outside the family, referencing `AppServices.Avalonia`, `AppServices.EntryPoint` and
+`ScopedEditors.Avalonia` at that exact version with nuget.org its only source, restored all eight.
+
+FileServer#15, `bebcee4`: `.gitignore` ignores `packages/`, as the template's does. CI packs into
+`./packages/Release`, and the same step run locally left a folder `check` failed on as a top-level
+directory without an `AGENTS.md`. With the folder present, `check` now conforms.
+
+`check --admin --repo` then ran for this repository and the six synced ones. It needs a login that
+can read the admin-only settings, and the maintainer's `gh` login on this machine can. All seven
+conform at admin depth, so `apply` had nothing to write and was not run.
 
 ## Release `2026.4.1031`
 
