@@ -7,6 +7,12 @@
   <ItemGroup Label="Versioning">
     <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.928" />
   </ItemGroup>
+
+  <ItemGroup Label="Analysis">
+    <!-- Microsoft.VisualStudio.Threading.Analyzers, for two of its rules; Directory.Build.props
+         says which and turns the rest off. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
+  </ItemGroup>
 <!--#if (Analyzer) -->
 
   <PropertyGroup Label="Roslyn">
