@@ -39,12 +39,15 @@ section):
 
 **Waiting on others:**
 - DiffView's conformance is on its `main`: `7bb970d`, with `conventions` green in run `41651995944` on
-  `8ae466f`, 2026-11-03. Left for DiffView, read from GitHub on 2026-11-04:
-  - DiffView#2 closed, superseded by that work and conflicting with `main`. `plans/00009` step 4
-    wants `gh pr list` empty, and DiffView's session has it as the maintainer's or its own to close.
+  `8ae466f`, 2026-11-03. Left for DiffView, read from GitHub on 2026-11-04 and passed to its session
+  by message the same day:
+  - DiffView#2 to close: still open, superseded by that work and conflicting with `main`.
+    `plans/00009` step 4 wants `gh pr list` empty, and DiffView's session has it as the maintainer's
+    or its own to close.
   - `packages.push`, which step 4 names and `main` does not have.
   - `"trimming": "required"`, item 4 above.
-  - `conventions` made required: `repository.json` lists five checks, and not that one.
+  - `conventions` made required: `repository.json` lists five checks, and not that one. `apply` reads
+    the list from that file, so it goes there first; step 4 does not ask for it.
   - `scripts/repo-conventions.cs` brought up to this repository's copy, the one finding
     `check --admin --repo` reports.
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
