@@ -8,7 +8,7 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 *Replaced, never appended, at each handoff. Rewritten 2026-11-03 after `Bennewitz.Ninja.Templates
 2026.4.1103` was released and verified from nuget.org, and the family synced to it (its section
-below).*
+below). Corrected 2026-11-04 for DiffView, whose `main` had moved.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
@@ -20,9 +20,9 @@ section):
    here: DiffView, its own session's, and TrueCourseCalculator, Geo.Core and GeoHash, which have
    no remote and push `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
 2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is AppKit.
-   - **Step 8, AppKit**, after step 4, DiffView conforming, which DiffView's own session was sent one
-     note about on 2026-10-29 and is not followed up from here. Its policy must be edited to the
-     renamed repository's name before any release (step 6's finding).
+   - **Step 8, AppKit**, after step 4, DiffView conforming, which is not finished: under *Waiting on
+     others*. Its policy must be edited to the renamed repository's name before any release (step 6's
+     finding).
    - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images; no family README carries an image today. A plan follows
@@ -31,16 +31,22 @@ section):
    part 2 done in the syncs, AppServices, ScopedEditors, FileServer and JsonC on `4.0.2`, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
-4. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 closes when DiffView's
-   conformance reaches its `main` and its CI runs the check green. DiffView is not watched from this
-   session (the maintainer's word, 2026-09-28). [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2)
-   is superseded and will be closed, not merged (DiffView's session, 2026-10-30, on the maintainer's
-   word): its replacement is DiffView's item 24, `77b844c`, on a local branch stacked behind another,
-   which stays local until the maintainer says push.
+4. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 waits on DiffView requiring
+   trimming. Its conformance reached `main` and CI's `conventions` job passes there, but its
+   `.github/repository.json` has no `"trimming": "required"`, which the step's record expected from
+   [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2). DiffView is not watched
+   from this session (the maintainer's word, 2026-09-28).
 
 **Waiting on others:**
-- DiffView conforms only locally: item 24 waits for the maintainer's word to push its stack, then its
-  merge, `apply`, the `conventions` job made required, and DiffView#2 closed.
+- DiffView's conformance is on its `main`: `7bb970d`, with `conventions` green in run `41651995944` on
+  `8ae466f`, 2026-11-03. Left for DiffView, read from GitHub on 2026-11-04:
+  - DiffView#2 closed, superseded by that work and conflicting with `main`. `plans/00009` step 4
+    wants `gh pr list` empty, and DiffView's session has it as the maintainer's or its own to close.
+  - `packages.push`, which step 4 names and `main` does not have.
+  - `"trimming": "required"`, item 4 above.
+  - `conventions` made required: `repository.json` lists five checks, and not that one.
+  - `scripts/repo-conventions.cs` brought up to this repository's copy, the one finding
+    `check --admin --repo` reports.
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
   passed to its session on 2026-10-09.
 
@@ -1393,7 +1399,7 @@ accepted with the plan.
 | 1 · AutoVersioning: `packages.push`, no glob push | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.AutoVersioning#5, merged as `aa0b9bd`, `build` and `conventions` green. The queued release's no-glob rule confirms it on the next sync. The preflight has not been run |
 | 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
 | 3 · Templates: multi-family support | **done**, released 2026-10-23 as `2026.4.1023` | Below; [JanusMael/Bennewitz.Ninja.Templates#41](https://github.com/JanusMael/Bennewitz.Ninja.Templates/pull/41). `verify-release --published 2026.4.1023` passed |
-| 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. Blocks AppKit only. DiffView#2 is superseded by DiffView's local item 24 and will be closed (2026-10-30, above); the step's check is unchanged: `conventions` green in DiffView itself, and `gh pr list` empty |
+| 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. Blocks AppKit only. DiffView#2 is superseded by the conformance now on DiffView's `main` and will be closed (2026-10-30, above); the step's check is unchanged: `conventions` green in DiffView itself, which it is, and `gh pr list` empty, which it is not. `packages.push`, which the step names, is absent (2026-11-04) |
 | 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
