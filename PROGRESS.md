@@ -1404,7 +1404,7 @@ accepted with the plan.
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
 | 8 · AppKit | after Inspections | |
-| 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy deleted by the maintainer the same day. XamlQuality and CodeQuality when each next changes |
+| 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29, **CodeQuality done** 2026-11-04 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy deleted by the maintainer the same day. `codequality/v2026.4.1104`, on the maintainer's word, with `plans/00005`'s six rules in Inspections: the feed lists it, the nuspec names Inspections, `BNCQ1009` fires from the installed package. Its old policy went on 2026-10-30, below. XamlQuality when it next changes |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
 | 11 · Links | **Inspections' done** 2026-10-29 | Below. AppKit's after step 8, by the maintainer's decision |
 
