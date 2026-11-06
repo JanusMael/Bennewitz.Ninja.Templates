@@ -9,7 +9,7 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Rewritten 2026-11-03 after `Bennewitz.Ninja.Templates
 2026.4.1103` was released and verified from nuget.org, and the family synced to it (its section
 below). Corrected 2026-11-04 for DiffView, whose `main` had moved, and 2026-11-06, `plans/00004`
-closing.*
+closing and DiffView finishing `plans/00009` step 4.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
@@ -17,13 +17,13 @@ section):
    JsonC, AppServices, ScopedEditors, FileServer and Inspections, one pull request each.
    AppServices and ScopedEditors released `2026.4.1103` the same day, on the maintainer's word, with
    the four copy handlers `VSTHRD101` reported; the others' packages did not change. All six, and
-   this repository, conform to `check --admin`, so `apply` had nothing to write. Not synced from
-   here: DiffView, its own session's, and TrueCourseCalculator, Geo.Core and GeoHash, which have
-   no remote and push `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
+   this repository, conform to `check --admin`, so `apply` had nothing to write. DiffView synced
+   itself on 2026-11-06. Not synced: TrueCourseCalculator, Geo.Core and GeoHash, which have no
+   remote and push `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
 2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is AppKit.
-   - **Step 8, AppKit**, after step 4, DiffView conforming, which is not finished: under *Waiting on
-     others*. Its policy must be edited to the renamed repository's name before any release (step 6's
-     finding).
+   - **Step 8, AppKit**: step 4 finished on 2026-11-06, so nothing blocks it but the maintainer's
+     word on the rename. Its policy must be edited to the renamed repository's name before any
+     release (step 6's finding).
    - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images; no family README carries an image today. A plan follows
@@ -34,18 +34,6 @@ section):
    supports 4.x.
 
 **Waiting on others:**
-- DiffView's conformance is on its `main`: `7bb970d`, with `conventions` green in run `41651995944` on
-  `8ae466f`, 2026-11-03. Left for DiffView, read from GitHub on 2026-11-06 and passed to its session
-  by message. DiffView is not watched from this session (the maintainer's word, 2026-09-28):
-  - [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) to close: still open,
-    superseded by that work and conflicting with `main`. `plans/00009` step 4 wants `gh pr list`
-    empty, and DiffView's session has it as the maintainer's or its own to close.
-  - DiffView#44, open and mergeable: ordinary work, but step 4's empty list needs it merged too.
-  - `packages.push`, which step 4 names and `main` does not have.
-  - `conventions` made required: `repository.json` lists five checks, and not that one. `apply` reads
-    the list from that file, so it goes there first; step 4 does not ask for it.
-  - `scripts/repo-conventions.cs` brought up to this repository's copy, the one finding
-    `check --admin --repo` reports.
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
   passed to its session on 2026-10-09.
 
@@ -785,7 +773,8 @@ which is `plans/00008`'s and found nothing in DiffView on 2026-10-30, and the cu
 property check has not run over DiffView; that comes with its sync. The maintainer chose to close
 the step now rather than after the sync. From 2026-11-04 to 2026-11-06 this file and two notes to
 DiffView's session listed the key as a gap, read from the rows above without checking them against
-`plans/00008`; DiffView's session caught it.
+`plans/00008`; DiffView's session caught it. Its sync followed the same day: `main` at `0ca1d54`
+carries this repository's script, blob `7be1c18`, and `conventions` passed in run `42273505615`.
 
 ⛔ **FileServer's library is analyzer-clean when marked, and marking it breaks its consumers.** With
 its three `MapGet(string, Delegate)` calls moved to `RequestDelegate` handlers, the trim analyzer and
@@ -1413,11 +1402,11 @@ accepted with the plan.
 | 1 · AutoVersioning: `packages.push`, no glob push | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.AutoVersioning#5, merged as `aa0b9bd`, `build` and `conventions` green. The queued release's no-glob rule confirms it on the next sync. The preflight has not been run |
 | 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
 | 3 · Templates: multi-family support | **done**, released 2026-10-23 as `2026.4.1023` | Below; [JanusMael/Bennewitz.Ninja.Templates#41](https://github.com/JanusMael/Bennewitz.Ninja.Templates/pull/41). `verify-release --published 2026.4.1023` passed |
-| 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. Blocks AppKit only. DiffView#2 is superseded by the conformance now on DiffView's `main` and will be closed (2026-10-30, above); the step's check is unchanged: `conventions` green in DiffView itself, which it is, and `gh pr list` empty, which it is not: #2 and #44 on 2026-11-06. `packages.push`, which the step names, is absent (2026-11-06) |
+| 4 · DiffView conforms | **done** 2026-11-06 | DiffView's own session, the maintainer's word of 2026-10-22 keeping that of 2026-09-24. Read from GitHub: `main` at `0ca1d54` (DiffView#45), `conventions` and the other five jobs passed in run `42273505615`, `gh pr list` empty with #2 closed and #44 merged, `packages.push` names `Bennewitz.Ninja.DiffView.Core` and `.Avalonia`, and `scripts/repo-conventions.cs` is this repository's blob `7be1c18`. `check --admin --repo` conforms. Two left as they are, reported by DiffView's session as the maintainer's choice: `conventions` is not a required check, which the step does not ask for and the AppKit move would make short-lived; `release.yml` is unchanged, having never run, because AppKit replaces it |
 | 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
-| 8 · AppKit | after Inspections | |
+| 8 · AppKit | unblocked 2026-11-06; waits on the maintainer's word | Steps 4 to 7 are done. Its renames are the maintainer's to authorize |
 | 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29, **CodeQuality done** 2026-11-04 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy deleted by the maintainer the same day. `codequality/v2026.4.1104`, on the maintainer's word, with `plans/00005`'s six rules in Inspections: the feed lists it, the nuspec names Inspections, `BNCQ1009` fires from the installed package. Its old policy went on 2026-10-30, below. XamlQuality when it next changes |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
 | 11 · Links | **Inspections' done** 2026-10-29 | Below. AppKit's after step 8, by the maintainer's decision |
