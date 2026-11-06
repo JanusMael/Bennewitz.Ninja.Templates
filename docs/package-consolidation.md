@@ -163,3 +163,13 @@ these out is still to be written.
 | 6 | **The repositories that empty out are archived with a pointer.** AssemblyQuality, CodeQuality, ScopedEditors and DiffView each get a final README commit naming the new home, then go read-only | Every published version links to its repository forever. Archiving keeps those links working. Deleting would break them |
 | 7 | **`AgentForge.*` is renamed `Bennewitz.Ninja.AgentForge.*`, stays in ClaudeForge, and keeps publishing to GitHub Packages.** Whether it goes public is a later decision | The bare ids belong to another owner on nuget.org. Renaming while private costs nothing, and one feed per repository stays true |
 | 8 | **Two conformance gaps are fixed during the work.** XamlQuality gains `packages.push`, which it needs anyway inside Inspections. AutoVersioning gains `packages.push` and stops pushing `*.nupkg` | A glob push publishes whatever pack produced, permanently, and is the failure `packages.local` exists to prevent |
+
+## Outcome — 2026-11-06
+
+| Repository | Families | Ids | How it landed |
+|---|---|---|---|
+| `Bennewitz.Ninja.Inspections` | XamlQuality, AssemblyQuality, CodeQuality | 5 | Grouping A in full. XamlQuality's repository renamed; AssemblyQuality and CodeQuality archived |
+| `Bennewitz.Ninja.AppKit` | AppServices, ScopedEditors | 8 | Variant B−, not decision 2's full grouping. AppServices' repository renamed; ScopedEditors archived |
+| `Bennewitz.Ninja.DiffView` | DiffView | 2 | Stays its own repository, not archived, with development active there. The maintainer's decision of 2026-11-06 |
+
+`plans/00009` carried this out, and `PROGRESS.md` holds how each step went.

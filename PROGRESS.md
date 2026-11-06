@@ -9,7 +9,7 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 *Replaced, never appended, at each handoff. Rewritten 2026-11-03 after `Bennewitz.Ninja.Templates
 2026.4.1103` was released and verified from nuget.org, and the family synced to it (its section
 below). Corrected 2026-11-04 for DiffView, whose `main` had moved, and 2026-11-06, `plans/00004`
-closing and DiffView finishing `plans/00009` step 4.*
+closing, DiffView finishing `plans/00009` step 4, and AppKit landing without DiffView.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
@@ -20,11 +20,10 @@ section):
    this repository, conform to `check --admin`, so `apply` had nothing to write. DiffView synced
    itself on 2026-11-06. Not synced: TrueCourseCalculator, Geo.Core and GeoHash, which have no
    remote and push `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
-2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is AppKit.
-   - **Step 8, AppKit**: step 4 finished on 2026-11-06, so nothing blocks it but the maintainer's
-     word on the rename. Its policy must be edited to the renamed repository's name before any
-     release (step 6's finding).
-   - **Step 11, AppKit's links**, after step 8; DiffView's among them. Inspections' are done.
+2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is step 9.
+   - **Step 9**: XamlQuality, AppServices and ScopedEditors each release from their new home when
+     they next change, on the maintainer's word. DiffView has no such release: the maintainer kept it
+     in its own repository (step 8, below).
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images; no family README carries an image today. A plan follows
      only when one first does (the maintainer, 2026-10-30).
@@ -1406,10 +1405,10 @@ accepted with the plan.
 | 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
-| 8 · AppKit | unblocked 2026-11-06; waits on the maintainer's word | Steps 4 to 7 are done. Its renames are the maintainer's to authorize |
+| 8 · AppKit | **done** 2026-11-06, two families of three | Below. `main` at `05ba4bb`, every job green in run `42298194345`, `check --admin` conforms, the preflight logged in, run `42296189806`. ScopedEditors archived. DiffView stays in its own repository, by the maintainer's decision |
 | 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29, **CodeQuality done** 2026-11-04 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy deleted by the maintainer the same day. `codequality/v2026.4.1104`, on the maintainer's word, with `plans/00005`'s six rules in Inspections: the feed lists it, the nuspec names Inspections, `BNCQ1009` fires from the installed package. Its old policy went on 2026-10-30, below. XamlQuality when it next changes |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
-| 11 · Links | **Inspections' done** 2026-10-29 | Below. AppKit's after step 8, by the maintainer's decision |
+| 11 · Links | **done** 2026-11-06 | Below. Inspections' on 2026-10-29; AppKit's in JanusMael/Bennewitz.Ninja.Inspections#126, where two passages named ScopedEditors' code. The search finds one more on purpose: `tools/real-code/inputs.json` keeps ScopedEditors' URL, because the commit it pins exists only there |
 
 ### Step 3, as built
 
@@ -1581,8 +1580,37 @@ Each is a candidate for `bbpkg`, not yet a change here:
   GHSA-846f-f764-76mx (2026-10-13) made a restore error. CodeQuality's own `main` has failed restore
   so since that date, unseen. An analyzer template (`plans/00010`) would meet it first.
 
+### Step 8, 2026-11-06
+
+AppKit holds two families, not three. AppServices is renamed `Bennewitz.Ninja.AppKit`, ScopedEditors'
+history is imported and its repository archived, and DiffView stays in `Bennewitz.Ninja.DiffView`,
+which is not archived. `main` is `05ba4bb`, on the import `6865533` on AppServices' `0c2dfae`: all nine
+tags kept their exact commits, so the source links of published packages still resolve, and
+ScopedEditors' tags are `scopededitors/v…`. Every job passed on that commit, run `42298194345`, and
+`check --admin` conforms. The policy is new, names AppKit, and logged in on the blank-version
+preflight, run `42296189806`.
+
+**Run on a pull request first, then renamed.** The other jobs were read before the rename, which
+Inspections did the other way round, so `conventions` was the only red check to explain.
+
+**The merge was replaced twice.** AppKit#20 needed a merge commit, and the repository disallows them,
+so GitHub's button offered only a squash, which dropped the imports. `d335f63` replaced it as a real
+merge commit, by the maintainer's choice. When the maintainer then kept DiffView out, they had its
+removal and the rewrite done together: nothing after `6865533` survives, including AppKit#21, whose
+work DiffView's session confirmed it did not need from here. A pull request that must merge by merge
+commit has to have merge commits allowed first, or be merged by whoever knows why.
+
+**GitHub still holds the old commits**, through `refs/pull/20` and `refs/pull/21` and those pull
+requests' pages. A fresh clone has none of them; only GitHub Support can purge them.
+
 ### Drift from `plans/00009`
 
+- **DiffView stayed out of AppKit**, against decision 2 and step 8. The maintainer decided on
+  2026-11-06, with development active there; step 7's archive does not apply to it, and step 9 has no
+  DiffView release. AppKit is the record's Variant B−.
+- **A policy's repository cannot be edited**, the maintainer found on 2026-11-06, so a renamed
+  repository needs a new policy and the old one deleted, not decision 20's edit. Step 6's entries here
+  and in Inspections say edited.
 - **CodeQuality's old policy went before its first release from Inspections**, which decision 20
   waited for. Chosen by the maintainer on 2026-10-30, through `choices`: the policy named the
   archived CodeQuality repository, which can run no workflow, so it could never publish again and
