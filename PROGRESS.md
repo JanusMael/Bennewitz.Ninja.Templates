@@ -1405,7 +1405,7 @@ accepted with the plan.
 | 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
-| 8 · AppKit | **done** 2026-11-06, two families of three | Below. `main` at `05ba4bb`, every job green in run `42298194345`, `check --admin` conforms, the preflight logged in, run `42296189806`. ScopedEditors archived. DiffView stays in its own repository, by the maintainer's decision |
+| 8 · AppKit | **done** 2026-11-06, two families of three | Below. `main` at `05ba4bb`, every job green in run `42298194345`, `check --admin` conforms, the preflight logged in, run `42300352526`. ScopedEditors archived. DiffView stays in its own repository, by the maintainer's decision |
 | 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29, **CodeQuality done** 2026-11-04 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy deleted by the maintainer the same day. `codequality/v2026.4.1104`, on the maintainer's word, with `plans/00005`'s six rules in Inspections: the feed lists it, the nuspec names Inspections, `BNCQ1009` fires from the installed package. Its old policy went on 2026-10-30, below. XamlQuality when it next changes |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
 | 11 · Links | **done** 2026-11-06 | Below. Inspections' on 2026-10-29; AppKit's in JanusMael/Bennewitz.Ninja.Inspections#126, where two passages named ScopedEditors' code. The search finds one more on purpose: `tools/real-code/inputs.json` keeps ScopedEditors' URL, because the commit it pins exists only there |
@@ -1587,8 +1587,10 @@ history is imported and its repository archived, and DiffView stays in `Bennewit
 which is not archived. `main` is `05ba4bb`, on the import `6865533` on AppServices' `0c2dfae`: all nine
 tags kept their exact commits, so the source links of published packages still resolve, and
 ScopedEditors' tags are `scopededitors/v…`. Every job passed on that commit, run `42298194345`, and
-`check --admin` conforms. The policy is new, names AppKit, and logged in on the blank-version
-preflight, run `42296189806`.
+`check --admin` conforms. The policy is new, names AppKit with a pattern for each of the two
+families, and logged in on the blank-version preflight, run `42300352526`. ScopedEditors' old policy
+stays until that family's first release from here, as step 9 says: the maintainer's decision, unlike
+CodeQuality's.
 
 **Run on a pull request first, then renamed.** The other jobs were read before the rename, which
 Inspections did the other way round, so `conventions` was the only red check to explain.
@@ -1601,7 +1603,8 @@ work DiffView's session confirmed it did not need from here. A pull request that
 commit has to have merge commits allowed first, or be merged by whoever knows why.
 
 **GitHub still holds the old commits**, through `refs/pull/20` and `refs/pull/21` and those pull
-requests' pages. A fresh clone has none of them; only GitHub Support can purge them.
+requests' pages. A fresh clone has none of them. The maintainer decided to leave them: DiffView's
+code is public in its own repository, and only GitHub Support could purge them.
 
 ### Drift from `plans/00009`
 
