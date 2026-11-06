@@ -8,7 +8,8 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 *Replaced, never appended, at each handoff. Rewritten 2026-11-03 after `Bennewitz.Ninja.Templates
 2026.4.1103` was released and verified from nuget.org, and the family synced to it (its section
-below). Corrected 2026-11-04 for DiffView, whose `main` had moved.*
+below). Corrected 2026-11-04 for DiffView, whose `main` had moved, and 2026-11-06, `plans/00004`
+closing.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
@@ -31,21 +32,16 @@ section):
    part 2 done in the syncs, AppServices, ScopedEditors, FileServer and JsonC on `4.0.2`, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
-4. [`plans/00004`](plans/00004-standard-build-properties.md) step 8 waits on DiffView requiring
-   trimming. Its conformance reached `main` and CI's `conventions` job passes there, but its
-   `.github/repository.json` has no `"trimming": "required"`, which the step's record expected from
-   [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2). DiffView is not watched
-   from this session (the maintainer's word, 2026-09-28).
 
 **Waiting on others:**
 - DiffView's conformance is on its `main`: `7bb970d`, with `conventions` green in run `41651995944` on
-  `8ae466f`, 2026-11-03. Left for DiffView, read from GitHub on 2026-11-04 and passed to its session
-  by message the same day:
-  - DiffView#2 to close: still open, superseded by that work and conflicting with `main`.
-    `plans/00009` step 4 wants `gh pr list` empty, and DiffView's session has it as the maintainer's
-    or its own to close.
+  `8ae466f`, 2026-11-03. Left for DiffView, read from GitHub on 2026-11-06 and passed to its session
+  by message. DiffView is not watched from this session (the maintainer's word, 2026-09-28):
+  - [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2) to close: still open,
+    superseded by that work and conflicting with `main`. `plans/00009` step 4 wants `gh pr list`
+    empty, and DiffView's session has it as the maintainer's or its own to close.
+  - DiffView#44, open and mergeable: ordinary work, but step 4's empty list needs it merged too.
   - `packages.push`, which step 4 names and `main` does not have.
-  - `"trimming": "required"`, item 4 above.
   - `conventions` made required: `repository.json` lists five checks, and not that one. `apply` reads
     the list from that file, so it goes there first; step 4 does not ask for it.
   - `scripts/repo-conventions.cs` brought up to this repository's copy, the one finding
@@ -54,7 +50,8 @@ section):
   passed to its session on 2026-10-09.
 
 **Peer sessions on this machine** (addresses change when a session restarts; `ListAgents` gives the
-current names): AppServices, AssemblyQuality, XamlQuality, FileServer, AutoVersioning, CodeQuality.
+current names): AppServices, AssemblyQuality, XamlQuality, FileServer, AutoVersioning, CodeQuality,
+DiffView.
 
 **Environment:** Docker Desktop is running (engine 29.8.0). A native Windows publish takes the newest
 Visual Studio or Build Tools with the C++ tools, now Build Tools 2026. An agent shell sets
@@ -731,14 +728,14 @@ The script builds its arrays through the constructor.
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done except DiffView's merge** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
+| 1 · Remove `IsContinuousIntegration`, AutoVersioning `2026.3.916` | **done** | AppServices `a50294e`, ScopedEditors `3f44048`, XamlQuality `8b9e4c3`, AssemblyQuality `ad75b45`, FileServer `1f16364`, direct to `main`; DiffView by [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3). In each: the untouched tree, evaluated with `GITHUB_ACTIONS=true` after a restore, gave `IsContinuousIntegration = 'true'`; with the change every project in the solution evaluates it empty; the repository's own CI build and tests passed locally before the push, and CI is green on every job after it |
 | 2 · Measure the baseline across the family | **done** | See the measurement below. Three repositories missed parts of the baseline, and the maintainer decided each |
 | 3 · The property check in `repo-conventions.cs` | **done** | Restore, evaluation with `GITHUB_ACTIONS=true`, roles (with *other* for non-packable libraries), the baseline, package rules for libraries and tools, `props` exemptions with reasons and a note for a stale one, the trimming stage, `--offline`; documented in `docs/repository-conventions.md`. 15 tests in `PropsTests` over three real repositories built in a temp directory; 8 planted defects, each caught, each also compiled and run to prove the catch was not a build failure. Against real repositories before any test: AppServices conforms, AutoVersioning shows step 2's gaps |
 | 4 · The template requires trimming; `verify-release` runs `check --offline` | **done** | The template's `repository.json` requires trimming; `ConventionsWorkflowTests.The_template_requires_trimming` pins it. `verify-release` gains step 9: the generated repository's OWN script copy, `check --offline`, with a guard that the properties were evaluated at all, allowing only the empty description and the markers. Passes as shipped (8 markers). Planted in the template: dropping `Nullable` or `IsTrimmable` was caught earlier, by the generated build and its `TrimmableTests`; re-adding `IsContinuousIntegration` and changing `AssemblyCompany`, which build and test cleanly, were each caught by step 9 alone |
 | 5 · This repository adopts the new script | **done** | Done by step 3: `scripts/repo-conventions.cs` is the new script, and this repository's CI ran the property check green on `caa8c03`, the packaging project as role *template* |
-| 6 · Each family repository adopts the script, with step 2's decisions | **done except DiffView's merges** | Direct to `main`, the script copy first and then `a8bd8de`'s again: AppServices `ef0f573` `cf30a9b`, ScopedEditors `c0c331c` `a01aa2a`, XamlQuality `de4a4b0` `006745b`, AssemblyQuality `d147dba` `b9711a3`. FileServer `f10c674` (central package management, its tests gain AutoVersioning; version-neutral, build, tests and sample build passed), `762cdd9` (both Dockerfiles copy `Directory.Packages.props` before the restore), `514fec0`. AutoVersioning `f093331` (a root `Directory.Build.props` and central versions; only its use of itself exempted, with the reason), `2631253`. CI is green on every job of every final commit, and `check --repo` from here reports no FAIL and no drift for all six. DiffView: the script copy is on [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2); [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3), with `main` merged in, builds cleanly and has no property FAIL, only the two trimming notes |
-| 7 · Trimming, repository by repository | **done; DiffView by pull request** | Required, each proved both ways: the check conforms, and a planted loss of the property fails the check and the repository's mark test. AppServices `8e07ab7` and ScopedEditors `3a20d6a`: already marked, `"trimming": "required"`. AssemblyQuality `e9f63e1`: marked through `IsAotCompatible`, now required, and `TrimmableTests` added. DiffView: both libraries marked in [DiffView#5](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/5), analyzer clean, its existing `TrimMode=link` trim check the ILLink pass, a mark test added; required in [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2). **Stay at the note:** XamlQuality and FileServer, for the reasons below |
-| 8 · The record | **written; closes with DiffView's merges** | Required: Templates, AppServices, ScopedEditors, AssemblyQuality, and DiffView once #2 merges. At the note: XamlQuality's library (22 analyzer findings; 18 of them reflect over the consumer's compiled types, and fixing them honestly means `[RequiresUnreferencedCode]` on the public rule API, which the plan leaves to XamlQuality) and FileServer's library (see the drift below). Not held: AutoVersioning, an analyzer; apps and tools, by decision 8 |
+| 6 · Each family repository adopts the script, with step 2's decisions | **done** | Direct to `main`, the script copy first and then `a8bd8de`'s again: AppServices `ef0f573` `cf30a9b`, ScopedEditors `c0c331c` `a01aa2a`, XamlQuality `de4a4b0` `006745b`, AssemblyQuality `d147dba` `b9711a3`. FileServer `f10c674` (central package management, its tests gain AutoVersioning; version-neutral, build, tests and sample build passed), `762cdd9` (both Dockerfiles copy `Directory.Packages.props` before the restore), `514fec0`. AutoVersioning `f093331` (a root `Directory.Build.props` and central versions; only its use of itself exempted, with the reason), `2631253`. CI is green on every job of every final commit, and `check --repo` from here reports no FAIL and no drift for all six. DiffView: the script copy is on [DiffView#2](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/2); [DiffView#3](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/3), with `main` merged in, builds cleanly and has no property FAIL, only the two trimming notes. Both reached `main`: #3 merged 2026-09-25, and the script copy came with DiffView's conformance work, not through #2 |
+| 7 · Trimming, repository by repository | **done** | Required, each proved both ways: the check conforms, and a planted loss of the property fails the check and the repository's mark test. AppServices `8e07ab7` and ScopedEditors `3a20d6a`: already marked, `"trimming": "required"`. AssemblyQuality `e9f63e1`: marked through `IsAotCompatible`, now required, and `TrimmableTests` added. DiffView: both libraries marked in [DiffView#5](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/pull/5), analyzer clean, its existing `TrimMode=link` trim check the ILLink pass, a mark test added, merged 2026-09-25. The key never reached it: `plans/00008` retired the key first, and its projects hold it now (the drift below). **Stay at the note:** XamlQuality and FileServer, for the reasons below |
+| 8 · The record | **done** 2026-11-06 | DiffView, the last repository, has `conventions` green in its own CI on `8ae466f` (the drift below). Required: Templates, AppServices, ScopedEditors, AssemblyQuality; DiffView is held by its projects' properties instead. At the note: XamlQuality's library (22 analyzer findings; 18 of them reflect over the consumer's compiled types, and fixing them honestly means `[RequiresUnreferencedCode]` on the public rule API, which the plan leaves to XamlQuality) and FileServer's library (see the drift below). Not held: AutoVersioning, an analyzer; apps and tools, by decision 8 |
 
 **Step 2's measurement, 2026-09-24.** Every project in the eight repositories' solutions (or, with
 none, every csproj outside `templates/`), from each `origin/main`, restored and evaluated in Release
@@ -775,6 +772,20 @@ baseline's role without the package properties.
    DiffView#3; both merge once DiffView's session makes `main` green.
 
 ### Drift from `plans/00004`
+
+**Step 8 closed on 2026-11-06 without DiffView#2, because `plans/00008` overtook "required".** Step 7
+sets `"trimming": "required"`, and the rows above expected DiffView's from #2, which will not merge.
+`plans/00008` retired the key on 2026-10-22: a repository trims when one of its projects sets a
+trimming property, and the `Trimming` rule holds its libraries from there, so the note those rows
+name went too. On DiffView's `main`, `DiffView.Core` and `DiffView.Avalonia` set `IsTrimmable` and
+`EnableTrimAnalyzer`, and the demo sets `PublishTrimmed` with `TrimMode=link`. Its `conventions` job
+runs `check` with a script copy that carries the `Trimming` rule, and it and `Trim Check` passed in
+run `41651995944` on `8ae466f`. That copy is behind this repository's: it lacks `TrimmablePackages`,
+which is `plans/00008`'s and found nothing in DiffView on 2026-10-30, and the current script's
+property check has not run over DiffView; that comes with its sync. The maintainer chose to close
+the step now rather than after the sync. From 2026-11-04 to 2026-11-06 this file and two notes to
+DiffView's session listed the key as a gap, read from the rows above without checking them against
+`plans/00008`; DiffView's session caught it.
 
 ⛔ **FileServer's library is analyzer-clean when marked, and marking it breaks its consumers.** With
 its three `MapGet(string, Delegate)` calls moved to `RequestDelegate` handlers, the trim analyzer and
@@ -1402,7 +1413,7 @@ accepted with the plan.
 | 1 · AutoVersioning: `packages.push`, no glob push | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.AutoVersioning#5, merged as `aa0b9bd`, `build` and `conventions` green. The queued release's no-glob rule confirms it on the next sync. The preflight has not been run |
 | 2 · XamlQuality: `packages.push` | **done** 2026-10-22 | JanusMael/Bennewitz.Ninja.XamlQuality#94, merged as `2694968`, every required check green. The preflight has not been run |
 | 3 · Templates: multi-family support | **done**, released 2026-10-23 as `2026.4.1023` | Below; [JanusMael/Bennewitz.Ninja.Templates#41](https://github.com/JanusMael/Bennewitz.Ninja.Templates/pull/41). `verify-release --published 2026.4.1023` passed |
-| 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. Blocks AppKit only. DiffView#2 is superseded by the conformance now on DiffView's `main` and will be closed (2026-10-30, above); the step's check is unchanged: `conventions` green in DiffView itself, which it is, and `gh pr list` empty, which it is not. `packages.push`, which the step names, is absent (2026-11-04) |
+| 4 · DiffView conforms | waits on DiffView's own session | The maintainer's word, 2026-10-22, keeping that of 2026-09-24. Blocks AppKit only. DiffView#2 is superseded by the conformance now on DiffView's `main` and will be closed (2026-10-30, above); the step's check is unchanged: `conventions` green in DiffView itself, which it is, and `gh pr list` empty, which it is not: #2 and #44 on 2026-11-06. `packages.push`, which the step names, is absent (2026-11-06) |
 | 5 · Inspections: rename, import | **done** 2026-10-26 | Below. [JanusMael/Bennewitz.Ninja.Inspections#98](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/98), merged as `a18a303` by a merge commit, every check green; `check --admin` conforms |
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
