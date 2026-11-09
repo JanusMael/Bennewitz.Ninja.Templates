@@ -367,6 +367,15 @@ OpenForge2k's `plans/00006` (draft) runs it at a pinned commit of this repositor
   build already finds the static cases; the scan adds the opaque ones, older MSTest versions, and
   one report per solution. Tests: `MstestAreEqualScanTests`, over a warnings-as-errors fixture;
   canaried — ignoring `Equals` overrides fails exactly the classification test.
+- ✅ **The emitted `DoNotParallelize` collection is suppressed for xUnit1073 (2026-11-09).** xunit.v3
+  `4.0.3`'s analyzers report a collection definition nothing joins, and `--emit-helpers` writes the
+  definition whether or not a converted class joins it, so JsonC's converted suite failed its build
+  on that version during the sync to `2026.4.1109`. The definition now carries a `SuppressMessage`
+  saying why. `The_emitted_helpers_build_clean_under_xunits_analyzers` builds the emitted helpers
+  alone in an xunit.v3 test project under warnings-as-errors, at this repository's pinned version;
+  the semantics test could not see it, compiling against xunit's assert and core packages, which
+  carry no analyzers. Canaried: without the suppression it fails on xUnit1073 at the definition.
+  ClaudeForge's `tests/Shared/MessageAssert.cs` holds the same definition.
 
 ## `docs/windows-defender-dev-exclusions.md` — outside the plans
 
