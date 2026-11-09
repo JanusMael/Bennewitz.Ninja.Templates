@@ -6,26 +6,19 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-03 after `Bennewitz.Ninja.Templates
-2026.4.1103` was released and verified from nuget.org, and the family synced to it (its section
-below). Corrected 2026-11-04 for DiffView, whose `main` had moved, and 2026-11-06, `plans/00004`
-closing, DiffView finishing `plans/00009` step 4, and AppKit landing without DiffView, and 2026-11-09,
-XamlQuality's release.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-09 after `Bennewitz.Ninja.Templates
+2026.4.1109` was released and verified from nuget.org, and the family synced to it (its section
+below).*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **The family is synced to `2026.4.1103`** (2026-11-03, its release section): AutoVersioning,
-   JsonC, AppServices, ScopedEditors, FileServer and Inspections, one pull request each.
-   AppServices and ScopedEditors released `2026.4.1103` the same day, on the maintainer's word, with
-   the four copy handlers `VSTHRD101` reported; the others' packages did not change. All six, and
-   this repository, conform to `check --admin`, so `apply` had nothing to write. DiffView synced
-   itself on 2026-11-06. Not synced: TrueCourseCalculator, Geo.Core and GeoHash, which have no
-   remote and push `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
-2. **The family's own packages, current in every template** (2026-11-09, its section below):
-   merged, unreleased. Next, on the maintainer's word: a Templates release, verified with
-   `verify-release --published`; then the family syncs to it, one pull request each, DiffView
-   left to its own session.
-3. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is step 9.
+1. **The family is synced to `2026.4.1109`** (2026-11-09, its release section): JsonC, FileServer,
+   Inspections and AppKit, one pull request each, pins only; AutoVersioning had nothing to take.
+   No package changed, so nothing released. DiffView is left to its own session, and ClaudeForge,
+   on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`, to its owner. Not synced:
+   TrueCourseCalculator, Geo.Core and GeoHash, which have no remote and push `artifacts/*.nupkg`,
+   which the no-glob rule fails once they adopt the script.
+2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is step 9.
    - **Step 9**: AppServices and ScopedEditors each release from AppKit when they next change, on the
      maintainer's word; ScopedEditors' old policy goes after its release. Inspections is done:
      XamlQuality released `2026.4.1109` on 2026-11-09 (step 9, below). DiffView has no such release:
@@ -33,8 +26,8 @@ section):
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images; no family README carries an image today. A plan follows
      only when one first does (the maintainer, 2026-10-30).
-4. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
-   part 2 done in the syncs, AppServices, ScopedEditors, FileServer and JsonC on `4.0.2`, AutoVersioning
+3. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
+   part 2 done in the syncs, AppKit, FileServer and JsonC on `4.0.3` since 2026-11-09, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
 
@@ -1404,7 +1397,7 @@ directly fails three tests that `dotnet new` would never have emitted. Test a te
 
 The maintainer chose, through `choices` on 2026-11-09, after XamlQuality's release: every template
 takes the family's latest releases, with two third-party patches. Nothing else under `templates/` had
-changed since `2026.4.1103`, so this is the next release's content.
+changed since `2026.4.1103`. Released in `2026.4.1109`, its section below.
 
 | Package | From | To | Where |
 |---|---|---|---|
@@ -1973,6 +1966,41 @@ Unreleased. It is the change of its own that side 2 of `plans/00008` waits to sh
 out on the maintainer's word. AppServices and ScopedEditors also need the attribute in
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
+
+## Release `2026.4.1109`
+
+One change, released on the maintainer's word "proceed on both" on 2026-11-09: the family's own
+packages current in every template, with xunit.v3 `4.0.3` and Avalonia `12.1.6` (its section above).
+
+`verify-release` passed on `1aa56da`'s tree before the tag, and the blank-version preflight logged in
+there (run `42671295400`). The tag's run,
+[42671689373](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/42671689373),
+failed twice at start-up, and a dispatch from the tag with the version filled (run `42672515724`)
+once, each annotated *"Internal server error"*: GitHub reported Actions degraded from 18:12 UTC and
+operational again at 18:45. No job ran, so nothing was built or pushed, and the tag was not moved.
+The run's third attempt passed every gate, pushed `Bennewitz.Ninja.Templates 2026.4.1109` and made
+the GitHub release with it. Verified against the feed: the flat container listed `2026.4.1109` at
+18:56 UTC, and `verify-release --published 2026.4.1109` installed it from nuget.org and passed all
+seven cases, every app publishing for `win-x64`.
+
+### The family, synced the same day
+
+On the maintainer's decision of 2026-11-09, pins only, since the scripts every repository carries were
+already this release's. Library floors stayed: Avalonia `12.1.3` in AppKit and Inspections.
+Inspections stays on xunit.v3 `3.2.2`, part 3 of the 4.x move not being taken.
+
+| Repository | Sync | Released |
+|---|---|---|
+| JsonC | #10, `605070c`: AutoVersioning `2026.4.1031`, xunit.v3 `4.0.3`. Its converted suite failed to build on `4.0.3`, xUnit1073 on the converter's unused `DoNotParallelize` definition, which went; the converter now emits it suppressed (#84) | Not released: the package did not change |
+| FileServer | #16, `d11aa9b`: AutoVersioning `2026.4.1031`, xunit.v3 `4.0.3` | Not released |
+| Inspections | #129, `5407534`: AutoVersioning `2026.4.1031` | Not released: no family's package changed |
+| AppKit | #23, `ee9729b`: AutoVersioning `2026.4.1031`, xunit.v3 `4.0.3`, and in the tests AssemblyQuality `2026.4.1031` and XamlQuality `2026.4.1109` | Not released: neither family's packages changed |
+| AutoVersioning | None: its scripts were this release's, and it holds none of these pins | — |
+
+Each was run as its CI runs it before the pull request, on Windows: build with warnings as errors,
+tests (JsonC 80, FileServer 165, Inspections 987, AppKit 466 with 15 skipped as before), pack,
+`assert-packages`, `check`, and Inspections' `real-code`. Every check passed on each pull request
+before the maintainer merged it.
 
 ## Release `2026.4.1103`
 
