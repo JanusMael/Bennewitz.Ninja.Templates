@@ -115,6 +115,38 @@ public sealed class MstestToXunitTests : IClassFixture<MstestToXunitTests.Run>
     }
 
     /// <summary>
+    /// The emitted helpers alone must build in a converted test project under xUnit's analyzers and
+    /// warnings-as-errors, whether or not a converted class joins the <c>DoNotParallelize</c>
+    /// collection.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ xunit.v3 4.0.3's analyzers report a collection definition nothing joins (xUnit1073), and the
+    /// definition is emitted either way, so JsonC's converted suite failed its build on that version.
+    /// The semantics test above cannot see it: it compiles against xunit's assert and core packages,
+    /// which carry no analyzers.
+    /// </remarks>
+    [Fact]
+    public void The_emitted_helpers_build_clean_under_xunits_analyzers()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "mstest-to-xunit-build-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Helpers.cs"), _run.Helpers);
+            File.WriteAllText(Path.Combine(directory, "HelperBuild.csproj"),
+                Fixture("HelperBuild.csproj.txt").Replace("{XUNIT_VERSION}", XunitVersion(), StringComparison.Ordinal));
+
+            (int exitCode, string output) = Run.Dotnet(directory, "build", "-c", "Release");
+
+            Assert.True(exitCode == 0, output);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    /// <summary>
     /// The MSTest the semantics test runs as its oracle. This repository references no MSTest, so it
     /// is pinned here; 4 is the major the rules convert from.
     /// </summary>
