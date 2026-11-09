@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Versioning">
-    <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.928" />
+    <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.4.1031" />
   </ItemGroup>
 
   <ItemGroup Label="Analysis">
@@ -17,10 +17,10 @@
   <ItemGroup Label="Avalonia">
     <!-- ⚠ Every Avalonia package moves together, Avalonia.Headless included. With transitive pinning
          on, one left behind is a restore error (NU1109) rather than a quiet mismatch. -->
-    <PackageVersion Include="Avalonia" Version="12.1.4" />
-    <PackageVersion Include="Avalonia.Desktop" Version="12.1.4" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.4" />
-    <PackageVersion Include="Avalonia.Headless" Version="12.1.4" />
+    <PackageVersion Include="Avalonia" Version="12.1.6" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.6" />
+    <PackageVersion Include="Avalonia.Headless" Version="12.1.6" />
     <PackageVersion Include="Semi.Avalonia" Version="12.1.0.1" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
@@ -29,16 +29,16 @@
     <!-- Logging (Serilog, a rolling file per hour, the Avalonia log bridge), the fatal-error dialog,
          and EntryPointOptions(), which connects both to the shared entry point.
          Bennewitz.Ninja.AppServices.Logging and .EntryPoint come with it. -->
-    <PackageVersion Include="Bennewitz.Ninja.AppServices.Avalonia" Version="2026.4.1001" />
+    <PackageVersion Include="Bennewitz.Ninja.AppServices.Avalonia" Version="2026.4.1103" />
     <!-- The markup and assembly rules, run as tests. -->
-    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.928" />
-    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.929" />
+    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1109" />
+    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
     <!-- xunit.v3 on Microsoft.Testing.Platform — see global.json. The VSTest bridge packages are
          deliberately absent, and so is TrxReport: nothing asks for a .trx, and it would have to
          match the platform version xunit takes on every bump. -->
-    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
   </ItemGroup>
 </Project>
