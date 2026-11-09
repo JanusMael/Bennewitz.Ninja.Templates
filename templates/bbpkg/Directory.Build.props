@@ -17,7 +17,7 @@
     <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>
     <AssemblyCompany>Bennewitz.Ninja</AssemblyCompany>
     <!-- The repository's product, for every project that names none: AutoVersioning fails one without
-         a product (BAUTOVERSIONING03). A package family's packages set their family's in their csproj. -->
+         a product (BNAV03). A package family's packages set their family's in their csproj. -->
     <AssemblyProduct>PkgStem</AssemblyProduct>
     <CopyrightHolder>Brian Bennewitz</CopyrightHolder>
     <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
