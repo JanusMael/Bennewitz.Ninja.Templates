@@ -18,11 +18,10 @@ section):
    on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`, to its owner. Not synced:
    TrueCourseCalculator, Geo.Core and GeoHash, which have no remote and push `artifacts/*.nupkg`,
    which the no-glob rule fails once they adopt the script.
-2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is step 9.
-   - **Step 9**: AppServices and ScopedEditors each release from AppKit when they next change, on the
-     maintainer's word; ScopedEditors' old policy goes after its release. Inspections is done:
-     XamlQuality released `2026.4.1109` on 2026-11-09 (step 9, below). DiffView has no such release:
-     the maintainer kept it in its own repository (step 8, below).
+2. **[`plans/00009`](plans/00009-package-consolidation.md) is complete** (2026-11-09, its section
+   below). AppServices and ScopedEditors release from AppKit as ordinary releases when each next
+   changes, on the maintainer's word, tracked in AppKit's `PROGRESS.md`. DiffView, kept in its own
+   repository, needs a policy of its own for its first nuget.org release.
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images; no family README carries an image today. A plan follows
      only when one first does (the maintainer, 2026-10-30).
@@ -1420,7 +1419,9 @@ XamlQuality `2026.4.1109` carries the reading its plan 00030 waits for.
 
 ## `plans/00009` — package families consolidate into Inspections and AppKit
 
-[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22 and frozen. The catalog
+[`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22 and frozen, **complete
+2026-11-09** by the maintainer's decision: every step that could run did, and the two families in
+AppKit release when they next change, as ordinary releases. The catalog
 and the groupings it rests on are [`docs/package-consolidation.md`](docs/package-consolidation.md),
 measured 2026-10-20. The maintainer chose, through `choices`: groupings A and B in full; the names
 `Bennewitz.Ninja.Inspections` and `Bennewitz.Ninja.AppKit`; growing the largest family's repository by
@@ -1439,7 +1440,7 @@ accepted with the plan.
 | 6 · Inspections: the policy | **done** 2026-10-29 | Below. One policy, edited, naming Inspections with a pattern per family; the blank-version preflight logged in, run `40933076378` |
 | 7 · Archive AssemblyQuality and CodeQuality | **done** 2026-10-29 | Below. Both archived, no open issue or pull request on either |
 | 8 · AppKit | **done** 2026-11-06, two families of three | Below. `main` at `05ba4bb`, every job green in run `42298194345`, `check --admin` conforms, the preflight logged in, run `42300352526`. ScopedEditors archived. DiffView stays in its own repository, by the maintainer's decision |
-| 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29, **CodeQuality done** 2026-11-04 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy deleted by the maintainer the same day. `codequality/v2026.4.1104`, on the maintainer's word, with `plans/00005`'s six rules in Inspections: the feed lists it, the nuspec names Inspections, `BNCQ1009` fires from the installed package. Its old policy went on 2026-10-30, below. **XamlQuality done** 2026-11-09: `xamlquality/v2026.4.1109` on `827c54e`, release run `42656565927`, verified from the feed, below. AppServices and ScopedEditors when they next change |
+| 9 · Each family's first release from its new home | **AssemblyQuality done** 2026-10-29, **CodeQuality done** 2026-11-04 | Below. `assemblyquality/v2026.4.1029`, verified from the feed; its old policy deleted by the maintainer the same day. `codequality/v2026.4.1104`, on the maintainer's word, with `plans/00005`'s six rules in Inspections: the feed lists it, the nuspec names Inspections, `BNCQ1009` fires from the installed package. Its old policy went on 2026-10-30, below. **XamlQuality done** 2026-11-09: `xamlquality/v2026.4.1109` on `827c54e`, release run `42656565927`, verified from the feed, below. AppServices and ScopedEditors were never released from AppKit: decision 21 holds them until each changes, and the plan closed without them, below |
 | 10 · AgentForge rename in ClaudeForge | **already true before the plan** | See the drift below |
 | 11 · Links | **done** 2026-11-06 | Below. Inspections' on 2026-10-29; AppKit's in JanusMael/Bennewitz.Ninja.Inspections#126, where two passages named ScopedEditors' code. The search finds one more on purpose: `tools/real-code/inputs.json` keeps ScopedEditors' URL, because the commit it pins exists only there |
 
@@ -1670,6 +1671,14 @@ clones under `%TEMP%\insp`, each checked for anything not on GitHub, were delete
   was no fallback for Inspections' one policy, which carries `Bennewitz.Ninja.CodeQuality*`.
   Decision 21 stands, so CodeQuality had nothing to release. Inspections records it in
   [JanusMael/Bennewitz.Ninja.Inspections#107](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/107).
+- **ScopedEditors' old policy went before its first release from AppKit too**, for the same reason:
+  chosen by the maintainer on 2026-11-09, through `choices`, and deleted by the maintainer on
+  nuget.org the same day, by their report. AppKit's policy carries `Bennewitz.Ninja.ScopedEditors.*`
+  and logged in on the blank-version preflight, run `42300352526`.
+- **The plan closed with step 9 open for AppKit's two families**, by the maintainer's decision of
+  2026-11-09. A sync to Templates `2026.4.1109` and two new tests (`BNXQ1009` and `BNXQ1010`,
+  AppKit#24, after XamlQuality's other unadopted rules were measured and inspected nothing in
+  ScopedEditors' markup) changed no package, so neither family had anything to release.
 - **The release also checks the version**, in every repository, families or not: `YYYY.Q.MMDD`,
   three parts, the quarter of the date. Decision 13 moved the resolution into a script; refusing a
   malformed version there costs nothing, and it would have refused `2026.3.1001`.
