@@ -21,7 +21,11 @@ section):
    this repository, conform to `check --admin`, so `apply` had nothing to write. DiffView synced
    itself on 2026-11-06. Not synced: TrueCourseCalculator, Geo.Core and GeoHash, which have no
    remote and push `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
-2. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is step 9.
+2. **The family's own packages, current in every template** (2026-11-09, its section below):
+   merged, unreleased. Next, on the maintainer's word: a Templates release, verified with
+   `verify-release --published`; then the family syncs to it, one pull request each, DiffView
+   left to its own session.
+3. **[`plans/00009`](plans/00009-package-consolidation.md)**: what remains is step 9.
    - **Step 9**: AppServices and ScopedEditors each release from AppKit when they next change, on the
      maintainer's word; ScopedEditors' old policy goes after its release. Inspections is done:
      XamlQuality released `2026.4.1109` on 2026-11-09 (step 9, below). DiffView has no such release:
@@ -29,7 +33,7 @@ section):
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images; no family README carries an image today. A plan follows
      only when one first does (the maintainer, 2026-10-30).
-3. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
+4. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
    part 2 done in the syncs, AppServices, ScopedEditors, FileServer and JsonC on `4.0.2`, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
@@ -1386,6 +1390,31 @@ outside the tests' namespace chain compiles and reaches the rule.
 belongs to the `--blazor` variant and is excluded by `template.json` otherwise, so testing the folder
 directly fails three tests that `dotnet new` would never have emitted. Test a template through
 `verify-release`, or through `dotnet new` from the packed template.
+
+## The family's own packages, current in every template — outside the plans
+
+The maintainer chose, through `choices` on 2026-11-09, after XamlQuality's release: every template
+takes the family's latest releases, with two third-party patches. Nothing else under `templates/` had
+changed since `2026.4.1103`, so this is the next release's content.
+
+| Package | From | To | Where |
+|---|---|---|---|
+| `Bennewitz.Ninja.AppServices.EntryPoint` | `2026.4.1001` | `2026.4.1103` | `bbweb`, `bbapi`, `bbconsole` |
+| `Bennewitz.Ninja.AppServices.Avalonia` | `2026.4.1001` | `2026.4.1103` | `bbavalonia`: its dialogs log a failed copy, the `VSTHRD101` fixes |
+| `Bennewitz.Ninja.AssemblyQuality` | `2026.3.929` | `2026.4.1031` | every template |
+| `Bennewitz.Ninja.XamlQuality` | `2026.3.928` | `2026.4.1109` | `bbavalonia` |
+| `Bennewitz.Ninja.AutoVersioning` | `2026.3.928` | `2026.4.1031` | every template and this repository; no change of its own |
+| `xunit.v3` | `4.0.2` | `4.0.3` | every template and this repository |
+| `Avalonia`, `.Desktop`, `.Fonts.Inter`, `.Headless` | `12.1.4` | `12.1.6` | `bbavalonia`, together, as its comment requires |
+
+Each target is the newest stable version nuget.org lists. Verified 2026-11-09: the root tests, 212 of
+212; `verify-release` passes all seven generated repositories, `bbavalonia` 17 of 17 with its trim
+warnings at the baseline, none new, and every app published for win-x64 and run.
+
+Decided the same day: the family repositories take these pins in the sync after the release, one pull
+request each, DiffView left to its own session; ClaudeForge, on AppServices `2026.4.1001` and
+ScopedEditors `2026.3.924`, is left to its owner, nothing sent; DiffView's session was told that
+XamlQuality `2026.4.1109` carries the reading its plan 00030 waits for.
 
 ## `plans/00009` — package families consolidate into Inspections and AppKit
 
