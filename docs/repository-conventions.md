@@ -111,7 +111,7 @@ for a project that names none:
 ```
 
 The root's own `AssemblyProduct` stays the repository's, for its tests, tools and scripts:
-AutoVersioning fails a project without one (`BAUTOVERSIONING03`). A family's README is a page on
+AutoVersioning fails a project without one (`BNAV03`). A family's README is a page on
 nuget.org, where a relative link resolves against nuget.org and goes nowhere, so it links
 absolutely, or to an `#anchor` on the page. A link shown as an example inside code is text.
 
