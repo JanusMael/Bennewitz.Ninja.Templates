@@ -1205,8 +1205,11 @@ static string? Serve(string executable, string folder)
 
     StringBuilder captured = new();
     using Process process = new() { StartInfo = startInfo };
+    // BNCQ1009: each body appends a line under a lock, which cannot throw on real input.
+#pragma warning disable BNCQ1009
     process.OutputDataReceived += (_, e) => { if (e.Data is not null) { lock (captured) { captured.AppendLine(e.Data); } } };
     process.ErrorDataReceived += (_, e) => { if (e.Data is not null) { lock (captured) { captured.AppendLine(e.Data); } } };
+#pragma warning restore BNCQ1009
 
     Stopwatch clock = Stopwatch.StartNew();
     process.Start();
@@ -1309,8 +1312,11 @@ static bool Dotnet(string[] arguments, string workingDirectory, out string log, 
 
     using Process process = new() { StartInfo = startInfo };
 
+    // BNCQ1009: each body appends a line under a lock, which cannot throw on real input.
+#pragma warning disable BNCQ1009
     process.OutputDataReceived += (_, e) => { if (e.Data is not null) { lock (captured) { captured.AppendLine(e.Data); } } };
     process.ErrorDataReceived += (_, e) => { if (e.Data is not null) { lock (captured) { captured.AppendLine(e.Data); } } };
+#pragma warning restore BNCQ1009
 
     process.Start();
     process.BeginOutputReadLine();
