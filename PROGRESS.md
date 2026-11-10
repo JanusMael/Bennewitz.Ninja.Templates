@@ -19,9 +19,13 @@ section):
    TrueCourseCalculator, Geo.Core and GeoHash, which have no remote and push `artifacts/*.nupkg`,
    which the no-glob rule fails once they adopt the script.
 2. **[`plans/00009`](plans/00009-package-consolidation.md) is complete** (2026-11-09, its section
-   below). AppServices and ScopedEditors release from AppKit as ordinary releases when each next
-   changes, on the maintainer's word, tracked in AppKit's `PROGRESS.md`. DiffView, kept in its own
-   repository, needs a policy of its own for its first nuget.org release.
+   below). **AppServices and ScopedEditors released from AppKit** on 2026-11-10, at `2026.4.1110`,
+   on the maintainer's word: `appservices/v2026.4.1110` and `scopededitors/v2026.4.1110` at
+   `a1f42db`, all eight ids verified from nuget.org (listed, nuspec naming AppKit, restored with
+   nuget.org alone), recorded in AppKit's `PROGRESS.md`. Against `2026.4.1103` only the URLs and the
+   packed README changed, so the templates' AppServices pins (`2026.4.1103`) can take `2026.4.1110`
+   at the next sync; nothing needs it sooner. nuget.org took about 45 minutes to index them. DiffView,
+   kept in its own repository, needs a policy of its own for its first nuget.org release.
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images; no family README carries an image today. A plan follows
      only when one first does (the maintainer, 2026-10-30).
