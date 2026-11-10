@@ -33,6 +33,13 @@ section):
    part 2 done in the syncs, AppKit, FileServer and JsonC on `4.0.3` since 2026-11-09, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
+4. **CodeQuality in every template** (2026-11-10, its section below): on `main` for the next
+   release, which waits on the maintainer's word; the family adopts it at the sync after it.
+   - **FileServer keeps `vYYYY.M.D` tags until its first 2027 release**, by its session's report of
+     the maintainer's decision, in its open JanusMael/Bennewitz.Ninja.FileServer#17: every
+     `2026.Q.MMDD` sorts below its published `2026.9.23`. Neither those tags nor its missing
+     `release-target.cs` is drift before then. The session suggests `release-target.cs` refuse a
+     version below the latest published one: a candidate, not decided.
 
 **Waiting on others:**
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
@@ -100,6 +107,9 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   - Markdown is checked out as LF in every repository, a conventions FAIL (DiffView's request), next.
   - Then the family adopts `Microsoft.VisualStudio.Threading.Analyzers` with only `VSTHRD101` and
     `VSTHRD110` on.
+- Decided 2026-11-10, through `choices`: `Bennewitz.Ninja.CodeQuality` in every template, every rule
+  at its default, in the next release; the family adopts it at its next sync, measured, a finding
+  that cannot throw suppressed where it stands, with the reason.
 
 ## Status
 
@@ -1420,6 +1430,41 @@ Decided the same day: the family repositories take these pins in the sync after 
 request each, DiffView left to its own session; ClaudeForge, on AppServices `2026.4.1001` and
 ScopedEditors `2026.3.924`, is left to its owner, nothing sent; DiffView's session was told that
 XamlQuality `2026.4.1109` carries the reading its plan 00030 waits for.
+
+## CodeQuality in every template — outside the plans
+
+The maintainer's decision of 2026-11-10, through `choices`, for the next release: every template, and
+this repository, builds with `Bennewitz.Ninja.CodeQuality` `2026.4.1104`, its latest, every rule at its
+default. It is the source-side twin of the AssemblyQuality tests every template already runs (decided
+2026-10-09): what `BNAQ1001`, `BNAQ1002` and `BNAQ1004` find after the build, `BNCQ1001`, `BNCQ1002`
+and `BNCQ1004` report while the code is written, and `BNCQ1005` to `BNCQ1009` and `BNCQ3001` report the
+shapes Inspections' `docs/exception-resilience.md` measured to end the process or fail silently. A
+private analyzer, beside `Microsoft.VisualStudio.Threading.Analyzers` in each `Directory.Build.props`,
+pinned in each `Directory.Packages.props`. The family repositories adopt it at their next sync, each
+measured first, a finding that cannot throw on real input suppressed where it stands, with the reason.
+
+- **Measured before the decision**, on the published `2026.4.1109`: all seven generated repositories
+  built with it, warnings as errors, with no finding. A canary, a `SemaphoreSlim` released outside a
+  `finally` in `bbpkg`, failed the build with `BNCQ1008`, so the analyzer ran.
+- **This repository's own adoption found four**, all `BNCQ1009`, in `scripts/verify-release.cs`: the
+  two pairs of `Process` output handlers that capture a child's output. Each appends a line under a
+  lock, which cannot throw on real input, so each pair is suppressed in place with that reason. No
+  other such callback exists here.
+- **Verified 2026-11-10**: the root tests, 213 of 213; `verify-release` passes all seven generated
+  repositories with it, `bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 17, `bbweb` 14,
+  `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with SIGINT skipped on Windows, every app published
+  for win-x64 and run; `check` conforms.
+- **What else was looked for, the maintainer asking that no quality package be missed.** Every
+  `Bennewitz.Ninja` package nuget.org lists was read against the templates. AssemblyQuality is in
+  every template, `BNAQ1001` to `BNAQ1005`; `BNAQ1006` checks a provider against consumers already
+  published, which a new repository has none of. XamlQuality is in `bbavalonia`, `BNXQ1001`, `1002` and
+  `1007`; the other seven read custom controls, fixed or zero-size Grid slots and lists generated from
+  `ItemsSource`, none of which its two windows have, so a test of theirs would inspect nothing.
+  `XamlQuality.ThemeAudit` and `.ThemeRuntime` audit an app's own theme dictionaries, and `bbavalonia`
+  uses Semi.Avalonia's. Chisel is a source-extraction tool. CodeQuality was the one gap.
+- ⚠ **Inspections' `AnalyzerReleases.Unshipped.md` still lists `BNCQ1005` to `BNCQ3001`**, which
+  `codequality/v2026.4.1104` shipped; its own convention moves them to `Shipped` in the tag's change.
+  Inspections' to fix.
 
 ## `plans/00009` — package families consolidate into Inspections and AppKit
 
