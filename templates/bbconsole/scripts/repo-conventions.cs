@@ -2138,16 +2138,16 @@ static class ReleaseTarget
 /// its tests take it by project. Inspections builds AssemblyQuality.
 /// </para>
 /// <para>
-/// ⚠ <b>Bennewitz.Ninja.CodeQuality joins <see cref="Required"/> once the family has adopted it</b>, at
-/// the sync after the release whose templates carry it; required sooner, it would fail every
-/// repository on the sync that brings in this rule.
+/// ⓘ <b>Bennewitz.Ninja.CodeQuality joined <see cref="Required"/> once the family had adopted it</b>,
+/// at the sync to 2026.4.1111 (the maintainer's decision of 2026-11-11). Required sooner, it would
+/// have failed every repository on the sync that brought in this rule. Inspections builds it too.
 /// </para>
 /// </remarks>
 static class QualityPins
 {
     private const string Props = "Directory.Packages.props";
 
-    public static readonly string[] Required = ["Bennewitz.Ninja.AssemblyQuality"];
+    public static readonly string[] Required = ["Bennewitz.Ninja.AssemblyQuality", "Bennewitz.Ninja.CodeQuality"];
 
     public static void Check(Tree tree, Config? config, List<Finding> findings)
     {

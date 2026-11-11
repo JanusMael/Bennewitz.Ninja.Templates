@@ -7,25 +7,23 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 ## Resume
 
 *Replaced, never appended, at each handoff. Rewritten 2026-11-11 after `Bennewitz.Ninja.Templates
-2026.4.1111` was released, verified from nuget.org, and the family synced to it (its section below).*
+2026.4.1111` was released and the family synced to it, and again once the next release was prepared.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **The family is synced to `2026.4.1111`** (2026-11-11, on the maintainer's word; its section
-   below). AutoVersioning, JsonC, FileServer, Inspections and AppKit each carry the new
-   `repo-conventions.cs` and `Bennewitz.Ninja.CodeQuality` `2026.4.1104`, and each conforms.
-   - **The next release waits for CodeQuality's next release**, which Inspections cuts after its
-     #132 (`BNCQ1009` and `BNCQ3001` accept a catch-all whose filter passes only fatal exceptions).
-     Then one change carries four things, decided 2026-11-11 through `choices`:
-     - the templates' CodeQuality pin raised to that release, measured;
-     - `Bennewitz.Ninja.CodeQuality` added to `QualityPins.Required`;
-     - the AppServices pins moved from `2026.4.1103` to `2026.4.1110`, where only URLs and the packed
-       README changed;
-     - `release-target.cs` refusing a version below the latest that nuget.org lists for the id.
+1. **The next release is ready on `main`, and waits for the maintainer's word** (its section below,
+   "The next release, prepared 2026-11-11"). It carries the four parts decided 2026-11-11 through
+   `choices`:
+   - CodeQuality `2026.4.1111`, released by Inspections after its #132, pinned everywhere, measured;
+   - `Bennewitz.Ninja.CodeQuality` in `QualityPins.Required`;
+   - the AppServices pins at `2026.4.1110`;
+   - `release-target.cs` refusing a version below the newest that nuget.org lists for one of the ids.
 
-     The release follows on the maintainer's word, then one family sync.
-   - **DiffView** must adopt `release-target.cs` before the new rule passes there, and the CodeQuality
-     pin once it is required. That is left to its own session, which has been told about the first.
+   After the release, one family sync: AutoVersioning, JsonC, FileServer, Inspections and AppKit take
+   the new `repo-conventions.cs` and CodeQuality `2026.4.1111`; each already pins CodeQuality, or
+   publishes it, so the new required pin fails none of them.
+   - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
+     there. That is left to its own session, which has been told about the first.
    - **Not ours to sync**: ClaudeForge, on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`,
      is left to its owner. TrueCourseCalculator, Geo.Core and GeoHash have no remote and push
      `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
@@ -2116,6 +2114,32 @@ unreleased until the maintainer's word.
     turned 3 red, and hid the re-run canary run beside it, so each ran alone.
   - `BNCQ1009` found the fake feed's server thread, whose throw would end the test process; its body
     is one try/catch that logs.
+
+- **CodeQuality `2026.4.1111` in every template and this repository**, raised from `2026.4.1104`.
+  Inspections cut it on 2026-11-11 after its #132, from `47ca716`, tag `codequality/v2026.4.1111`;
+  nuget.org's flat container lists it. What changed: `BNCQ1009` and `BNCQ3001` count a catch-all whose
+  filter lets only fatal exceptions through as guarding the body; nothing is newly reported, and no rule
+  was added or changed its default severity (`AnalyzerReleases.Unshipped.md` is empty). The note above
+  on `Unshipped.md` listing shipped rules is settled by the same release.
+  - **Measured**: this repository builds with it and reports nothing; so do all seven generated
+    repositories in `verify-release`, warnings as errors.
+- **`Bennewitz.Ninja.CodeQuality` joins `QualityPins.Required`**, beside AssemblyQuality, at every
+  depth including `--release`. The family adopted it at its sync to `2026.4.1111`, every repository
+  conforming at admin depth, so the sync after this release fails none of them. Inspections publishes it,
+  so it is not asked to pin it. DiffView pins neither yet; its session owns that.
+  - `docs/repository-conventions.md`, "What a sync cannot bring in" and its table, says so; the
+    canonical script and its five copies agree.
+  - **Tested**: a new test, a repository pinning AssemblyQuality alone fails; the "publishes it" test now
+    publishes both and pins neither; the missing-file message names both. Canaried: CodeQuality left out
+    of `Required` turned exactly those two pin tests red.
+- **The AppServices pins at `2026.4.1110`**, from `2026.4.1103`: `AppServices.EntryPoint` in `bbapi`,
+  `bbconsole` and `bbweb`, `AppServices.Avalonia` in `bbavalonia`. That release moved AppServices into
+  AppKit and changed only URLs and the packed README; both ids are on nuget.org at it.
+- **Verified 2026-11-11**: the root tests, 234 of 234, eleven of them new; `verify-release` passes all seven
+  generated repositories with the four parts, `bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 17,
+  `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with SIGINT skipped on Windows, every app
+  published for win-x64 and run. Its `resolve` step read nuget.org itself for `Bennewitz.Ninja.Widget`
+  and `Bennewitz.Ninja.Linter`, which it has never seen, and resolved both.
 
 ## Release `2026.4.1111`
 

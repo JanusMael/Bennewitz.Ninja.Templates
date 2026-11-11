@@ -715,7 +715,7 @@ public sealed class RepoConventionsTests
             <Project>
               <ItemGroup>
                 <!-- <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" /> -->
-                <PackageVersion Include="Bennewitz.Ninja.CodeQuality" Version="2026.4.1104" />
+                <PackageVersion Include="Bennewitz.Ninja.CodeQuality" Version="2026.4.1111" />
               </ItemGroup>
             </Project>
             """;
@@ -735,15 +735,39 @@ public sealed class RepoConventionsTests
         Result result = fixture.Run("check");
 
         Assert.Equal(1, result.ExitCode);
-        Assert.Contains("FAIL quality: Directory.Packages.props is missing, so nothing pins Bennewitz.Ninja.AssemblyQuality.", result.Output, StringComparison.Ordinal);
+        Assert.Contains("FAIL quality: Directory.Packages.props is missing, so nothing pins Bennewitz.Ninja.AssemblyQuality, Bennewitz.Ninja.CodeQuality.", result.Output, StringComparison.Ordinal);
     }
 
-    /// <summary>Inspections builds AssemblyQuality, and its tests take it by project, so it pins nothing.</summary>
+    /// <summary>
+    /// CodeQuality is required since the family adopted it (the maintainer's decision of 2026-11-11):
+    /// a repository pinning AssemblyQuality alone fails.
+    /// </summary>
     [Fact]
-    public void A_repository_that_publishes_AssemblyQuality_need_not_pin_it()
+    public void A_repository_that_does_not_pin_CodeQuality_fails()
     {
         Fixture fixture = Conforming();
-        fixture.Files["packages.push"] = "Fixture.Widget\nBennewitz.Ninja.AssemblyQuality\n";
+        fixture.Files["Directory.Packages.props"] =
+            """
+            <Project>
+              <ItemGroup>
+                <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" />
+              </ItemGroup>
+            </Project>
+            """;
+
+        Result result = fixture.Run("check", "--release");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL quality: Directory.Packages.props does not pin Bennewitz.Ninja.CodeQuality.", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("does not pin Bennewitz.Ninja.AssemblyQuality", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>Inspections builds both, and its tests take them by project, so it pins neither.</summary>
+    [Fact]
+    public void A_repository_that_publishes_the_quality_packages_need_not_pin_them()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["packages.push"] = "Fixture.Widget\nBennewitz.Ninja.AssemblyQuality\nBennewitz.Ninja.CodeQuality\n";
         fixture.Files["Directory.Packages.props"] = "<Project>\n  <ItemGroup />\n</Project>\n";
 
         Result result = fixture.Run("check", "--admin");
@@ -911,6 +935,7 @@ public sealed class RepoConventionsTests
                 <Project>
                   <ItemGroup>
                     <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" />
+                    <PackageVersion Include="Bennewitz.Ninja.CodeQuality" Version="2026.4.1111" />
                   </ItemGroup>
                 </Project>
                 """,
