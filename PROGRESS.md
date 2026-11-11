@@ -14,12 +14,18 @@ section):
 1. **The family is synced to `2026.4.1111`** (2026-11-11, on the maintainer's word; its section
    below). AutoVersioning, JsonC, FileServer, Inspections and AppKit each carry the new
    `repo-conventions.cs` and `Bennewitz.Ninja.CodeQuality` `2026.4.1104`, and each conforms.
-   - **Next, in a later release**: `Bennewitz.Ninja.CodeQuality` joins `QualityPins.Required`, now
-     that the family has adopted it. A release happens on the maintainer's word.
-   - **DiffView** must adopt `release-target.cs` before the new rule passes there. That is left to
-     its own session, which has been told.
-   - The templates' AppServices pins (`2026.4.1103`) can take `2026.4.1110`; only URLs and the
-     packed README changed.
+   - **The next release waits for CodeQuality's next release**, which Inspections cuts after its
+     #132 (`BNCQ1009` and `BNCQ3001` accept a catch-all whose filter passes only fatal exceptions).
+     Then one change carries four things, decided 2026-11-11 through `choices`:
+     - the templates' CodeQuality pin raised to that release, measured;
+     - `Bennewitz.Ninja.CodeQuality` added to `QualityPins.Required`;
+     - the AppServices pins moved from `2026.4.1103` to `2026.4.1110`, where only URLs and the packed
+       README changed;
+     - `release-target.cs` refusing a version below the latest that nuget.org lists for the id.
+
+     The release follows on the maintainer's word, then one family sync.
+   - **DiffView** must adopt `release-target.cs` before the new rule passes there, and the CodeQuality
+     pin once it is required. That is left to its own session, which has been told about the first.
    - **Not ours to sync**: ClaudeForge, on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`,
      is left to its owner. TrueCourseCalculator, Geo.Core and GeoHash have no remote and push
      `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
@@ -40,8 +46,8 @@ section):
    - It is recorded in FileServer's PROGRESS.md and AGENTS.md by JanusMael/Bennewitz.Ninja.FileServer#17
      (`50967b2`): every `2026.Q.MMDD` sorts below its published `2026.9.23`.
    - Its exemption from `release-target` lapses on `2027-01-01`.
-   - The session suggests `release-target.cs` refuse a version below the latest published one. That
-     is a candidate, not decided.
+   - The session suggested that `release-target.cs` refuse a version below the latest published
+     one. The maintainer took it for the next release on 2026-11-11 (item 1).
 
 **Waiting on others:**
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
@@ -116,6 +122,12 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   `NUGET_USER` moved to a variable; `check` gains two rules in the next release, `release-target.cs`
   where `packages.push` exists (FileServer exempt until 2027) and the AssemblyQuality pin everywhere.
   This repository is exempt from both, with its reasons, the maintainer's choice the same day.
+- Decided 2026-11-11 after the family synced, through `choices`, for the next release:
+  - It waits for CodeQuality's next release, and raises the templates' pin to it.
+  - It requires the CodeQuality pin in `check`, and moves the AppServices pins to `2026.4.1110`.
+  - It adds `release-target.cs` refusing a version below the latest nuget.org lists, taken over
+    declining it: a guard against a hand-typed wrong tag, at the cost of one query to nuget.org per
+    release.
 
 ## Status
 
@@ -2124,7 +2136,8 @@ tests, pack, `assert-packages`, and `check`. Results:
   `main` at `4012b08`, the theme-audit work of the same day, and measured again there.
 - No packed nuspec gained a dependency, and every CI job passed before each merge.
 
-`check --admin` was not run.
+`check --admin --repo` then ran for this repository and the five synced ones, with the maintainer's
+`gh` login on this machine: all six conform at admin depth.
 
 ## Release `2026.4.1109`
 
