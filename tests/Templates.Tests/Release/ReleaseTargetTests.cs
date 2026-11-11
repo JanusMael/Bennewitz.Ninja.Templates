@@ -197,6 +197,108 @@ public sealed class ReleaseTargetTests
         Assert.Contains("The widgets family names Fixture.Unlisted, which packages.push does not.", refusal.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The version floor (the maintainer's decision of 2026-11-11): nuget.org takes a version below its
+    /// newest without a word, and keeps it for good, so the release refuses one before anything is built.
+    /// </summary>
+    [Fact]
+    public void A_version_below_the_newest_on_nuget_org_is_refused()
+    {
+        using Repository repository = new(families: null);
+        repository.Feed.List("Fixture.Gadget", "2026.3.920", "2026.4.1101", "2026.4.1015");
+
+        Refusal refusal = repository.Refuse("--event", "push", "--ref", "v2026.4.1022");
+
+        Assert.Contains("nuget.org lists Fixture.Gadget 2026.4.1101, newer than 2026.4.1022.", refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_newer_prerelease_on_nuget_org_is_a_floor_too()
+    {
+        using Repository repository = new(families: null);
+        repository.Feed.List("Fixture.Gizmo", "2026.4.1015", "2026.4.1101-beta.2");
+
+        Refusal refusal = repository.Refuse("--event", "push", "--ref", "v2026.4.1022");
+
+        Assert.Contains("nuget.org lists Fixture.Gizmo 2026.4.1101-beta.2, newer than 2026.4.1022.", refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_dispatched_version_below_the_newest_on_nuget_org_is_refused()
+    {
+        using Repository repository = new(families: null);
+        repository.Feed.List("Fixture.Widget", "2026.4.1101");
+
+        Refusal refusal = repository.Refuse("--event", "workflow_dispatch", "--version", "2026.4.1022");
+
+        Assert.Contains("nuget.org lists Fixture.Widget 2026.4.1101, newer than 2026.4.1022.", refusal.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>A family's release is held to its own ids' floors: another family's newer release is no reason to refuse it.</summary>
+    [Fact]
+    public void A_family_s_release_is_held_to_its_own_ids_floors()
+    {
+        using Repository repository = new(TwoFamilies());
+        repository.Feed.List("Fixture.Gizmo", "2026.4.1101");
+
+        Assert.Equal("Fixture.Widget", repository.Resolve("--event", "push", "--ref", "widgets/v2026.4.1022")["IDS"]);
+        Refusal refusal = repository.Refuse("--event", "push", "--ref", "gadgets/v2026.4.1022");
+        Assert.Contains("nuget.org lists Fixture.Gizmo 2026.4.1101, newer than 2026.4.1022.", refusal.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// At or above the newest resolves: a prerelease counts below its own numbers, and a version of
+    /// another scheme by its numbers.
+    /// </summary>
+    [Theory]
+    [InlineData("an earlier day", new[] { "2026.4.1015" })]
+    [InlineData("its own prerelease", new[] { "2026.4.1022-beta" })]
+    [InlineData("another scheme", new[] { "1.0.0", "2026.4.1015", "not-a-version" })]
+    public void A_version_above_the_newest_on_nuget_org_resolves(string scenario, string[] listed)
+    {
+        _ = scenario; // names the row in the test explorer
+        using Repository repository = new(families: null);
+        repository.Feed.List("Fixture.Widget", listed);
+
+        Assert.Equal("2026.4.1022", repository.Resolve("--event", "push", "--ref", "v2026.4.1022")["VERSION"]);
+    }
+
+    /// <summary>
+    /// A re-run of a release nuget.org already lists publishes nothing new, as the push skips it, so it
+    /// resolves, below the newest or not.
+    /// </summary>
+    [Fact]
+    public void A_version_nuget_org_already_lists_resolves()
+    {
+        using Repository repository = new(families: null);
+        repository.Feed.List("Fixture.Widget", "2026.4.1022", "2026.4.1101");
+
+        Assert.Equal("2026.4.1022", repository.Resolve("--event", "push", "--ref", "v2026.4.1022")["VERSION"]);
+    }
+
+    /// <summary>Without the floor, the release would publish a version nobody checked; so a floor it cannot read refuses.</summary>
+    [Fact]
+    public void A_floor_nuget_org_will_not_give_is_refused()
+    {
+        using Repository repository = new(families: null);
+        repository.Feed.Failure = System.Net.HttpStatusCode.ServiceUnavailable;
+
+        Refusal refusal = repository.Refuse("--event", "push", "--ref", "v2026.4.1022");
+
+        Assert.Contains("nuget.org answered 503", refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("so whether 2026.4.1022 is below its newest is unknown", refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_floor_nuget_org_cannot_be_reached_for_is_refused()
+    {
+        using Repository repository = new(families: null);
+
+        Refusal refusal = repository.Refuse("--event", "push", "--ref", "v2026.4.1022", "--feed", FakeFeed.Unreachable());
+
+        Assert.Contains("nuget.org could not be reached for Fixture.Widget's versions", refusal.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void The_github_env_file_receives_every_line()
     {
@@ -467,6 +569,12 @@ public sealed class ReleaseTargetTests
 
         public string Directory { get; }
 
+        /// <summary>
+        /// The flat container <c>resolve</c> reads its version floor from. It lists no id until told
+        /// to, so every id is a first release and has no floor.
+        /// </summary>
+        public FakeFeed Feed { get; } = FakeFeed.Create();
+
         /// <summary>Sets a key of .github/repository.json; the script reads the working tree.</summary>
         public void Configure(string key, string value)
         {
@@ -539,9 +647,10 @@ public sealed class ReleaseTargetTests
             }
         }
 
+        // The feed goes first, so a test's own --feed, read later, takes its place.
         public Resolved Resolve(params string[] arguments)
         {
-            (int exit, string output) = ShippedScript.ReleaseTarget.Run(Directory, ["resolve", .. arguments]);
+            (int exit, string output) = ShippedScript.ReleaseTarget.Run(Directory, ["resolve", "--feed", Feed.Url, .. arguments]);
             Assert.True(exit == 0, output);
             return new Resolved(output.Replace("\r\n", "\n", StringComparison.Ordinal)
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
@@ -552,7 +661,7 @@ public sealed class ReleaseTargetTests
 
         public Refusal Refuse(params string[] arguments)
         {
-            (int exit, string output) = ShippedScript.ReleaseTarget.Run(Directory, ["resolve", .. arguments]);
+            (int exit, string output) = ShippedScript.ReleaseTarget.Run(Directory, ["resolve", "--feed", Feed.Url, .. arguments]);
             Assert.True(exit == 1, $"Expected a refusal, exit 1; got {exit}:\n{output}");
             Assert.Contains("::error::", output, StringComparison.Ordinal);
             Assert.Contains("Nothing was published.", output, StringComparison.Ordinal);

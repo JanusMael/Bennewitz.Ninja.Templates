@@ -2088,6 +2088,35 @@ out on the maintainer's word. AppServices and ScopedEditors also need the attrib
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
 
+## The next release, prepared 2026-11-11 — outside the plans
+
+The four parts the maintainer decided on 2026-11-11 through `choices` (the Resume), in one change,
+unreleased until the maintainer's word.
+
+- **`release-target.cs resolve` refuses a version below the newest that nuget.org lists for one of
+  the release's ids.** nuget.org takes a lower version without a word, and it is permanent; every tag
+  is typed by hand. It reads nuget.org's flat container, which lists unlisted versions too, after the
+  ids are resolved and before anything is built.
+  - A version nuget.org already lists is let through, below the newest or not: `--skip-duplicate`
+    makes a re-run's push a no-op, and plans/00011 decision 8 already allows a dispatch re-releasing an
+    older version.
+  - An id nuget.org has never seen (404) has no floor. A prerelease counts by its numbers, so
+    `2026.4.1022` is above `2026.4.1022-beta` and below `2026.4.1101-beta.2`.
+  - nuget.org answering anything else, or not at all within 30 s, refuses the release: a floor that
+    cannot be read is not one.
+  - `--feed <url>` reads another flat container. The tests serve one from their own process,
+    `FakeFeed`, an `HttpListener`, so they never reach nuget.org; `verify-release` still reads
+    nuget.org itself, resolving a tag in each generated repository.
+  - Its documentation: `docs/repository-conventions.md`, `templates/bbpkg/AGENTS.md`'s invariants,
+    `templates/bbpkg/scripts/AGENTS.md`, the shipped `release.yml`'s comment, `tests/AGENTS.md`.
+  - **Tested**: ten new cases in `ReleaseTargetTests`, which passes 50 of 50. Canaried, each turning
+    only its own tests red: the floor never checked (5: three lower versions, a family's among them,
+    and the feed answering 503 or nothing); a re-run not let through (1); a prerelease's suffix not
+    stripped (1, the test added after the canaries showed nothing caught it). An id not lower-cased
+    turned 3 red, and hid the re-run canary run beside it, so each ran alone.
+  - `BNCQ1009` found the fake feed's server thread, whose throw would end the test process; its body
+    is one try/catch that logs.
+
 ## Release `2026.4.1111`
 
 Released on the maintainer's word on 2026-11-11, "Push v2026.4.1111", through `choices`. It carries

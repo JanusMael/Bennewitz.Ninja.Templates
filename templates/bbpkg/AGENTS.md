@@ -39,6 +39,7 @@
 | Versions are pinned centrally | Two projects drift to different versions of one dependency | `Directory.Packages.props` |
 | Warnings are errors | A warning ships | `Directory.Build.props`; `ci.yml` builds with `-warnaserror` |
 | The version is the tag, `vYYYY.Q.MMDD`, or `<family>/vYYYY.Q.MMDD` where `.github/repository.json` declares families | The package and the tag disagree. A published version can never be replaced | `scripts/release-target.cs`, run by `release.yml` before anything is built |
+| A release's version is never below the newest nuget.org lists for one of its ids, unless nuget.org already lists it (a re-run, whose push is skipped) | nuget.org takes the lower version without a word, and it is permanent | `scripts/release-target.cs resolve`, which reads nuget.org's flat container and refuses when it cannot |
 | `NUGET_USER` is a repository **variable**, not a secret | A masked value hides why a trusted-publishing login fails | `release.yml`, step `Refuse to release without NUGET_USER` |
 | The repository meets the family conventions | Documentation or settings go missing unnoticed | `scripts/repo-conventions.cs`, run by CI |
 

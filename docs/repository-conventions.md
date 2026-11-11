@@ -114,7 +114,10 @@ release publishes one family's ids, at that family's version.
 the dispatch before anything is built. Where there are families it refuses a bare `v*` tag, a
 dispatch without a family, and a family that is not declared; where there are none, it refuses a
 family tag and a dispatch that names a family. In both kinds of repository it refuses a version
-that is not `YYYY.Q.MMDD` with the quarter of its date.
+that is not `YYYY.Q.MMDD` with the quarter of its date, and one below the newest that nuget.org
+lists for one of the release's ids, which nuget.org would take quietly and keep. A version nuget.org
+already lists is let through, as a re-run's push is skipped; an id it has never seen has no floor;
+and when nuget.org cannot be read, the release is refused.
 
 **A family's notes are its own** (`plans/00011`). GitHub's generated notes list every pull request
 merged in the repository, whichever family it touched, so `release-target.cs notes` writes them
