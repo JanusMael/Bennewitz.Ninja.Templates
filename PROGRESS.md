@@ -23,12 +23,13 @@ section):
      (`0b1a868`): both ported to MSTest and canaried, `docs/publishing.md`, and `NUGET_USER` moved
      from a secret to a variable, set on the maintainer's word, as in every other repository; its
      first blank-version preflight, run `43050490199`, logged in. Every family repository now has
-     both, FileServer's `release-target.cs` excepted until 2027. **Next: two `check` rules**, the
-     maintainer's decision of 2026-11-11, in the next release, so the next such file cannot be
-     missed: a repository with `packages.push` has `scripts/release-target.cs` and its `release.yml`
-     resolves through it, FileServer exempt through a `repository.json` field until 2027; and every
-     repository pins `Bennewitz.Ninja.AssemblyQuality`, and `Bennewitz.Ninja.CodeQuality` once the
-     family has adopted it. DiffView is left to its own session, and ClaudeForge,
+     both, FileServer's `release-target.cs` excepted until 2027. **Two `check` rules are on `main`
+     for the next release** (2026-11-11, their section below), so the next such file cannot be
+     missed: `release-target.cs` where `packages.push` names an id, and the AssemblyQuality pin
+     everywhere, each exemptible in `repository.json`'s `exempt`. At the sync that brings them in,
+     FileServer adds its `release-target` exemption until `2027-01-01`, DiffView adopts
+     `release-target.cs`, and `Bennewitz.Ninja.CodeQuality` joins the pin rule once the family has
+     adopted it. DiffView is left to its own session, and ClaudeForge,
    on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`, to its owner. Not synced:
    TrueCourseCalculator, Geo.Core and GeoHash, which have no remote and push `artifacts/*.nupkg`,
    which the no-glob rule fails once they adopt the script.
@@ -128,6 +129,7 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
 - Decided 2026-11-11, through `choices`: AutoVersioning caught up with the template now, and its
   `NUGET_USER` moved to a variable; `check` gains two rules in the next release, `release-target.cs`
   where `packages.push` exists (FileServer exempt until 2027) and the AssemblyQuality pin everywhere.
+  This repository is exempt from both, with its reasons, the maintainer's choice the same day.
 
 ## Status
 
@@ -1483,6 +1485,49 @@ measured first, a finding that cannot throw on real input suppressed where it st
 - ⚠ **Inspections' `AnalyzerReleases.Unshipped.md` still lists `BNCQ1005` to `BNCQ3001`**, which
   `codequality/v2026.4.1104` shipped; its own convention moves them to `Shipped` in the tag's change.
   Inspections' to fix.
+
+## What a sync cannot bring in: two `check` rules — outside the plans
+
+The maintainer's decision of 2026-11-11, through `choices`, for the next release, after JsonC's
+session found that a pins-only sync never delivers a file the template gained after a repository was
+generated (the Resume). `check` gains two rules, at every depth including `--release`, documented in
+`docs/repository-conventions.md`, "What a sync cannot bring in":
+
+- **`release-target`**: a repository whose `packages.push` names an id carries
+  `scripts/release-target.cs`, and some line of its `release.yml` outside a comment runs
+  `scripts/release-target.cs -- resolve`, with or without `--file`.
+- **`quality-pins`**: every repository's `Directory.Packages.props` pins
+  `Bennewitz.Ninja.AssemblyQuality`; a comment pins nothing. A repository whose `packages.push` names
+  the package builds it and takes it by project, so it is not asked to pin it: Inspections.
+  `Bennewitz.Ninja.CodeQuality` joins `QualityPins.Required` once the family has adopted it, at the
+  sync after the next release; required sooner, it would fail every repository on the sync that
+  brings in this rule.
+- **`exempt` in `repository.json`**: `{ "<rule>": { "reason": "…", "until": "YYYY-MM-DD" } }`, for those
+  two rules only. While it holds, what the rule would fail is a NOTE carrying the reason; from `until`
+  on, the rule fails again. An empty reason, another rule's name or a malformed date fails, and an
+  exemption from a rule the repository meets is a NOTE to remove it.
+- **This repository is exempt from both**, the maintainer's choice of 2026-11-11: it is the templates'
+  source, its own `release.yml` publishes its one id by name, and it ships no assembly for
+  AssemblyQuality to inspect. The surprise was found before the build: its own `check` failed both.
+- **The app templates' "Adding a library" checklist** now names `release-target.cs` among what to
+  bring over from `bbpkg`, since the rule applies the day `packages.push` names an id.
+- **The family, checked from this branch with `check --repo`**: JsonC, Inspections, AppKit and
+  AutoVersioning meet both, drift aside. Two do not, and neither is red until it takes the new script:
+  - **FileServer** needs `"exempt": { "release-target": { "reason": "…", "until": "2027-01-01" } }` in
+    its `repository.json` at that sync, its `vYYYY.M.D` tags kept until its first 2027 release (the
+    Resume); told to its session. Trialled on a local clone with that field: conforms, with the NOTE.
+  - **DiffView**, which pushes two ids and has not released, needs `release-target.cs` with the
+    `release.yml` that resolves through it, before its first release or at that sync; told to its
+    session, which owns the repository.
+- **Verified 2026-11-11**: the root tests, 223 of 223, ten of them new; `verify-release` passes all
+  seven generated repositories, each running its own copy of the new script with `check --offline`
+  (`bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 17, `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15,
+  `bbconsole` 14 with SIGINT skipped on Windows); this repository's `check` conforms through its two
+  exemptions. Canaried, each turning only its own tests red: `release-target` never checking (5),
+  the pin rule wanting nothing (3), an exemption never lapsing (1).
+- **No twin of the gap elsewhere in `check`**: the template's other files a sync would not bring
+  are `docs/publishing.md` and the AssemblyQuality tests themselves, neither checked here; the pin
+  rule stands in for the tests, and the maintainer's decision named these two rules only.
 
 ## `plans/00009` — package families consolidate into Inspections and AppKit
 
