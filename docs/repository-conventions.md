@@ -27,7 +27,7 @@ not generated from the template adopts the same files by hand; see
 | A `conventions` CI job | `.github/workflows/ci.yml` | Runs `check` on every push and pull request | the `main` ruleset requires it |
 | A preflight step | `.github/workflows/release.yml` | Runs `check --release` before anything is published | the release itself |
 | `scripts/release-target.cs` | `scripts/`, where `packages.push` names an id | [Resolves each release](#what-a-sync-cannot-bring-in): its version, its family and the ids it publishes. `release.yml` runs it | `check` |
-| The quality pin | `Directory.Packages.props` | [`Bennewitz.Ninja.AssemblyQuality` pinned](#what-a-sync-cannot-bring-in), its rules run in the tests | `check` |
+| The quality pins | `Directory.Packages.props` | [`Bennewitz.Ninja.AssemblyQuality` and `Bennewitz.Ninja.CodeQuality` pinned](#what-a-sync-cannot-bring-in), the first's rules run in the tests, the second's in the build | `check` |
 | `AssemblyInfo.InternalsVisibleTo.cs` | root | The generated [friend grants](#friend-grants): every assembly the repository builds | `check` |
 | `AssemblyInfo.InternalsVisibleTo.External.cs` | root | Grants to other repositories, by hand | `check` |
 | The grants link | `Directory.Build.targets` | Links both files into every project | `check` |
@@ -59,11 +59,12 @@ rules make such a gap visible, each at every depth including `--release`:
   family, and the ids it publishes, are read by that one script, never re-derived in a workflow's
   bash. `check` fails when the script is missing, or when no line of `release.yml` outside a comment
   runs `scripts/release-target.cs -- resolve`. A repository that publishes nothing needs neither.
-- **Every repository pins `Bennewitz.Ninja.AssemblyQuality` in `Directory.Packages.props`**, as
-  every template does, and runs its rules in its tests. `check` fails when the file is missing or
-  pins no such id; a comment pins nothing. A repository that publishes the package is not asked to
-  pin it: it builds it, and its tests take it by project. `Bennewitz.Ninja.CodeQuality` joins this
-  rule once the family has adopted it.
+- **Every repository pins `Bennewitz.Ninja.AssemblyQuality` and `Bennewitz.Ninja.CodeQuality` in
+  `Directory.Packages.props`**, as every template does, and runs AssemblyQuality's rules in its tests
+  and CodeQuality's in its build. `check` fails when the file is missing or does not pin one of them;
+  a comment pins nothing. A repository that publishes one of the packages is not asked to pin it: it
+  builds it, and its tests take it by project. CodeQuality joined the rule in the release after the
+  family adopted it, at its sync to `2026.4.1111`.
 
 Either rule can be set aside for one repository in `repository.json`'s
 [`exempt`](#githubrepositoryjson), with its reason and, when the exemption is temporary, the day it
