@@ -6,56 +6,53 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-09 after `Bennewitz.Ninja.Templates
-2026.4.1109` was released and verified from nuget.org, and the family synced to it (its section
-below).*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-11 after `Bennewitz.Ninja.Templates
+2026.4.1111` was released and verified from nuget.org (its section below).*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **The family is synced to `2026.4.1109`** (2026-11-09, its release section): JsonC, FileServer,
-   Inspections and AppKit, one pull request each, pins only; AutoVersioning had no pin to take.
-   No package changed, so nothing released.
-   - ⚠ **A pins-only sync never delivers a file the template gained after a repository was
-     generated**, and `check` does not look for those files. JsonC found it on 2026-11-10 and took
-     the two it lacked (JanusMael/Bennewitz.Ninja.JsonC#11, AssemblyQuality's tests; #12,
-     `release-target.cs` with the `release.yml` that uses it). AutoVersioning lacked both and was
-     caught up on 2026-11-11 by the maintainer's choice, JanusMael/Bennewitz.Ninja.AutoVersioning#10
-     (`0b1a868`): both ported to MSTest and canaried, `docs/publishing.md`, and `NUGET_USER` moved
-     from a secret to a variable, set on the maintainer's word, as in every other repository; its
-     first blank-version preflight, run `43050490199`, logged in. Every family repository now has
-     both, FileServer's `release-target.cs` excepted until 2027. **Two `check` rules are on `main`
-     for the next release** (2026-11-11, their section below), so the next such file cannot be
-     missed: `release-target.cs` where `packages.push` names an id, and the AssemblyQuality pin
-     everywhere, each exemptible in `repository.json`'s `exempt`. At the sync that brings them in,
-     FileServer adds its `release-target` exemption until `2027-01-01`, DiffView adopts
-     `release-target.cs`, and `Bennewitz.Ninja.CodeQuality` joins the pin rule once the family has
-     adopted it. DiffView is left to its own session, and ClaudeForge,
-   on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`, to its owner. Not synced:
-   TrueCourseCalculator, Geo.Core and GeoHash, which have no remote and push `artifacts/*.nupkg`,
-   which the no-glob rule fails once they adopt the script.
+1. **The family syncs to `2026.4.1111`, on the maintainer's word**; nothing is synced yet. The release
+   ships CodeQuality in every template and the two new `check` rules (their sections below).
+   - **The sync takes the new `repo-conventions.cs`** in each of JsonC, FileServer, Inspections,
+     AppKit and AutoVersioning: until then, run from here, each reports only drift.
+   - **It adopts `Bennewitz.Ninja.CodeQuality` `2026.4.1104` measured**: a finding that cannot throw
+     is suppressed where it stands, with the reason.
+   - **The new rules bring two follow-ups.**
+     - FileServer adds `"exempt": { "release-target": { …, "until": "2027-01-01" } }` in the same
+       commit as the new script; its session has acknowledged.
+     - DiffView must adopt `release-target.cs` before it passes. That is left to its own session,
+       which has been told.
+   - **After the sync**, `Bennewitz.Ninja.CodeQuality` joins `QualityPins.Required` in a later
+     release.
+   - The templates' AppServices pins (`2026.4.1103`) can take `2026.4.1110` there; only URLs and the
+     packed README changed.
+   - **Background: a pins-only sync never delivers a file the template gained after generation.**
+     JsonC found this on 2026-11-10 (JanusMael/Bennewitz.Ninja.JsonC#11, #12). AutoVersioning was
+     caught up on 2026-11-11 in JanusMael/Bennewitz.Ninja.AutoVersioning#10 (`0b1a868`); its
+     `NUGET_USER` is now a variable, and its first preflight, run `43050490199`, logged in. The two
+     rules exist so the next such gap is reported.
+   - **Not ours to sync**: ClaudeForge, on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`,
+     is left to its owner. TrueCourseCalculator, Geo.Core and GeoHash have no remote and push
+     `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
 2. **[`plans/00009`](plans/00009-package-consolidation.md) is complete** (2026-11-09, its section
-   below). **AppServices and ScopedEditors released from AppKit** on 2026-11-10, at `2026.4.1110`,
-   on the maintainer's word: `appservices/v2026.4.1110` and `scopededitors/v2026.4.1110` at
-   `a1f42db`, all eight ids verified from nuget.org (listed, nuspec naming AppKit, restored with
-   nuget.org alone), recorded in AppKit's `PROGRESS.md`. Against `2026.4.1103` only the URLs and the
-   packed README changed, so the templates' AppServices pins (`2026.4.1103`) can take `2026.4.1110`
-   at the next sync; nothing needs it sooner. nuget.org took about 45 minutes to index them. DiffView,
-   kept in its own repository, needs a policy of its own for its first nuget.org release.
+   below).
+   - **AppServices and ScopedEditors were released from AppKit** at `2026.4.1110` on 2026-11-10, on
+     the maintainer's word, with all eight ids verified from nuget.org.
+   - **DiffView**, kept in its own repository, needs a policy of its own for its first nuget.org
+     release.
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
-     `plans/00012` checks links, not images; no family README carries an image today. A plan follows
-     only when one first does (the maintainer, 2026-10-30).
+     `plans/00012` checks links, not images, and no family README carries an image today. A plan
+     follows only when one first does (the maintainer, 2026-10-30).
 3. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
    part 2 done in the syncs, AppKit, FileServer and JsonC on `4.0.3` since 2026-11-09, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
-4. **CodeQuality in every template** (2026-11-10, its section below): on `main` for the next
-   release, which waits on the maintainer's word; the family adopts it at the sync after it.
-   - **FileServer keeps `vYYYY.M.D` tags until its first 2027 release**, the maintainer's decision,
-     recorded in its PROGRESS.md and AGENTS.md by JanusMael/Bennewitz.Ninja.FileServer#17, merged as
-     `50967b2` on 2026-11-10, which also adopted AssemblyQuality's tests: every
-     `2026.Q.MMDD` sorts below its published `2026.9.23`. Neither those tags nor its missing
-     `release-target.cs` is drift before then. The session suggests `release-target.cs` refuse a
-     version below the latest published one: a candidate, not decided.
+4. **FileServer keeps `vYYYY.M.D` tags until its first 2027 release**, the maintainer's decision.
+   - It is recorded in FileServer's PROGRESS.md and AGENTS.md by JanusMael/Bennewitz.Ninja.FileServer#17
+     (`50967b2`): every `2026.Q.MMDD` sorts below its published `2026.9.23`.
+   - Its exemption from `release-target` lapses on `2027-01-01`.
+   - The session suggests `release-target.cs` refuse a version below the latest published one. That
+     is a candidate, not decided.
 
 **Waiting on others:**
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
@@ -2087,6 +2084,37 @@ Unreleased. It is the change of its own that side 2 of `plans/00008` waits to sh
 out on the maintainer's word. AppServices and ScopedEditors also need the attribute in
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
+
+## Release `2026.4.1111`
+
+Released on the maintainer's word on 2026-11-11, "Push v2026.4.1111", through `choices`. It carries
+three changes since `2026.4.1109`, each in its own section above:
+- `Bennewitz.Ninja.CodeQuality` `2026.4.1104` in every template;
+- the two `check` rules, `release-target` and `quality-pins`, with `repository.json`'s `exempt`;
+- the `BNAV03` comment.
+
+The converter's xUnit1073 suppression (#84) landed in the same span, but it is in this repository's
+`scripts/` and is not packed.
+
+`verify-release` passed on `8bfc70c`'s tree before the tag. `main`'s CI passed there, run
+`43062772053`, and the blank-version preflight logged in, run `43063576139`. The tag's run,
+[43064047910](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/43064047910),
+passed every gate. It pushed `Bennewitz.Ninja.Templates 2026.4.1111` and made the GitHub release with
+it.
+
+Verified against the feed: the flat container listed `2026.4.1111` at 17:28 UTC, about 20 minutes
+after the push. `verify-release --published 2026.4.1111` then installed it from nuget.org and
+passed all seven cases: `bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 17, `bbweb` 14,
+`bbweb --blazor` 17, `bbapi` 15, and `bbconsole` 14 with SIGINT skipped on Windows. Every app
+published for `win-x64` and ran.
+
+**The family syncs on the maintainer's word**, and nothing is synced yet. That sync brings in the new
+script and CodeQuality, adopted measured, with any finding that cannot throw suppressed where it
+stands. It also brings in the new rules:
+- FileServer adds its `release-target` exemption;
+- DiffView, left to its own session, adopts `release-target.cs`.
+
+`Bennewitz.Ninja.CodeQuality` joins `QualityPins.Required` once that sync is done.
 
 ## Release `2026.4.1109`
 
