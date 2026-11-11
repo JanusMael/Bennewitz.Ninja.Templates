@@ -71,8 +71,9 @@ produces ILLink warnings in CI's `publish` job, which fail it.
 
 **Adding a library under `src/`:** it is packable only if something outside this repository will
 reference it. If so, add its id to `packages.push`, or to `packages.local` with the reason, and
-bring over what `bbpkg` generates for publishing: the pack job and `assert-packages.cs`, a
-`Push to NuGet.org` release step, and trusted publishing on nuget.org. `repo-conventions` then holds
+bring over what `bbpkg` generates for publishing: the pack job and `assert-packages.cs`,
+`release-target.cs` and the release steps that resolve through it, a `Push to NuGet.org` release
+step, and trusted publishing on nuget.org. `repo-conventions` then holds
 it to the package properties and to trimming.
 
 **Adding, removing or renaming a project:** run `repo-conventions grants`, which rewrites

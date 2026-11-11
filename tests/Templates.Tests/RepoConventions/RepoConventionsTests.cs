@@ -404,6 +404,7 @@ public sealed class RepoConventionsTests
               publish:
                 runs-on: ubuntu-latest
                 steps:
+                  - run: dotnet run scripts/release-target.cs -- resolve
                   # Never ./packages/Release/*.nupkg: a glob publishes whatever the build produced.
                   - run: |
                       targets=()
@@ -647,6 +648,184 @@ public sealed class RepoConventionsTests
         Assert.DoesNotContain(Lines(result.Output), l => l.StartsWith("PATCH ", StringComparison.Ordinal));
     }
 
+    /// <remarks>
+    /// AutoVersioning as it stood until 2026-11-11: it published, and its release resolved nothing
+    /// through the script, which a pins-only sync never delivered. ⛔ At release depth.
+    /// </remarks>
+    [Fact]
+    public void A_publishing_repository_without_release_target_fails_at_release_depth()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files.Remove("scripts/release-target.cs");
+
+        Result result = fixture.Run("check", "--release");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL release: scripts/release-target.cs is missing.", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("does not resolve its release", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>The script on disk is not enough: the release must run it, and a comment runs nothing.</summary>
+    [Fact]
+    public void A_release_that_does_not_resolve_through_release_target_fails()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files[".github/workflows/release.yml"] =
+            """
+            name: Release
+            on: workflow_dispatch
+            jobs:
+              release:
+                runs-on: ubuntu-latest
+                steps:
+                  # dotnet run scripts/release-target.cs -- resolve
+                  - run: echo "IDS=$(grep -v '^#' packages.push)" >> "$GITHUB_ENV"
+            """;
+
+        Result result = fixture.Run("check");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL release: .github/workflows/release.yml does not resolve its release through scripts/release-target.cs", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>An app, which publishes nothing to nuget.org, has no release-target.cs to carry.</summary>
+    [Fact]
+    public void A_repository_that_publishes_nothing_needs_no_release_target()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["packages.push"] = "# Nothing is published.\n";
+        fixture.Files.Remove("scripts/release-target.cs");
+        fixture.Files.Remove(".github/workflows/release.yml");
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("release-target", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Inspections' shape: a comment names AssemblyQuality and pins nothing, and a comment is not a pin.
+    /// </summary>
+    [Fact]
+    public void A_repository_that_does_not_pin_AssemblyQuality_fails()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["Directory.Packages.props"] =
+            """
+            <Project>
+              <ItemGroup>
+                <!-- <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" /> -->
+                <PackageVersion Include="Bennewitz.Ninja.CodeQuality" Version="2026.4.1104" />
+              </ItemGroup>
+            </Project>
+            """;
+
+        Result result = fixture.Run("check", "--release");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL quality: Directory.Packages.props does not pin Bennewitz.Ninja.AssemblyQuality.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_repository_without_Directory_Packages_props_fails_the_pin()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files.Remove("Directory.Packages.props");
+
+        Result result = fixture.Run("check");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL quality: Directory.Packages.props is missing, so nothing pins Bennewitz.Ninja.AssemblyQuality.", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>Inspections builds AssemblyQuality, and its tests take it by project, so it pins nothing.</summary>
+    [Fact]
+    public void A_repository_that_publishes_AssemblyQuality_need_not_pin_it()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["packages.push"] = "Fixture.Widget\nBennewitz.Ninja.AssemblyQuality\n";
+        fixture.Files["Directory.Packages.props"] = "<Project>\n  <ItemGroup />\n</Project>\n";
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("FAIL quality", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// FileServer's exemption: until the day given, what the rule would fail is a NOTE that carries
+    /// the reason, so it stays in sight without turning CI red.
+    /// </summary>
+    [Fact]
+    public void An_exemption_sets_a_rule_aside_and_says_so()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files.Remove("scripts/release-target.cs");
+        fixture.Config["exempt"] = new JsonObject
+        {
+            ["release-target"] = new JsonObject { ["reason"] = "Its tags keep their old shape for now.", ["until"] = "2999-01-01" },
+        };
+
+        Result result = fixture.Run("check", "--release");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Contains("NOTE release-target: Exempt until 2999-01-01 by repository.json: Its tags keep their old shape for now. Otherwise: scripts/release-target.cs is missing.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_exemption_lapses_on_its_until_day()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files.Remove("Directory.Packages.props");
+        fixture.Config["exempt"] = new JsonObject
+        {
+            ["quality-pins"] = new JsonObject { ["reason"] = "Adopting it next.", ["until"] = "2020-01-01" },
+        };
+
+        Result result = fixture.Run("check");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL quality: Directory.Packages.props is missing", result.Output, StringComparison.Ordinal);
+        Assert.Contains("NOTE repository.json: The exemption from \"quality-pins\" lapsed on 2020-01-01: Adopting it next.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_exemption_a_repository_no_longer_needs_is_a_note()
+    {
+        Fixture fixture = Conforming();
+        fixture.Config["exempt"] = new JsonObject
+        {
+            ["release-target"] = new JsonObject { ["reason"] = "Not adopted yet." },
+        };
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Contains("NOTE repository.json: \"exempt\" sets \"release-target\" aside, but this repository meets it. Remove the exemption.", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>An exemption with no reason, from a rule no exemption covers, or with no date for its end, exempts nothing.</summary>
+    [Fact]
+    public void A_malformed_exemption_fails_and_exempts_nothing()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files.Remove("scripts/release-target.cs");
+        fixture.Config["exempt"] = new JsonObject
+        {
+            ["release-target"] = new JsonObject { ["reason"] = " " },
+            ["quality-pins"] = new JsonObject { ["reason"] = "Soon.", ["until"] = "next year" },
+            ["docs"] = new JsonObject { ["reason"] = "Not a rule an exemption covers." },
+        };
+
+        Result result = fixture.Run("check");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL repository.json: \"exempt\" sets \"release-target\" aside without a reason", result.Output, StringComparison.Ordinal);
+        Assert.Contains("FAIL repository.json: \"exempt\"'s \"quality-pins\" has \"until\" \"next year\", which is not a date, YYYY-MM-DD.", result.Output, StringComparison.Ordinal);
+        Assert.Contains("FAIL repository.json: \"exempt\" names \"docs\", which no exemption covers", result.Output, StringComparison.Ordinal);
+        Assert.Contains("FAIL release: scripts/release-target.cs is missing.", result.Output, StringComparison.Ordinal);
+    }
+
     private static IEnumerable<string> Lines(string text) =>
         text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.Trim());
 
@@ -712,6 +891,29 @@ public sealed class RepoConventionsTests
             ["scripts/AGENTS.md"] = "# scripts\n",
             ["scripts/CLAUDE.md"] = "@AGENTS.md\n",
             ["scripts/repo-conventions.cs"] = script,
+            // It publishes, so its release resolves through release-target.cs; only the file's presence is read.
+            ["scripts/release-target.cs"] = "// The template's release-target.cs.\n",
+            [".github/workflows/release.yml"] =
+                """
+                name: Release
+                on:
+                  push:
+                    tags: ['v*']
+                jobs:
+                  release:
+                    runs-on: ubuntu-latest
+                    steps:
+                      - name: Resolve the release
+                        run: dotnet run scripts/release-target.cs -- resolve --event "$GITHUB_EVENT_NAME" --ref "$GITHUB_REF_NAME"
+                """,
+            ["Directory.Packages.props"] =
+                """
+                <Project>
+                  <ItemGroup>
+                    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" />
+                  </ItemGroup>
+                </Project>
+                """,
             ["templates/AGENTS.md"] = "# templates\n\nEverything beneath is shipped content.\n",
             ["templates/CLAUDE.md"] = "@AGENTS.md\n",
             ["templates/bbpkg/AGENTS.md"] = "<!-- bbpkg: describe the generated repository -->\n",

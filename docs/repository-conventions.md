@@ -26,6 +26,8 @@ not generated from the template adopts the same files by hand; see
 | `scripts/repo-conventions.cs` | `scripts/` | The enforcer, identical to the template's copy | `check --repo`, run from this repository |
 | A `conventions` CI job | `.github/workflows/ci.yml` | Runs `check` on every push and pull request | the `main` ruleset requires it |
 | A preflight step | `.github/workflows/release.yml` | Runs `check --release` before anything is published | the release itself |
+| `scripts/release-target.cs` | `scripts/`, where `packages.push` names an id | [Resolves each release](#what-a-sync-cannot-bring-in): its version, its family and the ids it publishes. `release.yml` runs it | `check` |
+| The quality pin | `Directory.Packages.props` | [`Bennewitz.Ninja.AssemblyQuality` pinned](#what-a-sync-cannot-bring-in), its rules run in the tests | `check` |
 | `AssemblyInfo.InternalsVisibleTo.cs` | root | The generated [friend grants](#friend-grants): every assembly the repository builds | `check` |
 | `AssemblyInfo.InternalsVisibleTo.External.cs` | root | Grants to other repositories, by hand | `check` |
 | The grants link | `Directory.Build.targets` | Links both files into every project | `check` |
@@ -45,6 +47,28 @@ nuget.org version is permanent: one stray package is published for good.
 `action-gh-release` step. The whole workflow is read, not one step, so a glob on a continued or
 folded command line is caught. A workflow that publishes nothing may glob: CI listing its packages
 ships nothing. Comment lines are skipped.
+
+## What a sync cannot bring in
+
+A sync takes the template's pins and never a file the template gained after a repository was
+generated. AutoVersioning released for weeks without `release-target.cs`, and nothing said so. Two
+rules make such a gap visible, each at every depth including `--release`:
+
+- **A repository whose `packages.push` names an id carries `scripts/release-target.cs`, and its
+  `release.yml` resolves every release through it**, as the template's does. The tag's version and
+  family, and the ids it publishes, are read by that one script, never re-derived in a workflow's
+  bash. `check` fails when the script is missing, or when no line of `release.yml` outside a comment
+  runs `scripts/release-target.cs -- resolve`. A repository that publishes nothing needs neither.
+- **Every repository pins `Bennewitz.Ninja.AssemblyQuality` in `Directory.Packages.props`**, as
+  every template does, and runs its rules in its tests. `check` fails when the file is missing or
+  pins no such id; a comment pins nothing. A repository that publishes the package is not asked to
+  pin it: it builds it, and its tests take it by project. `Bennewitz.Ninja.CodeQuality` joins this
+  rule once the family has adopted it.
+
+Either rule can be set aside for one repository in `repository.json`'s
+[`exempt`](#githubrepositoryjson), with its reason and, when the exemption is temporary, the day it
+ends. While an exemption holds, what the rule would fail is a NOTE that carries the reason, so it
+stays in sight.
 
 ## Markdown is checked out as LF
 
@@ -392,6 +416,7 @@ Only what varies from one repository to the next:
 | `props` | Per-project exemptions from the [build properties](#build-properties): `{ "<project>": { "<rule>": "<reason>" } }`. An empty reason fails |
 | `families` | Only in a repository that releases several [package families](#package-families): `{ "<stem>": ["<id>", …] }`. The ids together must be exactly `packages.push`'s |
 | `bareTags` | Only with `families`: the stem of the family whose releases the repository's bare `v…` tags were, before it had families. That family's notes then start from the newest of them. A stem that is not a declared family fails |
+| `exempt` | Whole rules set aside for this repository: `{ "<rule>": { "reason": "…", "until": "YYYY-MM-DD" } }`, for `release-target` and `quality-pins` ([what a sync cannot bring in](#what-a-sync-cannot-bring-in)). `until` is optional: the first day the rule applies again. While it holds, what the rule would fail is a NOTE carrying the reason. An empty reason, another rule's name or a malformed date fails; an exemption from a rule the repository meets is a NOTE to remove it. This repository is exempt from both, as the templates' source; FileServer from `release-target` until `2027-01-01` |
 | `trimming` | Retired: no longer read, and a NOTE while present. Whether a repository trims follows from its projects ([build properties](#build-properties)) |
 
 ## Commands
@@ -406,10 +431,10 @@ dotnet run --file scripts/repo-conventions.cs -- grants
 
 | Command | Run by | What it does |
 |---|---|---|
-| `check` | CI, on every push and pull request | Documentation, markers, package globs, families, description, topics, homepage, feature toggles, rulesets, required checks, markdown line endings |
-| `check --release` | the release workflow | Only what is prescribed: the documents, the markers, the package globs, a non-empty description, the friend grants and, where there are families, the families' rules. A drifted setting does not stop a publish |
+| `check` | CI, on every push and pull request | Documentation, markers, package globs, `release-target.cs`, the quality pin, families, description, topics, homepage, feature toggles, rulesets, required checks, markdown line endings |
+| `check --release` | the release workflow | Only what is prescribed: the documents, the markers, the package globs, `release-target.cs`, the quality pin, a non-empty description, the friend grants and, where there are families, the families' rules. A drifted setting does not stop a publish |
 | `check --admin` | the maintainer | Everything, including the merge options and security toggles; fails on anything unreadable |
-| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, the families, the required checks against the workflows, the build properties, the friend grants, the script copy, and the markdown line endings |
+| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, `release-target.cs`, the quality pin, the families, the required checks against the workflows, the build properties, the friend grants, the script copy, and the markdown line endings |
 | `grants` | anyone, after adding, removing or renaming a project | Writes `AssemblyInfo.InternalsVisibleTo.cs` from the projects' assembly names, and an empty External file when there is none. Asks nothing of GitHub |
 | `apply --dry-run` | the maintainer | Prints every request `apply` would send |
 | `apply` | the maintainer | Writes the description, homepage, topics, baseline settings, security toggles and both rulesets |
@@ -450,7 +475,9 @@ What generation does is marked ✅; the rest is yours.
 2. Write `.github/repository.json`, listing in `requiredChecks` only jobs that already exist, and
    a root `.gitattributes` with [markdown checked out as LF](#markdown-is-checked-out-as-lf).
 3. Add the `conventions` job to CI and the preflight step to the release workflow, as the template's
-   workflows have them.
+   workflows have them. Where `packages.push` names an id, copy `scripts/release-target.cs` from the
+   template too and resolve the release through it, as the template's `release.yml` does. Pin
+   `Bennewitz.Ninja.AssemblyQuality` and run its rules in the tests, as the template's do.
 4. Write the documents. A directory that holds nothing written by hand, such as committed build
    output, goes in `undocumented` with its reason. The root `AGENTS.md` carries the
    [shared lessons](#shared-lessons) rule, as the template's does; `check` cannot see whether it
