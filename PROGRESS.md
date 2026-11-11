@@ -7,30 +7,19 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 ## Resume
 
 *Replaced, never appended, at each handoff. Rewritten 2026-11-11 after `Bennewitz.Ninja.Templates
-2026.4.1111` was released and verified from nuget.org (its section below).*
+2026.4.1111` was released, verified from nuget.org, and the family synced to it (its section below).*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **The family syncs to `2026.4.1111`, on the maintainer's word**; nothing is synced yet. The release
-   ships CodeQuality in every template and the two new `check` rules (their sections below).
-   - **The sync takes the new `repo-conventions.cs`** in each of JsonC, FileServer, Inspections,
-     AppKit and AutoVersioning: until then, run from here, each reports only drift.
-   - **It adopts `Bennewitz.Ninja.CodeQuality` `2026.4.1104` measured**: a finding that cannot throw
-     is suppressed where it stands, with the reason.
-   - **The new rules bring two follow-ups.**
-     - FileServer adds `"exempt": { "release-target": { …, "until": "2027-01-01" } }` in the same
-       commit as the new script; its session has acknowledged.
-     - DiffView must adopt `release-target.cs` before it passes. That is left to its own session,
-       which has been told.
-   - **After the sync**, `Bennewitz.Ninja.CodeQuality` joins `QualityPins.Required` in a later
-     release.
-   - The templates' AppServices pins (`2026.4.1103`) can take `2026.4.1110` there; only URLs and the
+1. **The family is synced to `2026.4.1111`** (2026-11-11, on the maintainer's word; its section
+   below). AutoVersioning, JsonC, FileServer, Inspections and AppKit each carry the new
+   `repo-conventions.cs` and `Bennewitz.Ninja.CodeQuality` `2026.4.1104`, and each conforms.
+   - **Next, in a later release**: `Bennewitz.Ninja.CodeQuality` joins `QualityPins.Required`, now
+     that the family has adopted it. A release happens on the maintainer's word.
+   - **DiffView** must adopt `release-target.cs` before the new rule passes there. That is left to
+     its own session, which has been told.
+   - The templates' AppServices pins (`2026.4.1103`) can take `2026.4.1110`; only URLs and the
      packed README changed.
-   - **Background: a pins-only sync never delivers a file the template gained after generation.**
-     JsonC found this on 2026-11-10 (JanusMael/Bennewitz.Ninja.JsonC#11, #12). AutoVersioning was
-     caught up on 2026-11-11 in JanusMael/Bennewitz.Ninja.AutoVersioning#10 (`0b1a868`); its
-     `NUGET_USER` is now a variable, and its first preflight, run `43050490199`, logged in. The two
-     rules exist so the next such gap is reported.
    - **Not ours to sync**: ClaudeForge, on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`,
      is left to its owner. TrueCourseCalculator, Geo.Core and GeoHash have no remote and push
      `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
@@ -1481,7 +1470,9 @@ measured first, a finding that cannot throw on real input suppressed where it st
   uses Semi.Avalonia's. Chisel is a source-extraction tool. CodeQuality was the one gap.
 - ⚠ **Inspections' `AnalyzerReleases.Unshipped.md` still lists `BNCQ1005` to `BNCQ3001`**, which
   `codequality/v2026.4.1104` shipped; its own convention moves them to `Shipped` in the tag's change.
-  Inspections' to fix.
+  Inspections' session fixes it in JanusMael/Bennewitz.Ninja.Inspections#132 (2026-11-11), which
+  also lets `BNCQ1009` and `BNCQ3001` accept a catch-all whose filter passes only fatal exceptions.
+  A CodeQuality release follows it, on the maintainer's word.
 
 ## What a sync cannot bring in: two `check` rules — outside the plans
 
@@ -2108,13 +2099,32 @@ passed all seven cases: `bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 17, `bbw
 `bbweb --blazor` 17, `bbapi` 15, and `bbconsole` 14 with SIGINT skipped on Windows. Every app
 published for `win-x64` and ran.
 
-**The family syncs on the maintainer's word**, and nothing is synced yet. That sync brings in the new
-script and CodeQuality, adopted measured, with any finding that cannot throw suppressed where it
-stands. It also brings in the new rules:
-- FileServer adds its `release-target` exemption;
-- DiffView, left to its own session, adopts `release-target.cs`.
+### The family, synced the same day
 
-`Bennewitz.Ninja.CodeQuality` joins `QualityPins.Required` once that sync is done.
+On the maintainer's word "proceed", 2026-11-11. The sync was driven from here, one pull request per
+repository, each merged when green. Each takes the new `repo-conventions.cs` and
+`Bennewitz.Ninja.CodeQuality` `2026.4.1104`, referenced privately with every rule at its default.
+A finding that cannot throw on real input is suppressed where it stands, with the reason.
+
+| Repository | Sync | Released |
+|---|---|---|
+| AutoVersioning | #11, `c11f157`: CodeQuality reported nothing; the analyzer was confirmed loaded in the compiler's arguments | Not released: the package did not change |
+| JsonC | #13, `8388c9b`: two `BNCQ1002` findings, `JsoncEditor.SetValue` and `SetValueEdits` taking a `JsonNode`. These are the two findings `AssemblyQualityTests` already pins for BNAQ1002, by the maintainer's decision of 2026-11-10. Each is suppressed on its method, and `AGENTS.md`'s invariant names the new guard | Not released |
+| FileServer | #18, `e497848`: `"exempt"` for `release-target` until `2027-01-01`, in the same commit as the script, as its session agreed. CodeQuality reported nothing | Not released |
+| Inspections | #133, `d18a6f7`: the published package, kept out of `src/CodeQuality` and `tests/CodeQuality.Tests` so no restore holds a project and a package of the same id. Six findings, every one a fixture holding that defect on purpose: `BNCQ1004` in four namespace-shadow fixtures, and `BNCQ1002` on `Offender.Leaked` and `LeakedNested` | Not released: no family's package changed |
+| AppKit | #28, `e773728`: two `BNCQ1009` findings, both test threads. `EntryPointProbe`'s `background` case throws on purpose. `EntryPointWebProbeTests`' thread catches the one exception its invoke can throw | Not released: neither family's packages changed |
+
+Each was run as its CI runs it before the pull request, on Windows: build with warnings as errors,
+tests, pack, `assert-packages`, and `check`. Results:
+
+- Tests: AutoVersioning 55, JsonC 84, FileServer 169, Inspections 1003, and AppKit 468 with 15
+  skipped as before.
+- FileServer's sample and smoke test passed.
+- Inspections' `real-code`, mutation smoke and probe builds passed. Its sync was rebased onto
+  `main` at `4012b08`, the theme-audit work of the same day, and measured again there.
+- No packed nuspec gained a dependency, and every CI job passed before each merge.
+
+`check --admin` was not run.
 
 ## Release `2026.4.1109`
 
