@@ -2135,6 +2135,14 @@ unreleased until the maintainer's word.
 - **The AppServices pins at `2026.4.1110`**, from `2026.4.1103`: `AppServices.EntryPoint` in `bbapi`,
   `bbconsole` and `bbweb`, `AppServices.Avalonia` in `bbavalonia`. That release moved AppServices into
   AppKit and changed only URLs and the packed README; both ids are on nuget.org at it.
+- **Found by this change's CI, 2026-11-12: MSBuild's answer read to the end.** Two `notes` tests
+  failed on GitHub's runner because `dotnet msbuild -getProperty` added "MSBuild server unavailable:
+  … Falling back to an in-process build." after a good JSON answer. `release-target.cs` and
+  `repo-conventions.cs` parsed from the first brace to the end of the output, so that line made the
+  answer unreadable and the release, or the props check, refused. Both now parse from the first brace
+  to the last. Not reproduced locally, even with the MSBuild server forced on, so no test plants it;
+  the root tests pass, 234 of 234, and the copies of `repo-conventions.cs` agree. No other script
+  parses MSBuild's JSON.
 - **Verified 2026-11-11**: the root tests, 234 of 234, eleven of them new; `verify-release` passes all seven
   generated repositories with the four parts, `bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 17,
   `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with SIGINT skipped on Windows, every app
