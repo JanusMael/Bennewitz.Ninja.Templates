@@ -726,16 +726,22 @@ static class Evaluation
     public static JsonObject? Properties(string output) => Json(output)?["Properties"] as JsonObject;
 
     /// <summary><c>dotnet msbuild -getProperty</c>/<c>-getItem</c>'s whole JSON, or null.</summary>
+    /// <remarks>
+    /// ⚠ From the first brace to the last, never to the end: on GitHub's runners MSBuild sometimes
+    /// adds "MSBuild server unavailable: … Falling back to an in-process build." after a good answer,
+    /// and read to the end, that line made the JSON unreadable (Templates#94's CI, 2026-11-12).
+    /// </remarks>
     public static JsonObject? Json(string output)
     {
         int start = output.IndexOf('{');
-        if (start < 0)
+        int end = output.LastIndexOf('}');
+        if (start < 0 || end < start)
         {
             return null;
         }
         try
         {
-            return JsonNode.Parse(output[start..]) as JsonObject;
+            return JsonNode.Parse(output[start..(end + 1)]) as JsonObject;
         }
         catch (JsonException)
         {
