@@ -16,7 +16,8 @@ section):
    `choices`:
    - CodeQuality `2026.4.1111`, released by Inspections after its #132, pinned everywhere, measured;
    - `Bennewitz.Ninja.CodeQuality` in `QualityPins.Required`;
-   - the AppServices pins at `2026.4.1110`;
+   - the AppServices pins at `2026.4.1112`, taken 2026-11-12 over `2026.4.1110`, with `bbavalonia`'s
+     smoke run turning off 1112's UI-thread handler;
    - `release-target.cs` refusing a version below the newest that nuget.org lists for one of the ids.
 
    After the release, one family sync: AutoVersioning, JsonC, FileServer, Inspections and AppKit take
@@ -126,6 +127,10 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   - It adds `release-target.cs` refusing a version below the latest nuget.org lists, taken over
     declining it: a guard against a hand-typed wrong tag, at the cost of one query to nuget.org per
     release.
+- Decided 2026-11-12, through `choices`: the next release pins AppServices `2026.4.1112`, released
+  that day, rather than `2026.4.1110`. `bbavalonia` turns 1112's UI-thread handler off for `--smoke`.
+  Taken over keeping `2026.4.1110` (a second family sync later) and over taking 1112 without the line
+  (a smoke run that no longer fails on a broken build).
 
 ## Status
 
@@ -2132,9 +2137,23 @@ unreleased until the maintainer's word.
   - **Tested**: a new test, a repository pinning AssemblyQuality alone fails; the "publishes it" test now
     publishes both and pins neither; the missing-file message names both. Canaried: CodeQuality left out
     of `Required` turned exactly those two pin tests red.
-- **The AppServices pins at `2026.4.1110`**, from `2026.4.1103`: `AppServices.EntryPoint` in `bbapi`,
-  `bbconsole` and `bbweb`, `AppServices.Avalonia` in `bbavalonia`. That release moved AppServices into
-  AppKit and changed only URLs and the packed README; both ids are on nuget.org at it.
+- **The AppServices pins at `2026.4.1112`**, from `2026.4.1103`: `AppServices.EntryPoint` in `bbapi`,
+  `bbconsole` and `bbweb`, `AppServices.Avalonia` in `bbavalonia`. The maintainer's decision of
+  2026-11-11 named `2026.4.1110`. AppKit released `2026.4.1112` the next day, and the maintainer took it
+  through `choices` (the locked decisions). Both ids are on nuget.org at it.
+  - **What `2026.4.1112` changes** (AppKit's plans/00002): `InstallAvaloniaHooks()` installs a UI-thread
+    exception handler, on by default, so a UI-thread failure is logged and shown and the app carries on.
+    AppKit's session sent the one line the template needs.
+  - **`bbavalonia` turns it off for `--smoke`**: `Program.cs` reads `--smoke` first, then sets
+    `HandleUiThreadExceptions = !App.Smoke`, the use the option's own documentation names. Its
+    `AGENTS.md` says why.
+  - **Canaried on a `Notebook` generated from this branch**, since `verify-release` does not run the GUI
+    app. Clean, `--smoke` exits 0. With a throw planted in the window's `Opened` handler, it exits 1,
+    with "fatal: Notebook stopped on an unhandled exception" and the canary's message on stderr. With
+    the same throw and the handler left on, it neither failed nor exited: killed at the 120 s bound,
+    exit 124, with nothing written. Left on, a broken build's smoke run hangs instead of failing.
+  - **Verified 2026-11-12 with `2026.4.1112`**: `verify-release` passes all seven generated
+    repositories again, with the same counts as the run below, every app published for win-x64.
 - **Found by this change's CI, 2026-11-12: MSBuild's answer read to the end.** Two `notes` tests
   failed on GitHub's runner because `dotnet msbuild -getProperty` added "MSBuild server unavailable:
   … Falling back to an in-process build." after a good JSON answer. `release-target.cs` and
