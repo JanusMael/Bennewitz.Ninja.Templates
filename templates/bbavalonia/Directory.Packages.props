@@ -34,7 +34,7 @@
          Bennewitz.Ninja.AppServices.Logging and .EntryPoint come with it. -->
     <PackageVersion Include="Bennewitz.Ninja.AppServices.Avalonia" Version="2026.4.1112" />
     <!-- The markup and assembly rules, run as tests. -->
-    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1109" />
+    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1111" />
     <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" />
   </ItemGroup>
 
