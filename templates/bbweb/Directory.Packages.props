@@ -20,7 +20,7 @@
   <ItemGroup Label="Family">
     <!-- The entry point: an unhandled exception reported on stderr and exit 1, and the version flag
          answered before the host is built. References nothing beyond the framework. -->
-    <PackageVersion Include="Bennewitz.Ninja.AppServices.EntryPoint" Version="2026.4.1110" />
+    <PackageVersion Include="Bennewitz.Ninja.AppServices.EntryPoint" Version="2026.4.1112" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">

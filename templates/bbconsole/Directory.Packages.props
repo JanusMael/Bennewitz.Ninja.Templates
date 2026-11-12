@@ -20,7 +20,7 @@
   <ItemGroup Label="Family">
     <!-- The entry point: exit codes 0, 1, 2 and 130, the fatal report on stderr, Ctrl+C and
          the version flag. References nothing beyond the framework, and is trim- and AOT-safe. -->
-    <PackageVersion Include="Bennewitz.Ninja.AppServices.EntryPoint" Version="2026.4.1110" />
+    <PackageVersion Include="Bennewitz.Ninja.AppServices.EntryPoint" Version="2026.4.1112" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">

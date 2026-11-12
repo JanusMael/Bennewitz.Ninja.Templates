@@ -21,14 +21,18 @@ internal static class Program
     // exception events, so a failure configuring it is still reported, on stderr and in the dialog.
     private static int Run(string[] args)
     {
+        App.Smoke = args.Contains("--smoke", StringComparer.Ordinal);
+
         AvaloniaDiagnostics.ConfigureLogging(new AvaloniaDiagnosticsOptions
         {
             AppName = "AppStem",
             LogsDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppStem", "logs"),
+            // A UI-thread failure is logged and shown, and the app carries on; but a smoke run proves
+            // the build by its exit code, so there it must still end the process.
+            HandleUiThreadExceptions = !App.Smoke,
         });
 
-        App.Smoke = args.Contains("--smoke", StringComparer.Ordinal);
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
