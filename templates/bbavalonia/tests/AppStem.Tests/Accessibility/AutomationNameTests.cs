@@ -48,6 +48,20 @@ public sealed class AutomationNameTests
     }
 
     /// <summary>
+    /// BNXQ1011: every input control written in markup declares a tooltip, what it does for the person
+    /// pointing at it, which neither its automation Name nor its AutomationId shows them.
+    /// </summary>
+    [Fact]
+    public void BNXQ1011_every_input_control_has_a_tooltip()
+    {
+        XamlRuleResult result = new InputTooltipRule().Analyze(Markup());
+
+        // The name box and Greet. Raise this as the app grows.
+        Assert.True(result.Inspected >= 2, $"BNXQ1011 inspected {result.Inspected} controls; expected at least 2.");
+        Assert.True(result.Findings.Count == 0, string.Join(Environment.NewLine, result.Findings));
+    }
+
+    /// <summary>
     /// BNXQ1001: every Expander carries an automation Name, which its header does not supply: a
     /// screen reader announces an unnamed Expander as just "expander".
     /// </summary>

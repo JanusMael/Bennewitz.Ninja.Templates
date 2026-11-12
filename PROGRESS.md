@@ -12,12 +12,13 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
 1. **The next release is ready on `main`, and waits for the maintainer's word** (its section below,
-   "The next release, prepared 2026-11-11"). It carries the four parts decided 2026-11-11 through
-   `choices`:
+   "The next release, prepared 2026-11-11"). It carries what was decided through `choices` on
+   2026-11-11 and 12, and a fix its CI found (MSBuild's JSON read from the first brace to the last):
    - CodeQuality `2026.4.1111`, released by Inspections after its #132, pinned everywhere, measured;
    - `Bennewitz.Ninja.CodeQuality` in `QualityPins.Required`;
    - the AppServices pins at `2026.4.1112`, taken 2026-11-12 over `2026.4.1110`, with `bbavalonia`'s
      smoke run turning off 1112's UI-thread handler;
+   - XamlQuality `2026.4.1111` in `bbavalonia`, with BNXQ1011, taken 2026-11-12;
    - `release-target.cs` refusing a version below the newest that nuget.org lists for one of the ids.
 
    After the release, one family sync: AutoVersioning, JsonC, FileServer, Inspections and AppKit take
@@ -131,6 +132,9 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   that day, rather than `2026.4.1110`. `bbavalonia` turns 1112's UI-thread handler off for `--smoke`.
   Taken over keeping `2026.4.1110` (a second family sync later) and over taking 1112 without the line
   (a smoke run that no longer fails on a broken build).
+- Decided 2026-11-12, through `choices`: the next release also pins XamlQuality `2026.4.1111` in
+  `bbavalonia` and adopts its BNXQ1011, tooltips on every input control. Taken over the pin alone and
+  over leaving `2026.4.1109`.
 
 ## Status
 
@@ -2154,6 +2158,17 @@ unreleased until the maintainer's word.
     exit 124, with nothing written. Left on, a broken build's smoke run hangs instead of failing.
   - **Verified 2026-11-12 with `2026.4.1112`**: `verify-release` passes all seven generated
     repositories again, with the same counts as the run below, every app published for win-x64.
+- **XamlQuality `2026.4.1111` in `bbavalonia`, with BNXQ1011**, from `2026.4.1109`: the maintainer's
+  decision of 2026-11-12, through `choices`, after a check that every family package the templates pin
+  was at its latest found this one behind. It adds BNXQ1011, every input control written in markup
+  declares a tooltip, and ThemeAudit changes `bbavalonia` does not use.
+  - `bbavalonia`'s name box and Greet button carry `ToolTip.Tip`. `AutomationNameTests` runs BNXQ1011
+    beside BNXQ1001, BNXQ1002 and BNXQ1007, asserting it inspected at least the two. The window's
+    comment and both `AGENTS.md` files name it.
+  - **Canaried on a `Notebook` generated from this branch**: clean, its tests pass 18 of 18; with the
+    Greet button's tooltip removed, only `BNXQ1011_every_input_control_has_a_tooltip` fails.
+  - **Verified 2026-11-12**: the root tests, 234 of 234; `verify-release` passes all seven generated
+    repositories, `bbavalonia` now 18, the others as before, every app published for win-x64.
 - **Found by this change's CI, 2026-11-12: MSBuild's answer read to the end.** Two `notes` tests
   failed on GitHub's runner because `dotnet msbuild -getProperty` added "MSBuild server unavailable:
   … Falling back to an in-process build." after a good JSON answer. `release-target.cs` and
