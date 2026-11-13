@@ -56,8 +56,9 @@ dotnet run --file scripts/repo-conventions.cs -- grants
   UI-thread exception handler (`HandleUiThreadExceptions = !App.Smoke` in `Program.cs`), so a
   failure there ends the run with a non-zero code instead of being logged while it exits 0. A
   separate switch, `ShowUnobservedTaskExceptions = !App.Smoke`, keeps a smoke run from showing a task
-  exception nobody observed: it is logged at Warning and written on stderr. Either way the run exits
-  0, so a smoke run does not catch one.
+  exception nobody observed: one that is not benign is logged at Warning and written on stderr; a
+  benign one (nothing but cancellations, or what `IsBenignException` accepts) is logged at Debug and
+  kept off stderr. Either way the run exits 0, so a smoke run does not catch one.
 - Tests run on Microsoft.Testing.Platform (`global.json`), so `dotnet test` takes `--solution` and
   rejects VSTest-only switches such as `--nologo`.
 - Write `-p:` rather than `/p:`: Git Bash on Windows rewrites a leading-slash argument into a path.
