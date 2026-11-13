@@ -2177,8 +2177,9 @@ unreleased until the maintainer's word.
     same exception at Error, the path that shows the dialog, and still exits 0 in 3 s: the app shut
     down behind the dialog. AppKit's session then confirmed why, from the code: the
     `FatalErrorDialog` is modeless, and the smoke run's explicit `Shutdown(0)` ends the app whatever
-    windows are open. So in `bbavalonia` the line keeps a smoke run from showing the exception and
-    logs it at Warning rather than Error; it changes no exit code, and a smoke run cannot catch such
+    windows are open (Avalonia 12.1.3's `Shutdown(exitCode)` forces it, closing every window without
+    an owner). So in `bbavalonia` the line keeps a smoke run from showing the exception and logs one
+    that is not benign at Warning rather than Error, a benign one at Debug either way; it changes no exit code, and a smoke run cannot catch such
     an exception either way. The hang it was first sent to prevent cannot happen here.
   - **Verified 2026-11-13 with `2026.4.1113`**: the root tests, 234 of 234; `verify-release` passes all
     seven generated repositories with the same counts as before, every app published for win-x64.
