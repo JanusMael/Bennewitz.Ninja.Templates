@@ -2106,6 +2106,27 @@ out on the maintainer's word. AppServices and ScopedEditors also need the attrib
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
 
+## The next release, prepared 2026-11-13 — outside the plans
+
+The maintainer's decision of 2026-11-13 after `2026.4.1113` (the locked decisions), unreleased until
+the maintainer's word for that release, planned for 2026-11-14.
+
+- **CodeQuality `2026.4.1113` in every template and this repository**, raised from `2026.4.1111`.
+  Inspections released it on 2026-11-13, tag `codequality/v2026.4.1113`, with one change (its
+  `47195c9`): BNCQ1009 and BNCQ3001 follow a delegate held in a local to its body, up to eight locals,
+  where they read only one given straight to a callback; DiffView found a lambda subscribed through a
+  `DataReceivedEventHandler` local that went unreported. No rule was added and none changed its
+  default severity.
+  - **Measured 2026-11-13**: this repository builds with it, its tests restore `2026.4.1113` and pass,
+    234 of 234, and it reports nothing. `verify-release` passes all seven generated repositories,
+    warnings as errors, with the counts of `2026.4.1113`'s release, every app published for win-x64:
+    it reports nothing in any template either.
+- **`templates/bbpkg/docs/publishing.md` names the version floor**, from the record of `2026.4.1113`
+  (its section below), so the next release ships it.
+
+After the release, a second family sync takes CodeQuality `2026.4.1113` into AutoVersioning, JsonC,
+FileServer, Inspections and AppKit, measured in each.
+
 ## What `2026.4.1113` carries, prepared 2026-11-11 to 13 — outside the plans
 
 The four parts the maintainer decided on 2026-11-11 through `choices` (the locked decisions), with
