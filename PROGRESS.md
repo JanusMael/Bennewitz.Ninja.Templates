@@ -11,14 +11,14 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **Nothing is waiting for a release.** `2026.4.1113` is out and the five synced repositories take it
-   (its section below). Open questions for the maintainer, none of them blocking:
-   - **CodeQuality `2026.4.1113`**, released from Inspections on 2026-11-13, is newer than the
-     `2026.4.1111` the templates and the family pin.
-   - **XamlQuality in AppKit** stays at `2026.4.1109` while `2026.4.1111` is out; AppKit's session
-     has passed it to the maintainer.
-   - **A smoke run cannot catch a task exception nobody observed**: `bbavalonia`'s `--smoke` exits 0
-     either way (the `2026.4.1113` section). Whether it should is the maintainer's.
+1. **`2026.4.1113` is out and the five synced repositories take it** (its section below). Next, the
+   maintainer's decisions of 2026-11-13 after it (the locked decisions):
+   - **CodeQuality `2026.4.1113` now**: raise the templates' pin and this repository's, measured;
+     release on 2026-11-14 on the maintainer's word for that release; then a second family sync.
+     bbpkg's runbook names the floor in the same release.
+   - **Asked of AppServices**: a smoke-mode option that turns a task exception nobody observed into an
+     exit code; `bbavalonia` takes it once released.
+   - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
      there. That is left to its own session, which has been told about the first.
    - **Not ours to sync**: ClaudeForge, on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`,
@@ -134,6 +134,18 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   that day, rather than `2026.4.1112`; `bbavalonia` sets `ShowUnobservedTaskExceptions = !App.Smoke`
   beside its 1112 line. Taken over keeping `2026.4.1112` (a second family sync later) and over the pin
   without the line.
+- Decided 2026-11-13 after the release and the sync, through `choices`:
+  - CodeQuality `2026.4.1113` is taken now: the templates' pin raised and measured, a Templates
+    release on 2026-11-14 for it, then a second family sync. Taken over waiting for the next release
+    and over staying on `2026.4.1111`. Its one change: BNCQ1009 and BNCQ3001 follow a delegate held in
+    a local to its body, so it can report what `2026.4.1111` did not.
+  - A smoke run that should fail on a task exception nobody observed is asked of AppServices: a
+    smoke-mode option in `AvaloniaDiagnostics` that forces a collection and turns such an exception
+    into an exit code, so every Avalonia app has it; `bbavalonia` takes it once released. Taken over
+    leaving it (the exception reaches the log and stderr only) and over the template forcing the
+    collection itself.
+  - AppKit pins XamlQuality `2026.4.1111` and adopts BNXQ1011 over its own markup, measured by
+    AppKit's session, in the next AppServices release. Taken over the pin alone and over `2026.4.1109`.
 
 ## Status
 
