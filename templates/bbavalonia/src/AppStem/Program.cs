@@ -29,8 +29,10 @@ internal static class Program
             LogsDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppStem", "logs"),
             // A UI-thread failure is logged and shown, and the app carries on; but a smoke run proves
-            // the build by its exit code, so there it must still end the process.
+            // the build by its exit code, so there it must still end the process. Nor may a smoke run
+            // open a dialog for a task exception nobody observed: nobody would close it.
             HandleUiThreadExceptions = !App.Smoke,
+            ShowUnobservedTaskExceptions = !App.Smoke,
         });
 
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
