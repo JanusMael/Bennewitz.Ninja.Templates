@@ -2175,9 +2175,11 @@ unreleased until the maintainer's word.
     and collected in the window's `Opened` handler. Clean, `--smoke` exits 0. Planted, it exits 0, the
     exception logged at Warning and written on stderr. Planted with the switch forced on, it logs the
     same exception at Error, the path that shows the dialog, and still exits 0 in 3 s: the app shut
-    down behind the dialog. So the line decides whether a smoke run opens a dialog, but the hang
-    AppKit's session warned of did not reproduce here, presumably because nothing kept the window
-    open; that is untested.
+    down behind the dialog. AppKit's session then confirmed why, from the code: the
+    `FatalErrorDialog` is modeless, and the smoke run's explicit `Shutdown(0)` ends the app whatever
+    windows are open. So in `bbavalonia` the line keeps a smoke run from showing the exception and
+    logs it at Warning rather than Error; it changes no exit code, and a smoke run cannot catch such
+    an exception either way. The hang it was first sent to prevent cannot happen here.
   - **Verified 2026-11-13 with `2026.4.1113`**: the root tests, 234 of 234; `verify-release` passes all
     seven generated repositories with the same counts as before, every app published for win-x64.
 - **XamlQuality `2026.4.1111` in `bbavalonia`, with BNXQ1011**, from `2026.4.1109`: the maintainer's
