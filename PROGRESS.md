@@ -6,25 +6,19 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-11 after `Bennewitz.Ninja.Templates
-2026.4.1111` was released and the family synced to it, and again once the next release was prepared.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-13 after `Bennewitz.Ninja.Templates
+2026.4.1113` was released and the family synced to it.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **The next release is ready on `main`, and waits for the maintainer's word** (its section below,
-   "The next release, prepared 2026-11-11"). It carries what was decided through `choices` on
-   2026-11-11, 12 and 13, and a fix its CI found (MSBuild's JSON read from the first brace to the last):
-   - CodeQuality `2026.4.1111`, released by Inspections after its #132, pinned everywhere, measured;
-   - `Bennewitz.Ninja.CodeQuality` in `QualityPins.Required`;
-   - the AppServices pins at `2026.4.1113`, taken 2026-11-13 over `2026.4.1112` (itself taken
-     2026-11-12 over `2026.4.1110`), with `bbavalonia`'s smoke run turning off both its UI-thread
-     handler and its dialog for a task exception nobody observed;
-   - XamlQuality `2026.4.1111` in `bbavalonia`, with BNXQ1011, taken 2026-11-12;
-   - `release-target.cs` refusing a version below the newest that nuget.org lists for one of the ids.
-
-   After the release, one family sync: AutoVersioning, JsonC, FileServer, Inspections and AppKit take
-   the new `repo-conventions.cs` and CodeQuality `2026.4.1111`; each already pins CodeQuality, or
-   publishes it, so the new required pin fails none of them.
+1. **Nothing is waiting for a release.** `2026.4.1113` is out and the five synced repositories take it
+   (its section below). Open questions for the maintainer, none of them blocking:
+   - **CodeQuality `2026.4.1113`**, released from Inspections on 2026-11-13, is newer than the
+     `2026.4.1111` the templates and the family pin.
+   - **XamlQuality in AppKit** stays at `2026.4.1109` while `2026.4.1111` is out; AppKit's session
+     has passed it to the maintainer.
+   - **A smoke run cannot catch a task exception nobody observed**: `bbavalonia`'s `--smoke` exits 0
+     either way (the `2026.4.1113` section). Whether it should is the maintainer's.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
      there. That is left to its own session, which has been told about the first.
    - **Not ours to sync**: ClaudeForge, on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`,
@@ -48,7 +42,7 @@ section):
      (`50967b2`): every `2026.Q.MMDD` sorts below its published `2026.9.23`.
    - Its exemption from `release-target` lapses on `2027-01-01`.
    - The session suggested that `release-target.cs` refuse a version below the latest published
-     one. The maintainer took it for the next release on 2026-11-11 (item 1).
+     one. The maintainer took it on 2026-11-11, and `2026.4.1113` shipped it.
 
 **Waiting on others:**
 - bleedink.com: its `/version` reads `AssemblyInformationalVersion`, so it answers "Built with ♥";
@@ -2100,10 +2094,10 @@ out on the maintainer's word. AppServices and ScopedEditors also need the attrib
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
 
-## The next release, prepared 2026-11-11 — outside the plans
+## What `2026.4.1113` carries, prepared 2026-11-11 to 13 — outside the plans
 
-The four parts the maintainer decided on 2026-11-11 through `choices` (the Resume), in one change,
-unreleased until the maintainer's word.
+The four parts the maintainer decided on 2026-11-11 through `choices` (the locked decisions), with
+what was added on 2026-11-12 and 13, released as `2026.4.1113` on 2026-11-13 (its section below).
 
 - **`release-target.cs resolve` refuses a version below the newest that nuget.org lists for one of
   the release's ids.** nuget.org takes a lower version without a word, and it is permanent; every tag
@@ -2207,6 +2201,51 @@ unreleased until the maintainer's word.
   `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with SIGINT skipped on Windows, every app
   published for win-x64 and run. Its `resolve` step read nuget.org itself for `Bennewitz.Ninja.Widget`
   and `Bennewitz.Ninja.Linter`, which it has never seen, and resolved both.
+
+## Release `2026.4.1113`
+
+Released on the maintainer's word on 2026-11-13, "you may tag and then release". It carries the
+section above, "What `2026.4.1113` carries", whose last part, AppServices `2026.4.1113`, merged as
+#97 the same day.
+
+`verify-release` passed on #97's tree before the merge. The merge, `cc5fda0`, has the tree of the
+commit whose `verify` and `conventions` checks passed, and `main`'s CI then passed on it too, run
+`43489725854`. The blank-version preflight logged in, run `43486549345`. The tag's run,
+[43489822859](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/43489822859),
+passed every gate. It pushed `Bennewitz.Ninja.Templates 2026.4.1113` and made the GitHub release
+with it at 19:17 UTC.
+
+Verified against the feed: the flat container listed `2026.4.1113` at 19:23 UTC.
+`verify-release --published 2026.4.1113` then installed it from nuget.org and passed all seven
+cases: `bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 18, `bbweb` 14, `bbweb --blazor` 17, `bbapi`
+15, and `bbconsole` 14 with SIGINT skipped on Windows. Every app published for `win-x64` and ran.
+
+- **Found after the tag, by AppKit's session: `templates/bbpkg/docs/publishing.md` did not describe
+  the floor.** "Choosing the version" named only the shape and quarter rules, and its failure table
+  had no row for the floor's two refusals, so a generated repository's runbook disagreed with
+  `docs/repository-conventions.md`. Both are added, in the change that records this release, and
+  ship in the next one.
+
+### The family, synced the same day
+
+On the maintainer's word, "yes, approved sync to 2026.4.1113 across five repositories". Driven from
+here, one pull request per repository, each prepared by an agent in a fresh clone, read here and
+merged when green. Each takes that release's `repo-conventions.cs` and, where it carries one,
+`release-target.cs`, byte for byte, and `Bennewitz.Ninja.CodeQuality` `2026.4.1111`, with the doc
+lines that name the floor where the repository had the template's wording, adapted where it had its
+own. CodeQuality `2026.4.1111` reported nothing new anywhere; every earlier suppression stands.
+
+| Repository | Sync | Released |
+|---|---|---|
+| AutoVersioning | #12, `edc4589`: 55 of 55 tests; `v2026.4.1030` refused by the floor below `2026.4.1031`, which passes as a re-run | Not released: the package did not change |
+| JsonC | #14, `a7157d6`: 84 of 84 tests; `v2026.4.1001` refused below `2026.4.1031` | Not released |
+| FileServer | #19, `4c71b00`: 169 of 169 tests, the sample and its smoke test. No `release-target.cs` and no floor rows: it is exempt until `2027-01-01`. Its container image was left to CI, as Docker's engine was not running here | Not released |
+| Inspections | #141, `96ae274`: 1074 of 1074 tests, `real-code`, the mutation smoke and both probe builds. The floor checked for the `codequality`, `xamlquality` and `assemblyquality` families. It stays on CodeQuality `2026.4.1111`, not the `2026.4.1113` it released the same day | Not released: no family's package changed |
+| AppKit | #37, `d00e199`: 649 tests, 15 skipped as before; the native AOT probe, 18 with 4 skipped for Windows' signals; the trimmed publish at its baseline. `appservices` `2026.4.1112` and `2026.4.1113` pass as re-runs, `2026.4.1111` is refused | Not released: neither family's packages changed |
+
+Each was run as its CI runs it before the pull request, on Windows, and every CI job passed before
+each merge. One error in the brief: its example of a version below the floor, `2026.3.101`, is
+refused by the quarter check first, so each agent showed the floor with a well-formed lower version.
 
 ## Release `2026.4.1111`
 
