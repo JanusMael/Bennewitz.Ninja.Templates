@@ -54,7 +54,9 @@ dotnet run --file scripts/repo-conventions.cs -- grants
 - A published binary run with `--smoke` opens the main window and exits 0: the quickest proof that
   a trimmed build still starts, loads its theme and binds. Only a smoke run turns off AppServices'
   UI-thread exception handler (`HandleUiThreadExceptions = !App.Smoke` in `Program.cs`), so a
-  failure there ends the run with a non-zero code instead of being logged while it exits 0.
+  failure there ends the run with a non-zero code instead of being logged while it exits 0. It turns
+  off the dialog for a task exception nobody observed as well (`ShowUnobservedTaskExceptions =
+  !App.Smoke`), a separate switch, so no smoke run waits on a dialog nobody will close.
 - Tests run on Microsoft.Testing.Platform (`global.json`), so `dotnet test` takes `--solution` and
   rejects VSTest-only switches such as `--nologo`.
 - Write `-p:` rather than `/p:`: Git Bash on Windows rewrites a leading-slash argument into a path.

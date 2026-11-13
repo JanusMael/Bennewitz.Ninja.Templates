@@ -13,11 +13,12 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 section):
 1. **The next release is ready on `main`, and waits for the maintainer's word** (its section below,
    "The next release, prepared 2026-11-11"). It carries what was decided through `choices` on
-   2026-11-11 and 12, and a fix its CI found (MSBuild's JSON read from the first brace to the last):
+   2026-11-11, 12 and 13, and a fix its CI found (MSBuild's JSON read from the first brace to the last):
    - CodeQuality `2026.4.1111`, released by Inspections after its #132, pinned everywhere, measured;
    - `Bennewitz.Ninja.CodeQuality` in `QualityPins.Required`;
-   - the AppServices pins at `2026.4.1112`, taken 2026-11-12 over `2026.4.1110`, with `bbavalonia`'s
-     smoke run turning off 1112's UI-thread handler;
+   - the AppServices pins at `2026.4.1113`, taken 2026-11-13 over `2026.4.1112` (itself taken
+     2026-11-12 over `2026.4.1110`), with `bbavalonia`'s smoke run turning off both its UI-thread
+     handler and its dialog for a task exception nobody observed;
    - XamlQuality `2026.4.1111` in `bbavalonia`, with BNXQ1011, taken 2026-11-12;
    - `release-target.cs` refusing a version below the newest that nuget.org lists for one of the ids.
 
@@ -135,6 +136,10 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
 - Decided 2026-11-12, through `choices`: the next release also pins XamlQuality `2026.4.1111` in
   `bbavalonia` and adopts its BNXQ1011, tooltips on every input control. Taken over the pin alone and
   over leaving `2026.4.1109`.
+- Decided 2026-11-13, through `choices`: the next release pins AppServices `2026.4.1113`, released
+  that day, rather than `2026.4.1112`; `bbavalonia` sets `ShowUnobservedTaskExceptions = !App.Smoke`
+  beside its 1112 line. Taken over keeping `2026.4.1112` (a second family sync later) and over the pin
+  without the line.
 
 ## Status
 
@@ -2141,10 +2146,11 @@ unreleased until the maintainer's word.
   - **Tested**: a new test, a repository pinning AssemblyQuality alone fails; the "publishes it" test now
     publishes both and pins neither; the missing-file message names both. Canaried: CodeQuality left out
     of `Required` turned exactly those two pin tests red.
-- **The AppServices pins at `2026.4.1112`**, from `2026.4.1103`: `AppServices.EntryPoint` in `bbapi`,
+- **The AppServices pins at `2026.4.1113`**, from `2026.4.1103`: `AppServices.EntryPoint` in `bbapi`,
   `bbconsole` and `bbweb`, `AppServices.Avalonia` in `bbavalonia`. The maintainer's decision of
-  2026-11-11 named `2026.4.1110`. AppKit released `2026.4.1112` the next day, and the maintainer took it
-  through `choices` (the locked decisions). Both ids are on nuget.org at it.
+  2026-11-11 named `2026.4.1110`. AppKit released `2026.4.1112` the next day and `2026.4.1113` the day
+  after, and the maintainer took each through `choices` (the locked decisions). Both ids are on
+  nuget.org at it.
   - **What `2026.4.1112` changes** (AppKit's plans/00002): `InstallAvaloniaHooks()` installs a UI-thread
     exception handler, on by default, so a UI-thread failure is logged and shown and the app carries on.
     AppKit's session sent the one line the template needs.
@@ -2158,6 +2164,22 @@ unreleased until the maintainer's word.
     exit 124, with nothing written. Left on, a broken build's smoke run hangs instead of failing.
   - **Verified 2026-11-12 with `2026.4.1112`**: `verify-release` passes all seven generated
     repositories again, with the same counts as the run below, every app published for win-x64.
+  - **What `2026.4.1113` adds** (AppKit's plans/00003): a task exception nobody observed is shown in
+    the `FatalErrorDialog`, as a UI-thread failure is, on by default, through a switch of its own,
+    `ShowUnobservedTaskExceptions`, separate from `HandleUiThreadExceptions` by the maintainer's choice
+    there. AppKit's session sent the line the template needs; the option's documentation names the
+    smoke run as a place to turn it off.
+  - **`bbavalonia` turns it off for `--smoke` too**: `ShowUnobservedTaskExceptions = !App.Smoke`
+    beside the 1112 line, the comment and `AGENTS.md` saying why.
+  - **Canaried 2026-11-13 on a `Notebook` generated from this branch**, with a faulted task dropped
+    and collected in the window's `Opened` handler. Clean, `--smoke` exits 0. Planted, it exits 0, the
+    exception logged at Warning and written on stderr. Planted with the switch forced on, it logs the
+    same exception at Error, the path that shows the dialog, and still exits 0 in 3 s: the app shut
+    down behind the dialog. So the line decides whether a smoke run opens a dialog, but the hang
+    AppKit's session warned of did not reproduce here, presumably because nothing kept the window
+    open; that is untested.
+  - **Verified 2026-11-13 with `2026.4.1113`**: the root tests, 234 of 234; `verify-release` passes all
+    seven generated repositories with the same counts as before, every app published for win-x64.
 - **XamlQuality `2026.4.1111` in `bbavalonia`, with BNXQ1011**, from `2026.4.1109`: the maintainer's
   decision of 2026-11-12, through `choices`, after a check that every family package the templates pin
   was at its latest found this one behind. It adds BNXQ1011, every input control written in markup
