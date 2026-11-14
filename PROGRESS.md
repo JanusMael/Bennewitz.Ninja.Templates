@@ -6,16 +6,15 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-13 after `Bennewitz.Ninja.Templates
-2026.4.1113` was released and the family synced to it.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-14 after `Bennewitz.Ninja.Templates
+2026.4.1114` was released.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **`2026.4.1113` is out and the five synced repositories take it** (its section below). Next, the
-   maintainer's decisions of 2026-11-13 after it (the locked decisions):
-   - **CodeQuality `2026.4.1113` now**: raise the templates' pin and this repository's, measured;
-     release on 2026-11-14 on the maintainer's word for that release; then a second family sync.
-     bbpkg's runbook names the floor in the same release.
+1. **`2026.4.1114` is out with CodeQuality `2026.4.1113`** and bbpkg's runbook naming the floor (its
+   section below). Next, the maintainer's decisions of 2026-11-13 (the locked decisions):
+   - **A second family sync** takes CodeQuality `2026.4.1113` into AutoVersioning, JsonC, FileServer,
+     Inspections and AppKit, measured in each, on the maintainer's word for it.
    - **Asked of AppServices**: a smoke-mode option that turns a task exception nobody observed into an
      exit code; `bbavalonia` takes it once released.
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
@@ -2106,10 +2105,10 @@ out on the maintainer's word. AppServices and ScopedEditors also need the attrib
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
 
-## The next release, prepared 2026-11-13 — outside the plans
+## What `2026.4.1114` carries, prepared 2026-11-13 — outside the plans
 
-The maintainer's decision of 2026-11-13 after `2026.4.1113` (the locked decisions), unreleased until
-the maintainer's word for that release, planned for 2026-11-14.
+The maintainer's decision of 2026-11-13 after `2026.4.1113` (the locked decisions), merged as #99 and
+released as `2026.4.1114` on 2026-11-14 (its section below).
 
 - **CodeQuality `2026.4.1113` in every template and this repository**, raised from `2026.4.1111`.
   Inspections released it on 2026-11-13, tag `codequality/v2026.4.1113`, with one change (its
@@ -2122,7 +2121,7 @@ the maintainer's word for that release, planned for 2026-11-14.
     warnings as errors, with the counts of `2026.4.1113`'s release, every app published for win-x64:
     it reports nothing in any template either.
 - **`templates/bbpkg/docs/publishing.md` names the version floor**, from the record of `2026.4.1113`
-  (its section below), so the next release ships it.
+  (its section below), shipped in this release.
 
 After the release, a second family sync takes CodeQuality `2026.4.1113` into AutoVersioning, JsonC,
 FileServer, Inspections and AppKit, measured in each.
@@ -2234,6 +2233,26 @@ what was added on 2026-11-12 and 13, released as `2026.4.1113` on 2026-11-13 (it
   `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with SIGINT skipped on Windows, every app
   published for win-x64 and run. Its `resolve` step read nuget.org itself for `Bennewitz.Ninja.Widget`
   and `Bennewitz.Ninja.Linter`, which it has never seen, and resolved both.
+
+## Release `2026.4.1114`
+
+Released on the maintainer's word on 2026-11-14, "Tag and release". It carries the section above,
+"What `2026.4.1114` carries": CodeQuality `2026.4.1113` in every template, and bbpkg's runbook naming
+the version floor. The day is UTC's: the tag was pushed at 01:17 UTC on 2026-11-14, `2026.4.1113`'s
+release having run at 19:11 UTC the day before.
+
+`verify-release` passed on #99's tree before the merge. The merge, `18818ad`, has the tree of the
+commit whose `verify` and `conventions` checks passed, and `main`'s CI then passed on it too, run
+`43539050169`. The blank-version preflight logged in, run `43539568781`. The tag's run,
+[43539664363](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/43539664363),
+passed every gate. It pushed `Bennewitz.Ninja.Templates 2026.4.1114` and made the GitHub release
+with it at 01:23 UTC.
+
+Verified against the feed: the flat container listed `2026.4.1114` at 01:29 UTC. The package taken
+from it pins CodeQuality `2026.4.1113` in all five templates, and its `bbpkg` runbook names the floor.
+`verify-release --published 2026.4.1114` then installed it from nuget.org and passed all seven cases:
+`bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 18, `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, and
+`bbconsole` 14 with SIGINT skipped on Windows. Every app published for `win-x64` and ran.
 
 ## Release `2026.4.1113`
 
