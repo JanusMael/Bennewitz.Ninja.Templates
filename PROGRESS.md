@@ -14,8 +14,8 @@ section):
 1. **`2026.4.1114` is out, and the five synced repositories take CodeQuality `2026.4.1113`** (its
    section below); nothing waits for a release. Open, from the maintainer's decisions of 2026-11-13
    (the locked decisions):
-   - **Asked of AppServices**: a smoke-mode option that turns a task exception nobody observed into an
-     exit code; `bbavalonia` takes it once released.
+   - **Asked of AppKit**, whose `appservices` family it is: a smoke-mode option that turns a task
+     exception nobody observed into an exit code; `bbavalonia` takes it once released.
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
      there. That is left to its own session, which has been told about the first.
@@ -47,8 +47,9 @@ section):
   passed to its session on 2026-10-09.
 
 **Peer sessions on this machine** (addresses change when a session restarts; `ListAgents` gives the
-current names): AppServices, AssemblyQuality, XamlQuality, FileServer, AutoVersioning, CodeQuality,
-DiffView.
+current names): AppKit, which owns the AppServices and ScopedEditors families, the repository
+`Bennewitz.Ninja.AppServices` renamed to `Bennewitz.Ninja.AppKit`; Inspections, which owns XamlQuality,
+AssemblyQuality and CodeQuality; FileServer; AutoVersioning; JsonC; DiffView.
 
 **Environment:** Docker Desktop is running (engine 29.8.0). A native Windows publish takes the newest
 Visual Studio or Build Tools with the C++ tools, now Build Tools 2026. An agent shell sets
