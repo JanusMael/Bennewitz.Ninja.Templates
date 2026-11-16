@@ -6,16 +6,16 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-16 after the family synced to
-`Bennewitz.Ninja.Templates 2026.4.1114`.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-16 after AppServices `2026.4.1116`
+was taken.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **`2026.4.1114` is out, and the five synced repositories take CodeQuality `2026.4.1113`** (its
-   section below); nothing waits for a release. Open, from the maintainer's decisions of 2026-11-13
-   (the locked decisions):
-   - **Asked of AppKit**, whose `appservices` family it is: a smoke-mode option that turns a task
-     exception nobody observed into an exit code; `bbavalonia` takes it once released.
+1. **AppServices `2026.4.1116` is taken, with `bbavalonia`'s smoke run failing on a task exception
+   nobody observed** (the section "The next release, prepared 2026-11-16"), unreleased until the
+   maintainer's word for that release. `2026.4.1114` is out, and the five synced repositories take
+   CodeQuality `2026.4.1113`. Open, from the maintainer's decisions of 2026-11-13 (the locked
+   decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
      there. That is left to its own session, which has been told about the first.
@@ -2108,6 +2108,34 @@ Unreleased. It is the change of its own that side 2 of `plans/00008` waits to sh
 out on the maintainer's word. AppServices and ScopedEditors also need the attribute in
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
+
+## The next release, prepared 2026-11-16 — outside the plans
+
+The maintainer's decision of 2026-11-13 (the locked decisions): a smoke run that should fail on a
+task exception nobody observed is asked of AppServices, and `bbavalonia` takes it once released.
+Unreleased until the maintainer's word for that release.
+
+- **AppServices `2026.4.1116` in every app template**, raised from `2026.4.1113`:
+  `AppServices.EntryPoint` in `bbapi`, `bbconsole` and `bbweb`, `AppServices.Avalonia` in
+  `bbavalonia`. AppKit released it on 2026-11-16, at its `31e9c7a`, with all five ids verified there;
+  nuget.org's flat container lists it here for `AppServices`, `.Avalonia` and `.EntryPoint`. It carries AppKit's `plans/00004`,
+  `AvaloniaDiagnosticsOptions.FailOnUnobservedTaskExceptions`, off by default, and `plans/00005`, a
+  tooltip on every control of `FatalErrorDialog` and `NonFatalNoticeDialog`. ScopedEditors
+  `2026.4.1116`, released the same day, is in no template.
+- **`bbavalonia` sets `FailOnUnobservedTaskExceptions = App.Smoke`** beside its
+  `HandleUiThreadExceptions = !App.Smoke` and `ShowUnobservedTaskExceptions = !App.Smoke`, as
+  AppServices' upgrade note gives it. With it on, the options collect twice at the lifetime's exit,
+  and a task exception nobody observed that is not benign turns an exit code of 0 into 1. The
+  comment in `Program.cs` and `templates/bbavalonia/AGENTS.md` say so.
+  - **Measured 2026-11-16 on a generated app**, `--smoke` four ways: clean, exit 0; a planted task
+    exception nobody observed, with no collection of its own, exit 1, the exception on stderr; a
+    planted `OperationCanceledException`, which is benign, exit 0; the first plant with the line set
+    to `false`, exit 0. So the line is what fails the run, and AppServices' own collection at exit
+    finds the exception.
+  - **This repository's tests pass**, 234 of 234, and `verify-release` passes all seven generated
+    repositories, warnings as errors: `bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 18, `bbweb`
+    14, `bbweb --blazor` 17, `bbapi` 15, and `bbconsole` 14 with SIGINT skipped on Windows. Every
+    app published for `win-x64`.
 
 ## What `2026.4.1114` carries, prepared 2026-11-13 — outside the plans
 

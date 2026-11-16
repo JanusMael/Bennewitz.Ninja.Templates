@@ -10,8 +10,9 @@ internal static class Program
     /// Starts the app through the entry point every family app shares: an unhandled exception is
     /// logged as fatal, shown in the native fatal-error dialog and exits 1; the log is flushed on every
     /// exit; and <c>--version</c>, alone, prints the release version. <c>--smoke</c> opens the main
-    /// window, lets it render once and exits 0: the cheapest proof that a trimmed single-file build
-    /// still starts, loads its theme and binds.
+    /// window, lets it render once and exits 0, or 1 when a task exception nobody observed, and not
+    /// benign, was reported: the cheapest proof that a trimmed single-file build still starts, loads its theme and
+    /// binds.
     /// </summary>
     [STAThread]
     public static int Main(string[] args) =>
@@ -30,10 +31,11 @@ internal static class Program
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppStem", "logs"),
             // A UI-thread failure is logged and shown, and the app carries on; but a smoke run proves
             // the build by its exit code, so there it must still end the process. Nor does a smoke run
-            // show a task exception nobody observed: one that is not benign is logged at Warning and
-            // written on stderr, and the run still exits 0, so the exit code never shows one.
+            // show a task exception nobody observed: it collects at exit, and one that is not benign
+            // turns its exit code of 0 into 1.
             HandleUiThreadExceptions = !App.Smoke,
             ShowUnobservedTaskExceptions = !App.Smoke,
+            FailOnUnobservedTaskExceptions = App.Smoke,
         });
 
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
