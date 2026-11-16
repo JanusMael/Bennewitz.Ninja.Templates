@@ -26,6 +26,7 @@ It is also where the family's conventions are prescribed:
 | `scripts/` | File-based apps: the release gate, the packaging guard, the conventions check, and a test-suite converter |
 | `tests/` | `Templates.Tests`, which reads this repository's files and runs its scripts |
 | `docs/` | The conventions, runbooks, and records of past decisions |
+| `reference/` | The family's canonical kit for reading upstream sources, `fetch-reference.cs` with its manifest and shields; this repository lists no source |
 | `plans/` | Numbered plans; approved ones are frozen |
 | `.github/` | This repository's own workflows and `repository.json` |
 

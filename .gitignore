@@ -5,3 +5,4 @@ packages/
 *.user
 .vs/
 .idea/
+/reference/*/
