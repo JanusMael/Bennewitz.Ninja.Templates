@@ -1,0 +1,6 @@
+{
+  // The upstream sources this repository reads, fetched read-only into the folders beside this file by
+  // fetch-reference.cs. This repository holds the kit as the family's canonical copy and lists none; a
+  // repository that copies the kit lists its own here. README.md beside this file describes every field.
+  "sources": []
+}

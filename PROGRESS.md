@@ -11,8 +11,8 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
 1. **[`plans/00013`](plans/00013-reference-sources.md), one way to read upstream sources, is approved**
-   (2026-11-16, its section below). Step 1 is next: AppKit's `reference/` kit at its `adf2284` into
-   this repository's root.
+   (2026-11-16, its section below). Step 1 is done: AppKit's `reference/` kit, at its `adf2284`, is at
+   this repository's root. Step 2, the cross-platform test, is next.
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -23,8 +23,11 @@ section):
      ordinary tests: one shared `Application` broke code that reads `Application.Current is null` as
      "no UI". `bbavalonia`'s one test assembly holds both kinds. The choice (split the headless
      tests into a project of their own, per assembly with a warm-up fixture and the guard tests, or
-     stay per test; the guard tests fail under per-test isolation) waits on ClaudeForge's final CI
-     verdict, then the maintainer. XamlQuality holds the gotcha until then.
+     stay per test; the guard tests fail under per-test isolation) waits on the maintainer.
+     ClaudeForge's final CI verdict came on 2026-11-16: per-assembly isolation in an assembly that
+     holds only headless tests passed 4 of 4 on each of Windows, Ubuntu and macOS (runs
+     `43955937306` and `43956133147`, each run twice), merged to its `main` as `78da238d`.
+     XamlQuality holds the gotcha until the choice is made.
    - From the maintainer's decisions of 2026-11-13 (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
@@ -1948,14 +1951,35 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 
 | Step | State | Notes |
 |---|---|---|
-| 1 · The kit at this repository's root, from AppKit's `adf2284` | next | |
-| 2 · The cross-platform test | not started | |
+| 1 · The kit at this repository's root, from AppKit's `adf2284` | done | Below |
+| 2 · The cross-platform test | next | |
 | 3 · `check`: the ignore rule | not started | |
 | 4 · `check --repo`: the drift failure | not started | |
 | 4a · `check`: `fetch-reference.*` outside `reference/` | not started | |
 | 5 · `docs/repository-conventions.md` | not started | |
 | 5a · The pointers in every template's `AGENTS.md` and the README | not started | |
 | 6 · A run on macOS, then a Templates release; the family adopts at its next sync | not started | |
+
+### Step 1, as built
+
+- **Six of the kit's eight files are AppKit's at `adf2284`, byte for byte**: `fetch-reference.cs`, the
+  three shields, `AGENTS.md` and `CLAUDE.md`, by their git blob hashes against AppKit's tree, all mode
+  `100644`. `README.md` is changed as decision 2 says, and `sources.json` is replaced by one listing no
+  source.
+- **`/reference/*/` is in `.gitignore`**, and the root `AGENTS.md`'s layout table names `reference/`.
+- **Verified**:
+  - `dotnet run --file reference/fetch-reference.cs -- --status` exits 0 and prints nothing.
+  - `git check-ignore -v` names `.gitignore:8:/reference/*/` for a file in a probe folder.
+  - `check` conforms with the kit staged. As a canary, `reference/AGENTS.md` unstaged fails it on
+    the documents rule.
+  - The root tests pass, 234 of 234.
+
+#### Drift from step 1
+
+- **The README lost one more clause than decision 2 names.** "Every text file in the three here is
+  LF" described AppKit's three checkouts; the script converts no line endings but does not make
+  upstream's files LF, so the clause would be false of a repository that lists other sources. The
+  sentence now ends at "the same bytes on every platform".
 
 ## `plans/00012` — every packed README is a nuget.org page
 
