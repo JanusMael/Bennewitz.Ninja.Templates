@@ -6,15 +6,14 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-14 after `Bennewitz.Ninja.Templates
-2026.4.1114` was released.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-16 after the family synced to
+`Bennewitz.Ninja.Templates 2026.4.1114`.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **`2026.4.1114` is out with CodeQuality `2026.4.1113`** and bbpkg's runbook naming the floor (its
-   section below). Next, the maintainer's decisions of 2026-11-13 (the locked decisions):
-   - **A second family sync** takes CodeQuality `2026.4.1113` into AutoVersioning, JsonC, FileServer,
-     Inspections and AppKit, measured in each, on the maintainer's word for it.
+1. **`2026.4.1114` is out, and the five synced repositories take CodeQuality `2026.4.1113`** (its
+   section below); nothing waits for a release. Open, from the maintainer's decisions of 2026-11-13
+   (the locked decisions):
    - **Asked of AppServices**: a smoke-mode option that turns a task exception nobody observed into an
      exit code; `bbavalonia` takes it once released.
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
@@ -145,6 +144,10 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
     collection itself.
   - AppKit pins XamlQuality `2026.4.1111` and adopts BNXQ1011 over its own markup, measured by
     AppKit's session, in the next AppServices release. Taken over the pin alone and over `2026.4.1109`.
+- Decided 2026-11-16, through `choices`: the five family repositories take CodeQuality `2026.4.1113`
+  now, from `2026.4.1114`, one pull request each, measured, a finding fixed or suppressed with its
+  reason. Taken over folding it into the next sync (the widened rules unmeasured in the family until
+  then) and over measuring without pull requests.
 
 ## Status
 
@@ -2253,6 +2256,28 @@ from it pins CodeQuality `2026.4.1113` in all five templates, and its `bbpkg` ru
 `verify-release --published 2026.4.1114` then installed it from nuget.org and passed all seven cases:
 `bbpkg` 16, `bbpkg --analyzer` 23, `bbavalonia` 18, `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, and
 `bbconsole` 14 with SIGINT skipped on Windows. Every app published for `win-x64` and ran.
+
+### The family, synced on 2026-11-16
+
+On the maintainer's decision of 2026-11-16 through `choices`, "Sync all five now". Driven from here,
+one pull request per repository, each prepared by an agent in a fresh clone, read here and merged when
+green. Each raises `Bennewitz.Ninja.CodeQuality` from `2026.4.1111` to `2026.4.1113` and takes the
+runbook's floor text where its `docs/publishing.md` had the template's wording. The scripts did not
+change between `2026.4.1113` and `2026.4.1114`; every repository's copies match the template by hash.
+CodeQuality `2026.4.1113` reported nothing new anywhere, BNCQ1009 and BNCQ3001 included; every earlier
+suppression stands.
+
+| Repository | Sync | Released |
+|---|---|---|
+| AutoVersioning | #13, `9e6298b`: 55 of 55 tests; the floor text as the template's | Not released: the package did not change |
+| JsonC | #15, `d4d0d09`: 84 of 84 tests; the floor text as the template's | Not released |
+| FileServer | #20, `772af3c`: 169 of 169 tests, the sample and its smoke test. No `docs/publishing.md` and no `release-target.cs`, so no floor text | Not released |
+| Inspections | #143, `27bd6d9`: 1074 of 1074 tests, `real-code`, the mutation smoke and both probe builds; the floor text as the template's. Its own CodeQuality projects still take no package | Not released: no family's package changed |
+| AppKit | #39, `3fd6254`: 649 tests, 15 skipped as before; the native AOT probe, 18 with 4 skipped; the trimmed publish at its baseline. Its runbook already named the floor in its own words, from its #38, so it is unchanged | Not released: neither family's packages changed |
+
+Each was run as its CI runs it before the pull request, on Windows, with the restore resolving
+`2026.4.1113`, and every CI job passed before each merge. FileServer's container image and AppKit's
+Linux AOT job ran only in CI.
 
 ## Release `2026.4.1113`
 
