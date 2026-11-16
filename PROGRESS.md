@@ -6,16 +6,23 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-16 after AppServices `2026.4.1116`
-was taken.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-16 after `Bennewitz.Ninja.Templates
+2026.4.1116` was released.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **AppServices `2026.4.1116` is taken, with `bbavalonia`'s smoke run failing on a task exception
-   nobody observed** (the section "The next release, prepared 2026-11-16"), unreleased until the
-   maintainer's word for that release. `2026.4.1114` is out, and the five synced repositories take
-   CodeQuality `2026.4.1113`. Open, from the maintainer's decisions of 2026-11-13 (the locked
-   decisions):
+1. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
+   a task exception nobody observed (its section below); nothing waits for a release. The family
+   repositories pin no AppServices, so no sync follows. Open:
+   - **`bbavalonia`'s headless isolation.** The ClaudeForge session found, read in Avalonia 12.1.6
+     and measured, that the default per-test isolation lets a background thread claim
+     `Dispatcher.UIThread` (1,815 of 2,000 dispatches failed against a background reader). Its fix,
+     per-assembly isolation with a warm-up fixture, failed locally in an assembly that also holds
+     ordinary tests: one shared `Application` broke code that reads `Application.Current is null` as
+     "no UI". `bbavalonia`'s one test assembly holds both kinds. The choice (split the headless
+     tests into their own project, or stay per test and add the guard tests) waits on ClaudeForge's
+     final CI verdict, then the maintainer. XamlQuality holds the gotcha until then.
+   - From the maintainer's decisions of 2026-11-13 (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
      there. That is left to its own session, which has been told about the first.
@@ -2109,11 +2116,11 @@ out on the maintainer's word. AppServices and ScopedEditors also need the attrib
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
 
-## The next release, prepared 2026-11-16 — outside the plans
+## What `2026.4.1116` carries, prepared 2026-11-16 — outside the plans
 
 The maintainer's decision of 2026-11-13 (the locked decisions): a smoke run that should fail on a
 task exception nobody observed is asked of AppServices, and `bbavalonia` takes it once released.
-Unreleased until the maintainer's word for that release.
+Merged as #103 and released as `2026.4.1116` on 2026-11-16 (its section below).
 
 - **AppServices `2026.4.1116` in every app template**, raised from `2026.4.1113`:
   `AppServices.EntryPoint` in `bbapi`, `bbconsole` and `bbweb`, `AppServices.Avalonia` in
@@ -2265,6 +2272,28 @@ what was added on 2026-11-12 and 13, released as `2026.4.1113` on 2026-11-13 (it
   `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with SIGINT skipped on Windows, every app
   published for win-x64 and run. Its `resolve` step read nuget.org itself for `Bennewitz.Ninja.Widget`
   and `Bennewitz.Ninja.Linter`, which it has never seen, and resolved both.
+
+## Release `2026.4.1116`
+
+Released on the maintainer's word on 2026-11-16, "you may do the release". It carries the section
+above, "What `2026.4.1116` carries": AppServices `2026.4.1116` in every app template, and
+`bbavalonia`'s smoke run failing on a task exception nobody observed.
+
+`verify-release` passed on #103's tree before the merge, and the merge, `9bd23aa`, has that tree;
+`main`'s CI passed on it. The blank-version preflight logged in, run `43942515653`. The tag's run,
+[43942777076](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/43942777076),
+passed every gate. It pushed `Bennewitz.Ninja.Templates 2026.4.1116` and made the GitHub release
+with it at 19:51 UTC.
+
+Verified against the feed: the flat container listed `2026.4.1116` at 19:57 UTC. The package taken
+from it pins AppServices `2026.4.1116` in `bbapi`, `bbavalonia`, `bbconsole` and `bbweb`, and its
+`bbavalonia` sets `FailOnUnobservedTaskExceptions = App.Smoke`. `verify-release --published
+2026.4.1116` then installed it from nuget.org and passed all seven cases: `bbpkg` 16,
+`bbpkg --analyzer` 23, `bbavalonia` 18, `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, and `bbconsole`
+14 with SIGINT skipped on Windows. Every app published for `win-x64`.
+
+No family repository pins AppServices, so no sync follows: AutoVersioning, JsonC, FileServer,
+Inspections and DiffView pin none, and AppKit releases it.
 
 ## Release `2026.4.1114`
 
