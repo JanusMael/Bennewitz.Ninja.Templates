@@ -11,8 +11,10 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
 1. **[`plans/00013`](plans/00013-reference-sources.md), one way to read upstream sources, is approved**
-   (2026-11-16, its section below). Step 1 is done: AppKit's `reference/` kit, at its `adf2284`, is at
-   this repository's root. Step 2, the cross-platform test, is next.
+   (2026-11-16, its section below). Steps 1 and 2 are done: the kit at this repository's root, and
+   its test. Step 3, `check`'s ignore rule, is next, and waits on the maintainer for one point: as
+   decision 3 words it, `check --repo` would fail DiffView, which adopted the kit with `reference/*`
+   in its `.gitignore` (the section's "What DiffView's adoption changes").
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -1952,8 +1954,8 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | Step | State | Notes |
 |---|---|---|
 | 1 · The kit at this repository's root, from AppKit's `adf2284` | done | Below |
-| 2 · The cross-platform test | next | |
-| 3 · `check`: the ignore rule | not started | |
+| 2 · The cross-platform test | done | Below |
+| 3 · `check`: the ignore rule | next, one point with the maintainer | Below |
 | 4 · `check --repo`: the drift failure | not started | |
 | 4a · `check`: `fetch-reference.*` outside `reference/` | not started | |
 | 5 · `docs/repository-conventions.md` | not started | |
@@ -1980,6 +1982,45 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
   LF" described AppKit's three checkouts; the script converts no line endings but does not make
   upstream's files LF, so the clause would be false of a repository that lists other sources. The
   sentence now ends at "the same bytes on every platform".
+
+### Step 2, as built
+
+- **`tests/Templates.Tests/Reference/FetchReferenceTests.cs`**, 8 tests over one fixture. It builds an
+  upstream with two commits tagged `v1` and `v2`, cloned bare, and a repository that keeps the
+  script and its shields, which it copies from this repository's `reference/`. The fixture runs
+  `dotnet run --file reference/fetch-reference.cs` there step by step:
+  - `--status` before any fetch: `missing`, exit 1, nothing fetched;
+  - a plain run: `fetched` at `v1`, exit 0. `git status` lists the kit as untracked but nothing
+    under the checkout;
+  - `--status`: `present`, exit 0;
+  - the ref moved to `v2`: `off-pin`, exit 1, under `--status` and under a plain run, which leaves
+    `v1` in place;
+  - `--update`: `fetched` at `v2`, exit 0, then `present`;
+  - the ref back at `v1` and `/reference/*/` gone from `.gitignore`: `--update` exits 2, with "git
+    does not ignore reference/upstream", and `v2` stays.
+- **The script is copied, not run in place.** It looks for its root from its own folder before the
+  current directory, so run from here it would fetch into this repository.
+- **Verified**: 8 of 8 on Windows here, in 12 s. CI's `verify` job runs it on `ubuntu-latest`. Two
+  canaries:
+  - The test repository started without `/reference/*/`, the canary the plan names: 7 of 8 failed,
+    each on the script's exit 2. The eighth, that git ignores the checkout, passed with no checkout
+    at all, so it now first requires the checkout fetched at `v1`.
+  - The script's ignore gate disabled: exactly the exit-2 test failed.
+- **macOS is still owed before the release** (decision 5, step 6), as a run of this test there.
+  DiffView's CI ran the script itself on GitHub's macOS runner (below), which is evidence for the
+  script but not for this test.
+
+### What DiffView's adoption changes
+
+AppKit reported on 2026-11-16 that DiffView adopted the kit as its PR #59, and DiffView's own tree
+confirms it, read the same day:
+
+| Fact | Effect on `plans/00013` |
+|---|---|
+| DiffView's `reference/fetch-reference.cs` is blob `dfd0d48`, this repository's, merged as `b863932` | Decision 4's drift check will find it identical |
+| Its `scripts/fetch-reference.{cs,sh,ps1}` are gone | Step 4a expects `check --repo` to fail DiffView on them. It will pass, so step 4a needs another repository to show the rule fails one. Inspections still has `scripts/fetch-reference.cs` and `.json` |
+| Its `.gitignore` ignores `reference/*` and un-ignores the kit's eight files: a checkout linked in from elsewhere is a symlink, which the folder pattern `/reference/*/` does not match | Step 3's `check` in a checkout asks git, so it passes DiffView. `check --repo`, as decision 3 words it, accepts only the lines `/reference/*/` and `reference/*/`, and would fail DiffView, which the decision's own reason meant to pass. The maintainer's call |
+| Its CI ran the script on GitHub's Linux, macOS and Windows runners from a clean checkout, fetching all five sources at their pins with the nuspecs read from nuget.org, then built and tested green | The script runs on macOS with real packages. Decision 5's gate is a run of step 2's test there, and stays |
 
 ## `plans/00012` — every packed README is a nuget.org page
 
