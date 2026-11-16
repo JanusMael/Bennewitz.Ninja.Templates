@@ -6,12 +6,14 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-16 after `Bennewitz.Ninja.Templates
-2026.4.1116` was released.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-16 after `plans/00013` was approved.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
+1. **[`plans/00013`](plans/00013-reference-sources.md), one way to read upstream sources, is approved**
+   (2026-11-16, its section below). Step 1 is next: AppKit's `reference/` kit at its `adf2284` into
+   this repository's root.
+2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
    - **`bbavalonia`'s headless isolation.** The ClaudeForge session found, read in Avalonia 12.1.6
@@ -20,8 +22,9 @@ section):
      per-assembly isolation with a warm-up fixture, failed locally in an assembly that also holds
      ordinary tests: one shared `Application` broke code that reads `Application.Current is null` as
      "no UI". `bbavalonia`'s one test assembly holds both kinds. The choice (split the headless
-     tests into their own project, or stay per test and add the guard tests) waits on ClaudeForge's
-     final CI verdict, then the maintainer. XamlQuality holds the gotcha until then.
+     tests into a project of their own, per assembly with a warm-up fixture and the guard tests, or
+     stay per test; the guard tests fail under per-test isolation) waits on ClaudeForge's final CI
+     verdict, then the maintainer. XamlQuality holds the gotcha until then.
    - From the maintainer's decisions of 2026-11-13 (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
@@ -29,7 +32,7 @@ section):
    - **Not ours to sync**: ClaudeForge, on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`,
      is left to its owner. TrueCourseCalculator, Geo.Core and GeoHash have no remote and push
      `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
-2. **[`plans/00009`](plans/00009-package-consolidation.md) is complete** (2026-11-09, its section
+3. **[`plans/00009`](plans/00009-package-consolidation.md) is complete** (2026-11-09, its section
    below).
    - **AppServices and ScopedEditors were released from AppKit** at `2026.4.1110` on 2026-11-10, on
      the maintainer's word, with all eight ids verified from nuget.org.
@@ -38,11 +41,11 @@ section):
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images, and no family README carries an image today. A plan
      follows only when one first does (the maintainer, 2026-10-30).
-3. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
+4. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
    part 2 done in the syncs, AppKit, FileServer and JsonC on `4.0.3` since 2026-11-09, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
-4. **FileServer keeps `vYYYY.M.D` tags until its first 2027 release**, the maintainer's decision.
+5. **FileServer keeps `vYYYY.M.D` tags until its first 2027 release**, the maintainer's decision.
    - It is recorded in FileServer's PROGRESS.md and AGENTS.md by JanusMael/Bennewitz.Ninja.FileServer#17
      (`50967b2`): every `2026.Q.MMDD` sorts below its published `2026.9.23`.
    - Its exemption from `release-target` lapses on `2027-01-01`.
@@ -156,6 +159,14 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   now, from `2026.4.1114`, one pull request each, measured, a finding fixed or suppressed with its
   reason. Taken over folding it into the next sync (the widened rules unmeasured in the family until
   then) and over measuring without pull requests.
+- Decided 2026-11-16, through `choices`, for `plans/00013`: the `reference/` kit is held at this
+  repository's root only and shipped in no template, with a pointer to it in every template's root
+  `AGENTS.md`, the conventions document and this repository's `README.md`, so a repository starting
+  out finds it; a repository that tracks `reference/fetch-reference.cs` without git ignoring
+  `/reference/*/` FAILs `check`. The plan, with its decision 7, approved the same day.
+- Decided 2026-11-16, through `choices`: jmui gets the headless UIThread finding from XamlQuality's
+  `docs/avalonia-gotchas.md` once it lands, not by a message now; it has no GitHub repository and its
+  only session is offline.
 
 ## Status
 
@@ -1922,6 +1933,29 @@ gives `PREVIOUS_TAG` `v2026.4.1026`, and for `codequality/v…` `codequality/v20
 true for both. `notes` lists, for xamlquality and for codequality, the merge's own commits
 `7e82d76`, `1701070` and `7e5236f`, and none of another family's history; for assemblyquality, that
 nothing changed since its release.
+
+## `plans/00013` — one way to read upstream sources
+
+[plans/00013-reference-sources.md](plans/00013-reference-sources.md), approved 2026-11-16 and frozen.
+Two `step-back` reviews before approval:
+- they made later changes to the script Templates' own;
+- they made `check` ask git, not match one line, whether the checkouts are ignored;
+- they gated the release on a macOS run;
+- they replaced a `verify-release` check that does not exist with a test;
+- they added decision 7, the rule on `fetch-reference.*` outside `reference/`.
+
+The second review also found Inspections' `scripts/fetch-reference.cs` and `.json`.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · The kit at this repository's root, from AppKit's `adf2284` | next | |
+| 2 · The cross-platform test | not started | |
+| 3 · `check`: the ignore rule | not started | |
+| 4 · `check --repo`: the drift failure | not started | |
+| 4a · `check`: `fetch-reference.*` outside `reference/` | not started | |
+| 5 · `docs/repository-conventions.md` | not started | |
+| 5a · The pointers in every template's `AGENTS.md` and the README | not started | |
+| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | not started | |
 
 ## `plans/00012` — every packed README is a nuget.org page
 
