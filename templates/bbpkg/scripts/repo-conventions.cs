@@ -2,7 +2,7 @@
 // Checks, and applies, the conventions every Bennewitz.Ninja repository carries: its GitHub
 // settings, the rulesets that gate `main` and the release tags, the documentation at its root and
 // in every top-level directory, markdown checked out as LF, a release resolved through
-// release-target.cs, and the family's quality packages pinned. The convention itself is prescribed in the template
+// release-target.cs, the family's quality packages pinned, and the reference/ kit's checkouts ignored. The convention itself is prescribed in the template
 // repository's docs/repository-conventions.md; this script is how it is enforced.
 //
 // ⭐ WHY A SCRIPT AND NOT THE TEMPLATE. GitHub keeps a repository's settings outside git, so neither
@@ -164,6 +164,7 @@ int Check()
         CheckProjects(props: true);
         Drift.Check(tree, remoteTree, findings);
         LineEndings.Check(tree, findings);
+        ReferenceKit.Check(tree, remoteTree, localRoot, findings);
         return Report();
     }
 
@@ -221,6 +222,7 @@ int Check()
     CheckProjects(props: true);
     Drift.Check(tree, remoteTree, findings);
     LineEndings.Check(tree, findings);
+    ReferenceKit.Check(tree, remoteTree, localRoot, findings);
     return Report();
 }
 
@@ -2413,6 +2415,63 @@ static class LineEndings
         }
 
         return regex.ToString();
+    }
+}
+
+/// <summary>
+/// A repository that keeps the family's <c>reference/</c> kit, the read-only upstream checkouts
+/// <c>reference/fetch-reference.cs</c> fetches, has git ignore <c>reference/src</c>, where every checkout
+/// is, and commits nothing under it. A repository without the script is asked nothing.
+/// </summary>
+/// <remarks>
+/// <para>
+/// ⭐ <b>In a checkout git is asked</b>, <c>git check-ignore reference/src</c>, as the script asks it
+/// before it runs, so any <c>.gitignore</c> line git honours passes. The one line the kit prescribes,
+/// <c>/reference/src</c>, also covers a checkout linked in as a symlink, which a folder pattern misses.
+/// </para>
+/// <para>
+/// ⚠ <b>Through the API git cannot be asked</b>, so <c>check --repo</c> passes only the line itself,
+/// <c>/reference/src</c> or <c>reference/src</c>, which git reads alike, and says so when it fails.
+/// </para>
+/// </remarks>
+static class ReferenceKit
+{
+    private const string Script = "reference/fetch-reference.cs";
+    private const string Checkouts = "reference/src";
+    private const string Line = "/reference/src";
+
+    public static void Check(Tree tree, bool remoteTree, string root, List<Finding> findings)
+    {
+        if (!tree.Files.Contains(Script))
+        {
+            return;
+        }
+
+        string[] seen = [.. tree.Files.Where(p => p == Checkouts || p.StartsWith(Checkouts + "/", StringComparison.Ordinal)).Take(3)];
+        if (seen.Length > 0)
+        {
+            findings.Add(Finding.Fail("reference", $"git sees {string.Join(", ", seen)}: a checkout under {Checkouts}/ is read-only upstream source and is never committed. Remove it from git, and keep `{Line}` in .gitignore."));
+        }
+
+        if (remoteTree)
+        {
+            string[] lines = [.. (tree.Read(".gitignore") ?? "").Split('\n').Select(l => l.Trim())];
+            if (!lines.Any(l => l is Line or Checkouts))
+            {
+                findings.Add(Finding.Fail("reference", $"{Script} is tracked, and .gitignore has no line `{Line}`, which ignores every checkout. Read through the API, git was not asked: run `check` in a checkout to have it ask, or add the line, as the kit's README gives it."));
+            }
+            return;
+        }
+
+        (int exit, string output) = Shell.Run("git", root, null, "check-ignore", "-q", Checkouts);
+        if (exit == 1)
+        {
+            findings.Add(Finding.Fail("reference", $"{Script} is tracked, and git does not ignore {Checkouts}, where every checkout is: add `{Line}` to .gitignore. The script refuses to run without it."));
+        }
+        else if (exit != 0)
+        {
+            findings.Add(Finding.Fail("reference", $"git check-ignore failed with exit {exit}, so whether {Checkouts} is ignored is unknown: {output.Trim()}"));
+        }
     }
 }
 

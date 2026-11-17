@@ -587,6 +587,110 @@ public sealed class RepoConventionsTests
         Assert.Contains("FAIL line-endings: .gitattributes is missing", result.Output, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("bin/\nobj/\n/reference/src\n")]
+    [InlineData("reference/src\n")]
+    // DiffView's form before 2026-11-17: everything in reference/ but the kit's files. Git ignores
+    // reference/src by it, and in a checkout git is what is asked.
+    [InlineData("reference/*\n!reference/fetch-reference.cs\n!reference/AGENTS.md\n!reference/CLAUDE.md\n")]
+    public void A_repository_with_the_reference_kit_passes_when_git_ignores_reference_src(string gitignore)
+    {
+        Result result = WithReferenceKit(gitignore).Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("bin/\nobj/\n")]
+    // A folder pattern: before reference/src exists git cannot tell it is a folder, and a symlink never is one.
+    [InlineData("/reference/src/\n")]
+    // The form AppKit and this repository had before 2026-11-17.
+    [InlineData("/reference/*/\n")]
+    public void A_repository_with_the_reference_kit_fails_when_git_does_not_ignore_reference_src(string? gitignore)
+    {
+        Result result = WithReferenceKit(gitignore).Run("check", "--admin");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL reference: reference/fetch-reference.cs is tracked, and git does not ignore reference/src", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_repository_without_the_reference_kit_is_asked_nothing_about_reference_src()
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["reference/AGENTS.md"] = "# reference\n";
+        fixture.Files["reference/CLAUDE.md"] = "@AGENTS.md\n";
+        fixture.Files["reference/src/Upstream/Widget.cs"] = "// Not the kit's: no fetch-reference.cs beside it.\n";
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("reference:", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_checkout_git_sees_under_reference_src_fails()
+    {
+        Fixture fixture = WithReferenceKit("bin/\nobj/\n");
+        fixture.Files["reference/src/Upstream/Widget.cs"] = "// An upstream file nobody ignored.\n";
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL reference: git sees reference/src/Upstream/Widget.cs:", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>A publish is not stopped for the reference/ ignore, as it is not for any other drift.</summary>
+    [Fact]
+    public void Release_depth_does_not_stop_a_publish_for_the_reference_ignore()
+    {
+        Result result = WithReferenceKit(null).Run("check", "--release");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+    }
+
+    /// <remarks>
+    /// Through the API git cannot be asked, so only the line itself passes: DiffView's earlier form,
+    /// which git honours, fails here and says why.
+    /// </remarks>
+    [Theory]
+    [InlineData("/reference/src\n", true)]
+    [InlineData("bin/\r\nreference/src\r\n", true)]
+    [InlineData("reference/*\n!reference/fetch-reference.cs\n!reference/AGENTS.md\n!reference/CLAUDE.md\n", false)]
+    [InlineData(null, false)]
+    public void Check_repo_reads_the_reference_ignore_line_through_the_api(string? gitignore, bool passes)
+    {
+        Result result = WithReferenceKit(gitignore).RunRemote("check", "--admin");
+
+        Assert.Contains("NOTE props: Build properties are evaluated from a checkout", result.Output, StringComparison.Ordinal);
+        string[] failures = [.. Lines(result.Output).Where(l => l.StartsWith("FAIL reference:", StringComparison.Ordinal))];
+        if (passes)
+        {
+            Assert.True(result.ExitCode == 0, result.Output);
+            Assert.Empty(failures);
+        }
+        else
+        {
+            Assert.Equal(1, result.ExitCode);
+            Assert.Contains("git was not asked", Assert.Single(failures), StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>The conforming repository keeping the reference/ kit, with <paramref name="gitignore"/> as its .gitignore, or none.</summary>
+    private static Fixture WithReferenceKit(string? gitignore)
+    {
+        Fixture fixture = Conforming();
+        fixture.Files["reference/fetch-reference.cs"] = "// The kit's fetch-reference.cs; only the file's presence is read.\n";
+        fixture.Files["reference/AGENTS.md"] = "# reference\n";
+        fixture.Files["reference/CLAUDE.md"] = "@AGENTS.md\n";
+        if (gitignore is not null)
+        {
+            fixture.Files[".gitignore"] = gitignore;
+        }
+        return fixture;
+    }
+
     /// <summary>A publish is not stopped for line endings, as it is not for any other drift.</summary>
     [Fact]
     public void Release_depth_does_not_stop_a_publish_for_line_endings()
@@ -1033,7 +1137,16 @@ public sealed class RepoConventionsTests
         /// <summary>False leaves .github/repository.json out of the tree.</summary>
         public bool WriteConfig { get; set; } = true;
 
-        public Result Run(params string[] arguments)
+        /// <summary>Runs the script over the tree as a checkout, with <c>--root</c>.</summary>
+        public Result Run(params string[] arguments) => Execute(remote: false, arguments);
+
+        /// <summary>
+        /// Runs the script over the tree as <c>check --repo</c> reads one, through the API: the tree and
+        /// each file's contents answered from fixtures written as GitHub returns them.
+        /// </summary>
+        public Result RunRemote(params string[] arguments) => Execute(remote: true, arguments);
+
+        private Result Execute(bool remote, string[] arguments)
         {
             string directory = Path.Combine(Path.GetTempPath(), "repo-conventions-" + Guid.NewGuid().ToString("N"));
             string tree = Path.Combine(directory, "tree");
@@ -1057,6 +1170,24 @@ public sealed class RepoConventionsTests
                 foreach ((string name, JsonNode? answer) in Api)
                 {
                     File.WriteAllText(Path.Combine(answers, name + ".json"), answer?.ToJsonString() ?? "");
+                }
+
+                if (remote)
+                {
+                    // GET git/trees/main?recursive=1, and GET contents/<path>?ref=main for each file,
+                    // its content base64 as GitHub sends it.
+                    JsonArray entries = [];
+                    foreach ((string path, string text) in written)
+                    {
+                        entries.Add(new JsonObject { ["path"] = path, ["type"] = "blob" });
+                        JsonObject content = new() { ["content"] = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(text)) };
+                        File.WriteAllText(Path.Combine(answers, "contents-" + path.Replace('/', '-') + ".json"), content.ToJsonString());
+                    }
+                    File.WriteAllText(Path.Combine(answers, "git-trees-main.json"), new JsonObject { ["tree"] = entries }.ToJsonString());
+
+                    (int remoteExit, string remoteOutput) = ConventionsScript.Run(RepoRoot(),
+                        [.. arguments, "--repo", "o/r", "--api-fixtures", answers]);
+                    return new Result(remoteExit, remoteOutput);
                 }
 
                 (int initExit, string initOutput) = ConventionsScript.Execute("git", tree, "init", "-q");

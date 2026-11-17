@@ -14,7 +14,8 @@ section):
    (2026-11-16, its section below). Steps 1 and 2 are done: the kit at this repository's root, and
    its test. On 2026-11-17 the maintainer moved every checkout into `reference/src/`, ignored by the
    one line `/reference/src`, and had the script refuse on Windows without long paths; the script
-   holds both (the section's "The layout of 2026-11-17"). Step 3, `check` holding that line, is next.
+   holds both (the section's "The layout of 2026-11-17"). Step 3 is done: `check` holds that line.
+   Step 4, `check --repo` failing a differing copy of the script as drift, is next.
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -1964,8 +1965,8 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 |---|---|---|
 | 1 · The kit at this repository's root, from AppKit's `adf2284` | done | Below |
 | 2 · The cross-platform test | done | Below |
-| 3 · `check`: the ignore rule | next | The line is `/reference/src` since 2026-11-17; below |
-| 4 · `check --repo`: the drift failure | not started | |
+| 3 · `check`: the ignore rule | done | The line is `/reference/src` since 2026-11-17; below |
+| 4 · `check --repo`: the drift failure | next | |
 | 4a · `check`: `fetch-reference.*` outside `reference/` | not started | |
 | 5 · `docs/repository-conventions.md` | not started | |
 | 5a · The pointers in every template's `AGENTS.md` and the README | not started | |
@@ -2080,6 +2081,48 @@ its checkouts by path, so they move with them.
   `check`, holds it. Step 3's `check --repo` reads that one line, so the question of which forms to
   accept is gone.
 - **The README and the shields differ from AppKit's** in their account of the layout.
+
+### Step 3, as built
+
+- **`ReferenceKit` in `repo-conventions.cs`**, both copies, the rule `reference`. It asks nothing of a
+  repository that does not track `reference/fetch-reference.cs`. One that does:
+  - fails when git sees anything under `reference/src/`, since a checkout is never committed;
+  - in a checkout, asks git, `git check-ignore -q reference/src`, the question the script asks
+    before it runs, so any `.gitignore` git honours passes;
+  - under `check --repo`, passes only the line `/reference/src`, or `reference/src`, which git reads
+    alike. Otherwise it fails, saying git was not asked.
+- **It runs beside `drift` and `line-endings`**, in every `check` but `--release`, which stops a
+  publish for no drift.
+- **Tests**: 14 cases in `RepoConventionsTests`:
+  - three `.gitignore` forms git honours, DiffView's old block among them;
+  - four it does not: none, unrelated lines, `/reference/src/`, and `/reference/*/`;
+  - a repository without the script, which is asked nothing;
+  - a checkout git sees under `reference/src/`;
+  - `--release` not stopped;
+  - four readings over the API.
+  `RunRemote` is new in the fixture: it answers `git/trees` and each file's `contents` as GitHub
+  returns them.
+- **Verified**:
+  - 71 of 71 in the class.
+  - Canary, the rule returning at once: all 7 cases that expect a FAIL failed.
+  - Canary, `--repo` taking any line that names `reference`: exactly DiffView's old block over the
+    API failed.
+  - `check` here conforms.
+  - `check --repo`, 2026-11-17: AppKit (`/reference/*/`), DiffView (its `reference/*` block) and
+    Inspections each FAIL `reference`, as each must until its sync moves to `/reference/src`. Each
+    also FAILs `drift`, because its `repo-conventions.cs` predates this one; the sync that brings
+    the rule brings the move with it.
+- **Inspections adopted the kit too**, as its #145, merged as `fff52fa`, with the script at
+  `dfd0d48`, and its `scripts/fetch-reference.*` are gone. No family repository keeps an old script
+  now, so step 4a's rule can be shown failing only in its tests.
+
+#### Drift from step 3
+
+- **The checkout's question is git's, asked as the script asks it**: `git check-ignore` on
+  `reference/src`, not `--no-index` on each `dir` and a probe folder. Since 2026-11-17 every
+  checkout is under that one folder, and the two must agree.
+- **The plan's verification, AppKit conforming on this rule, no longer holds**: it fails until its
+  sync, as above.
 
 ## `plans/00012` — every packed README is a nuget.org page
 
