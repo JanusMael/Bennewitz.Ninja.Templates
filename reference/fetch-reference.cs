@@ -834,6 +834,14 @@ static class Checkout
         string[] lines = [.. File.ReadAllLines(record).Select(line => line.Trim()).Where(line => line.Length > 0)];
         string made = lines.FirstOrDefault() ?? "";
         string fetched = lines.Length > 1 ? lines[1] : made;
+
+        // A record an earlier script wrote holds the tag or branch alone, never the commit it was made at,
+        // so it cannot be held to a pin; said so, or the line shows one version on both sides.
+        if (made.Length > 0 && !Pin.IsCommitHash(made))
+        {
+            return (State.OffPin, $"{source.Folder} holds {made}, recorded with no commit by an earlier script, and the pin is {pin.Label}");
+        }
+
         if (fetched != pin.Ref)
         {
             return (State.OffPin, $"{source.Folder} holds {Pin.Shorten(fetched)}, and the pin is {pin.Label}");

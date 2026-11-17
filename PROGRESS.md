@@ -2124,6 +2124,16 @@ its checkouts by path, so they move with them.
 - **The plan's verification, AppKit conforming on this rule, no longer holds**: it fails until its
   sync, as above.
 
+### A pin record with no commit — outside the steps
+
+Inspections found it when it adopted the script (its #145), and AppKit forwarded it on 2026-11-17. A
+record an earlier script wrote holds the tag alone. Read by this script, the `off-pin` line said
+"reference/Avalonia holds 12.1.3, and the pin is 12.1.3 @ 8eeda4f": one version on both sides, and
+no reason. Such a record now reads "holds 12.1.3, recorded with no commit by an earlier script, and
+the pin is …"; `--update` clears it as before. It rides with the layout change, which every
+repository takes at its sync. `FetchReferenceTests` gains the case, 11 tests. Without the change
+exactly that test fails.
+
 ## `plans/00012` — every packed README is a nuget.org page
 
 [plans/00012-every-packed-readme-is-a-nuget-page.md](plans/00012-every-packed-readme-is-a-nuget-page.md),
