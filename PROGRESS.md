@@ -12,9 +12,9 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 section):
 1. **[`plans/00013`](plans/00013-reference-sources.md), one way to read upstream sources, is approved**
    (2026-11-16, its section below). Steps 1 and 2 are done: the kit at this repository's root, and
-   its test. Step 3, `check`'s ignore rule, is next, and waits on the maintainer for one point: as
-   decision 3 words it, `check --repo` would fail DiffView, which adopted the kit with `reference/*`
-   in its `.gitignore` (the section's "What DiffView's adoption changes").
+   its test. On 2026-11-17 the maintainer moved every checkout into `reference/src/`, ignored by the
+   one line `/reference/src`, and had the script refuse on Windows without long paths; the script
+   holds both (the section's "The layout of 2026-11-17"). Step 3, `check` holding that line, is next.
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -169,6 +169,15 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   `AGENTS.md`, the conventions document and this repository's `README.md`, so a repository starting
   out finds it; a repository that tracks `reference/fetch-reference.cs` without git ignoring
   `/reference/*/` FAILs `check`. The plan, with its decision 7, approved the same day.
+- Decided 2026-11-17, by the maintainer, for `plans/00013`, superseding decision 3's form of the
+  ignore: one rule for every repository, fixed in the script itself. Every checkout is a folder under
+  `reference/src/`, and `.gitignore` ignores it whole with the one line `/reference/src`, which also
+  covers a checkout linked in as a symlink and needs no `!` line for the kit's files. The kit stays in
+  `reference/`, where the shields must be for MSBuild's walk up from a checkout. The script refuses
+  any other `dir`, and refuses to run unless git ignores `reference/src`.
+- Decided 2026-11-17, by the maintainer, through `choices`: on Windows, `fetch-reference.cs` refuses
+  with exit 2 unless `LongPathsEnabled` is 1, printing the administrator's command; it never changes
+  the setting.
 - Decided 2026-11-16, through `choices`: jmui gets the headless UIThread finding from XamlQuality's
   `docs/avalonia-gotchas.md` once it lands, not by a message now; it has no GitHub repository and its
   only session is offline.
@@ -1955,7 +1964,7 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 |---|---|---|
 | 1 · The kit at this repository's root, from AppKit's `adf2284` | done | Below |
 | 2 · The cross-platform test | done | Below |
-| 3 · `check`: the ignore rule | next, one point with the maintainer | Below |
+| 3 · `check`: the ignore rule | next | The line is `/reference/src` since 2026-11-17; below |
 | 4 · `check --repo`: the drift failure | not started | |
 | 4a · `check`: `fetch-reference.*` outside `reference/` | not started | |
 | 5 · `docs/repository-conventions.md` | not started | |
@@ -2021,6 +2030,56 @@ confirms it, read the same day:
 | Its `scripts/fetch-reference.{cs,sh,ps1}` are gone | Step 4a expects `check --repo` to fail DiffView on them. It will pass, so step 4a needs another repository to show the rule fails one. Inspections still has `scripts/fetch-reference.cs` and `.json` |
 | Its `.gitignore` ignores `reference/*` and un-ignores the kit's eight files: a checkout linked in from elsewhere is a symlink, which the folder pattern `/reference/*/` does not match | Step 3's `check` in a checkout asks git, so it passes DiffView. `check --repo`, as decision 3 words it, accepts only the lines `/reference/*/` and `reference/*/`, and would fail DiffView, which the decision's own reason meant to pass. The maintainer's call |
 | Its CI ran the script on GitHub's Linux, macOS and Windows runners from a clean checkout, fetching all five sources at their pins with the nuspecs read from nuget.org, then built and tested green | The script runs on macOS with real packages. Decision 5's gate is a run of step 2's test there, and stays |
+
+### The layout of 2026-11-17
+
+The maintainer asked for one rule across the family, and that the script itself hold it. What was
+measured first, under WSL with real symlinks, on 2026-11-17:
+
+| Ignore | A fetched folder | A symlinked checkout | A loose file in `reference/` |
+|---|---|---|---|
+| `/reference/*/` (AppKit, Templates) | ignored | **shown as untracked** | shown |
+| `reference/*` with a `!` line for each kit file (DiffView) | ignored | ignored | ignored |
+| `/reference/src`, every checkout under `reference/src/` | ignored | ignored | shown |
+
+- **The script took no symlinked checkout, whatever the form.** Its gate asked git about
+  `reference/<name>/.fetched-ref`, and git refuses a path beyond a symbolic link: exit 128, which the
+  script turned into exit 2. AppKit's report that "the script accepts it" held only while no symlink
+  existed.
+- **The kit cannot move into a subfolder instead.** The shields work only on MSBuild's walk up from
+  a checkout, so they stay in `reference/`, and the documents rule holds `reference/AGENTS.md` and
+  `CLAUDE.md` there; five `!` lines would remain.
+- **Long paths**: `LongPathsEnabled` is 1 on this machine. The longest path in any checkout under
+  `C:\c\cl`, 11 repositories and about 19,000 files, is 198 characters, in Avalonia's tests. Moved
+  into an agent's scratchpad worktree, about 75 characters deeper, the same file passes 260.
+
+**As built**, in this repository's copy of the kit:
+- `fetch-reference.cs`: every `dir` must be under `reference/src/`, or the manifest is refused with
+  exit 2. The gate asks git about `reference/src` once, by that name, so it answers for a folder, a
+  symlink, or a checkout not fetched yet, and for `reference/src` itself as a symlink. On Windows it
+  reads `HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled` first and refuses with
+  exit 2 unless it is 1. The shields it writes say the checkouts are in `src/`.
+- `.gitignore` here carries `/reference/src`. The README, `AGENTS.md` and the three shields describe
+  the layout. The README gives the one line and the administrator's long-path command.
+- `FetchReferenceTests`, 10 tests: the step 2 sequence under `reference/src/`, plus a checkout
+  moved out and linked back in as a symlink (`present`, and `git status` shows nothing under
+  `reference/src`), and a `dir` outside `reference/src/` (exit 2). The symlink test skips on a machine
+  that cannot make a directory symlink; it ran here.
+- **Verified**: 10 of 10 here. Two canaries:
+  - The old gate restored: exactly the symlink test failed, on git's "beyond a symbolic link".
+  - The long-path condition inverted: the script refused with exit 2 and printed the command.
+  No test covers the refusal itself, since a test cannot change the registry.
+
+**What each repository changes at its sync**: its `.gitignore` line becomes `/reference/src`, and
+each `dir` in its `sources.json` moves under `reference/src/`. DiffView's tests and theme audit read
+its checkouts by path, so they move with them.
+
+#### Drift from `plans/00013`
+
+- **Decision 3's ignore is `/reference/src`, not `/reference/*/`**, and the script, not only
+  `check`, holds it. Step 3's `check --repo` reads that one line, so the question of which forms to
+  accept is gone.
+- **The README and the shields differ from AppKit's** in their account of the layout.
 
 ## `plans/00012` — every packed README is a nuget.org page
 
