@@ -2103,7 +2103,11 @@ its checkouts by path, so they move with them.
   `RunRemote` is new in the fixture: it answers `git/trees` and each file's `contents` as GitHub
   returns them.
 - **Verified**:
-  - 71 of 71 in the class.
+  - 71 of 71 in the class, and 259 of 259 in all with `GITHUB_ACTIONS=true` set. The first push
+    was red in CI: the `--repo` test split the output itself, so its `StartsWith("FAIL")` matched
+    nothing behind the `::error::` Actions adds, the trap `tests/AGENTS.md` names. It reads through
+    `ConventionsScript.Lines` now. The same two cases failed here with the variable set, before the
+    fix.
   - Canary, the rule returning at once: all 7 cases that expect a FAIL failed.
   - Canary, `--repo` taking any line that names `reference`: exactly DiffView's old block over the
     API failed.

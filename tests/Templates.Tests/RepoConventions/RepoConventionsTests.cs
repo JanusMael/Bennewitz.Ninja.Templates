@@ -664,7 +664,9 @@ public sealed class RepoConventionsTests
         Result result = WithReferenceKit(gitignore).RunRemote("check", "--admin");
 
         Assert.Contains("NOTE props: Build properties are evaluated from a checkout", result.Output, StringComparison.Ordinal);
-        string[] failures = [.. Lines(result.Output).Where(l => l.StartsWith("FAIL reference:", StringComparison.Ordinal))];
+        // ConventionsScript.Lines strips the ::error:: GitHub Actions puts before a FAIL; split here,
+        // a StartsWith("FAIL") would match nothing in CI.
+        string[] failures = [.. ConventionsScript.Lines(result.Output).Where(l => l.StartsWith("FAIL reference:", StringComparison.Ordinal))];
         if (passes)
         {
             Assert.True(result.ExitCode == 0, result.Output);
