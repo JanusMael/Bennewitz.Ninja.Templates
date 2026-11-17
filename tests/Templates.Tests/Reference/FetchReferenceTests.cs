@@ -69,6 +69,16 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
     }
 
     [Fact]
+    public void A_pin_record_with_no_commit_is_off_pin_and_says_why()
+    {
+        Step step = _run.StatusOldRecord;
+
+        Assert.True(step.Exit == 1, step.Output);
+        Assert.Equal("off-pin", step.StateOf(Run.Name));
+        Assert.Contains("reference/src/upstream holds v2, recorded with no commit by an earlier script, and the pin is v2", step.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_checkout_linked_in_as_a_symlink_is_present_and_ignored()
     {
         Assert.SkipWhen(_run.Symlinked is null, $"This machine cannot make a directory symlink: {_run.SymlinkProblem}");
@@ -198,6 +208,13 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
             Update = Fetch("--update");
             StatusAfterUpdate = Fetch("--status");
 
+            // A pin record as an earlier script wrote it: the tag alone, no commit.
+            string record = Path.Combine(_repository, "reference", "src", Name, ".fetched-ref");
+            string written = File.ReadAllText(record);
+            File.WriteAllText(record, "v2\n");
+            StatusOldRecord = Fetch("--status");
+            File.WriteAllText(record, written);
+
             // The checkout moved elsewhere and linked back in. Git refuses to look through a symlink, so
             // a gate that asked about a path inside the checkout would fail here.
             string checkout = Path.Combine(_repository, "reference", "src", Name);
@@ -240,6 +257,9 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
         public Step Update { get; }
 
         public Step StatusAfterUpdate { get; }
+
+        /// <summary><c>--status</c> with the pin record as an earlier script wrote it, the tag alone.</summary>
+        public Step StatusOldRecord { get; }
 
         /// <summary><c>--status</c> with the checkout a symlink, or null when this machine cannot make one.</summary>
         public Step? Symlinked { get; }
