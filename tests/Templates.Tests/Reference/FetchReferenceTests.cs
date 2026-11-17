@@ -7,8 +7,15 @@ namespace Templates.Tests.Reference;
 /// <c>reference/fetch-reference.cs</c>, the family's kit for reading upstream sources (plans/00013
 /// decision 5), run as a person runs it over a repository built in a temp directory, fetching from a
 /// bare repository beside it through a <c>file://</c> url: the states <c>missing</c>, <c>fetched</c>,
-/// <c>present</c> and <c>off-pin</c>, and the exit codes 0, 1 and 2.
+/// <c>present</c> and <c>off-pin</c>, the exit codes 0, 1 and 2, a checkout linked in as a symlink, and
+/// the two rules on where checkouts go: under <c>reference/src/</c>, which git must ignore.
 /// </summary>
+/// <remarks>
+/// <para>
+/// ⓘ <b>The long-path gate is not exercised here.</b> It reads Windows' registry, which a test cannot
+/// change, and every machine that runs this has long paths on, or is not Windows.
+/// </para>
+/// </remarks>
 /// <remarks>
 /// <para>
 /// ⭐ <b>No network and no package.</b> A source pinned by a <c>ref</c> reads no nuspec and no feed, so
@@ -58,7 +65,28 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
         string[] untracked = [.. ConventionsScript.Lines(_run.UntrackedAfterFetch).Where(line => line.Length > 0)];
 
         Assert.Contains("?? reference/sources.json", untracked);
-        Assert.DoesNotContain(untracked, line => line.Contains("reference/upstream", StringComparison.Ordinal));
+        Assert.DoesNotContain(untracked, line => line.Contains("reference/src", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_checkout_linked_in_as_a_symlink_is_present_and_ignored()
+    {
+        Assert.SkipWhen(_run.Symlinked is null, $"This machine cannot make a directory symlink: {_run.SymlinkProblem}");
+        Step step = _run.Symlinked!;
+
+        Assert.True(step.Exit == 0, step.Output);
+        Assert.Equal("present", step.StateOf(Run.Name));
+        Assert.Equal("two\n", step.Checkout);
+        Assert.DoesNotContain(ConventionsScript.Lines(_run.UntrackedWhenSymlinked), line => line.Contains("reference/src", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_dir_outside_reference_src_exits_2()
+    {
+        Step step = _run.OutsideSrc;
+
+        Assert.True(step.Exit == 2, step.Output);
+        Assert.Contains("is not a folder under reference/src/", step.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -109,7 +137,7 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
         Step step = _run.UpdateWithoutIgnore;
 
         Assert.True(step.Exit == 2, step.Output);
-        Assert.Contains("git does not ignore reference/upstream", step.Output, StringComparison.Ordinal);
+        Assert.Contains("git does not ignore reference/src", step.Output, StringComparison.Ordinal);
         Assert.Equal("two\n", step.Checkout);
     }
 
@@ -156,7 +184,7 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
             {
                 File.Copy(Path.Combine(kit, file), Path.Combine(_repository, "reference", file));
             }
-            File.WriteAllText(Path.Combine(_repository, ".gitignore"), "bin/\nobj/\n/reference/*/\n");
+            File.WriteAllText(Path.Combine(_repository, ".gitignore"), "bin/\nobj/\n/reference/src\n");
             Manifest("v1");
 
             StatusBeforeFetch = Fetch("--status");
@@ -169,6 +197,27 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
             PlainRunOffPin = Fetch();
             Update = Fetch("--update");
             StatusAfterUpdate = Fetch("--status");
+
+            // The checkout moved elsewhere and linked back in. Git refuses to look through a symlink, so
+            // a gate that asked about a path inside the checkout would fail here.
+            string checkout = Path.Combine(_repository, "reference", "src", Name);
+            string elsewhere = Path.Combine(_scratch, "elsewhere");
+            Directory.Move(checkout, elsewhere);
+            try
+            {
+                Directory.CreateSymbolicLink(checkout, elsewhere);
+                Symlinked = Fetch("--status");
+                UntrackedWhenSymlinked = Git(_repository, "status", "--porcelain", "--untracked-files=all");
+                Directory.Delete(checkout);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                SymlinkProblem = error.Message;
+            }
+            Directory.Move(elsewhere, checkout);
+
+            Manifest("v2", "reference/" + Name);
+            OutsideSrc = Fetch("--status");
 
             // Off its pin again, so a run that ignored the missing line would fetch.
             Manifest("v1");
@@ -191,6 +240,15 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
         public Step Update { get; }
 
         public Step StatusAfterUpdate { get; }
+
+        /// <summary><c>--status</c> with the checkout a symlink, or null when this machine cannot make one.</summary>
+        public Step? Symlinked { get; }
+
+        public string UntrackedWhenSymlinked { get; } = "";
+
+        public string? SymlinkProblem { get; }
+
+        public Step OutsideSrc { get; }
 
         public Step UpdateWithoutIgnore { get; }
 
@@ -232,14 +290,14 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
             return "file://" + (bare.StartsWith('/') ? "" : "/") + bare.Replace('\\', '/');
         }
 
-        private void Manifest(string reference)
+        private void Manifest(string reference, string dir = "reference/src/" + Name)
         {
             JsonObject manifest = new()
             {
                 ["sources"] = new JsonArray(new JsonObject
                 {
                     ["name"] = Name,
-                    ["dir"] = "reference/" + Name,
+                    ["dir"] = dir,
                     ["url"] = _url,
                     ["ref"] = reference,
                 }),
@@ -257,7 +315,7 @@ public sealed class FetchReferenceTests : IClassFixture<FetchReferenceTests.Run>
                 command.AddRange(arguments);
             }
             (int exit, string output) = ConventionsScript.Execute("dotnet", _repository, [.. command]);
-            string file = Path.Combine(_repository, "reference", Name, "README.txt");
+            string file = Path.Combine(_repository, "reference", "src", Name, "README.txt");
             return new Step(exit, output, File.Exists(file) ? File.ReadAllText(file) : null);
         }
 

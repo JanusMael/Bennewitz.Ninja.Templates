@@ -5,4 +5,4 @@ packages/
 *.user
 .vs/
 .idea/
-/reference/*/
+/reference/src
