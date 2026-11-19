@@ -3,9 +3,10 @@ name: Release
 # The TEMPLATE REPOSITORY's own release. Triggered by a version tag (v1.2.3), or dispatched.
 #
 # ⛔ A PUBLISHED NUGET VERSION CAN NEVER BE REPLACED. Everything this repository otherwise
-# treats as recoverable becomes permanent past the push step, so the gates below — test, pack,
-# the packed-vs-declared check, and the full end-to-end verify-release — all run before it, and
-# --skip-duplicate makes a re-run of a completed release a no-op rather than a failure.
+# treats as recoverable becomes permanent past the push step, so the gates below — the reference
+# kit on macOS, test, pack, the packed-vs-declared check, and the full end-to-end verify-release —
+# all run before it, and --skip-duplicate makes a re-run of a completed release a no-op rather than
+# a failure.
 #
 # ⚠ This workflow is NOT the one the template ships. That one lives at
 # templates/bbpkg/.github/workflows/release.yml and never runs here, because Actions only reads
@@ -40,7 +41,37 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
 jobs:
+  # ⛔ The reference/ kit's tests on macOS, before anything can publish (the maintainer,
+  # 2026-11-19). CI's reference-macos job is NOT a required check, so a macOS runner outage never
+  # blocks main; here a failure of any kind, outage included, stops the release instead. Nothing
+  # tries to tell an outage from a real failure: GitHub's status reports Actions as one component,
+  # an outage usually leaves the job queued with no step to run, and a wrong guess would wave a
+  # real failure through. An outage only delays the release: rerun the workflow once the runners
+  # are back, and --skip-duplicate keeps the rerun safe.
+  #
+  # ⚠ It runs in the credential preflight too, so publish needs no condition on how this job ended
+  # and a skipped job can never read as a pass.
+  reference-macos:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # ⚠ --minimum-expected-tests: a filter that matched nothing would otherwise pass.
+      - name: Test the reference kit
+        run: dotnet test --project tests/Templates.Tests/Templates.Tests.csproj -c Release --filter-class Templates.Tests.Reference.FetchReferenceTests --minimum-expected-tests 11
+
   publish:
+    needs: reference-macos
     runs-on: ubuntu-latest
     permissions:
       contents: write

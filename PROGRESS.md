@@ -20,18 +20,21 @@ section):
    the pointers in every template's root `AGENTS.md` and this repository's README. Step 6: nobody in
    the family can run the macOS test (the maintainer, 2026-11-19), so CI's `reference-macos` job runs
    `FetchReferenceTests` on `macos-latest` on every change. It is green: 11 of 11, none skipped, on
-   #113 and again on `main` at `51f6bf4`. **A Templates release waits on the maintainer's word.**
+   #113 and again on `main` at `51f6bf4`. This repository's release now runs the same tests on macOS
+   before it can publish (the section's "The release waits for macOS"). **The release waits for
+   `bbavalonia`'s split (item 2) and carries both, then on the maintainer's word** (2026-11-19).
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
-   - **`bbavalonia`'s headless isolation.** The ClaudeForge session found, read in Avalonia 12.1.6
+   - **`bbavalonia`'s headless isolation: next, split the headless tests into a project of their
+     own** (the maintainer, 2026-11-19, among the locked decisions). The ClaudeForge session found, read in Avalonia 12.1.6
      and measured, that the default per-test isolation lets a background thread claim
      `Dispatcher.UIThread` (1,815 of 2,000 dispatches failed against a background reader). Its fix,
      per-assembly isolation with a warm-up fixture, failed locally in an assembly that also holds
      ordinary tests: one shared `Application` broke code that reads `Application.Current is null` as
      "no UI". `bbavalonia`'s one test assembly holds both kinds. The choice (split the headless
      tests into a project of their own, per assembly with a warm-up fixture and the guard tests, or
-     stay per test; the guard tests fail under per-test isolation) waits on the maintainer.
+     stay per test; the guard tests fail under per-test isolation) was the maintainer's: split.
      ClaudeForge's final CI verdict came on 2026-11-16: per-assembly isolation in an assembly that
      holds only headless tests passed 4 of 4 on each of Windows, Ubuntu and macOS (runs
      `43955937306` and `43956133147`, each run twice), merged to its `main` as `78da238d`.
@@ -184,6 +187,21 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
 - Decided 2026-11-19, by the maintainer, for `plans/00013` step 6: nobody in the family can run the
   macOS test, so the run decision 5 asks for is CI's, a `reference-macos` job on `macos-latest`
   running `FetchReferenceTests` on every change. It is not a required check.
+- Decided 2026-11-19, by the maintainer, through `choices`: `bbavalonia`'s headless tests move to a
+  test project of their own, isolated per assembly with a warm-up fixture and the guard tests, as
+  ClaudeForge proved on Windows, Ubuntu and macOS; its ordinary tests stay where they are. Taken over
+  staying per test, and over leaving it open.
+- Decided 2026-11-19, by the maintainer, through `choices`: the next Templates release waits for the
+  `bbavalonia` split and carries it with the reference kit, rather than shipping the kit today and the
+  split later. Until then AppKit, DiffView and Inspections cannot sync to `reference/src`, and their
+  `check --repo` stays red. The tag itself still waits on the maintainer's word.
+- Decided 2026-11-19, by the maintainer, through `choices`: CI's `reference-macos` stays optional, so
+  a macOS runner outage never blocks `main`. Then, asked whether an outage could be sniffed so the
+  job blocks only a real failure: this repository's release runs the reference kit's tests on macOS
+  as a job `publish` needs, so any failure, an outage included, stops the release and none blocks a
+  merge. Sniffing was dropped: GitHub's status reports Actions as one component with no macOS part,
+  an outage usually leaves the job queued with no step to run, and a wrong guess passes a real
+  failure.
 - Decided 2026-11-17, by the maintainer, through `choices`: on Windows, `fetch-reference.cs` refuses
   with exit 2 unless `LongPathsEnabled` is 1, printing the administrator's command; it never changes
   the setting.
@@ -1978,7 +1996,7 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 4a · `check`: `fetch-reference.*` outside `reference/` | done | Below; shown failing in tests only |
 | 5 · `docs/repository-conventions.md` | done | Below |
 | 5a · The pointers in every template's `AGENTS.md` and the README | done | Below |
-| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | macOS done; next: the release, on the maintainer's word | The macOS run is CI's; below |
+| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | macOS done, and the release gated on it; next: the release, with `bbavalonia`'s split, on the maintainer's word | The macOS run is CI's; below |
 
 ### Step 1, as built
 
@@ -2242,6 +2260,22 @@ its checkouts by path, so they move with them.
   rather than once before the release.
 - **Steps 5 and 5a reached `main` through #113, not #112.** #113 was stacked on #112's branch, so
   its merge carried both commits (`5ae24d5`, `5caca44`); #112 was closed as superseded.
+
+### The release waits for macOS, as built
+
+- **A `reference-macos` job in `.github/workflows/release.yml`**, the same command as CI's, with
+  `timeout-minutes: 15`; `publish` has `needs: reference-macos` and no job-level `if:`. It runs in the
+  credential preflight too, so `publish` needs no condition on how it ended, and a skipped job can
+  never read as a pass. An outage delays a release: rerun the workflow once the runners are back,
+  and `--skip-duplicate` keeps the rerun safe.
+- **`PackagingTests.This_repository_s_release_publishes_only_after_the_reference_kit_passes_on_macOS`**
+  holds the shape: the job on `macos-latest` running `FetchReferenceTests` with a floor, `publish`
+  needing it, and neither job carrying a job-level `if:` or `continue-on-error`.
+- **Proven by planting**, one defect at a time, each failing the guard: `needs` removed, `if: always()`
+  on `publish`, `if: false` on the macOS job, `continue-on-error: true` on it, and the
+  `--minimum-expected-tests` floor dropped.
+- **Unproven until it runs in `release.yml`**: CI's identical job is green on macOS. A credential
+  preflight, dispatched with the version blank, runs it without publishing.
 
 ### A pin record with no commit — outside the steps
 
