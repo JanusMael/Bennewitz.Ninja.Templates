@@ -238,6 +238,10 @@ Case[] cases =
             // The trim-warning baseline and the script that holds the publish to it, in both directions.
             Path.Combine("scripts", "check-trim-warnings.cs"),
             Path.Combine("src", "{0}", "trim-warnings.txt"),
+            // The headless tests' own project, isolated per assembly, and the fixture that gives the
+            // session's thread the UI dispatcher before any test runs.
+            Path.Combine("tests", "{0}.Headless.Tests", "{0}.Headless.Tests.csproj"),
+            Path.Combine("tests", "{0}.Headless.Tests", "Session", "HeadlessSessionOwnership.cs"),
         ],
         Forbidden: [], Publish: PublishKind.Trimmed, Crash: DesktopCrash),
     new("bbweb", "bbweb", "Gallery", [], Packs: false,

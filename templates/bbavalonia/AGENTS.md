@@ -19,7 +19,7 @@ on GitHub Releases. Generated from the `bbavalonia` template in Bennewitz.Ninja.
 | Directory | What it holds |
 |---|---|
 | `src/` | The app: `src/AppStem`, its views, view models and the trim-warning baseline |
-| `tests/` | Headless UI tests, the XamlQuality and AssemblyQuality rules, and the packaging guard |
+| `tests/` | `AppStem.Headless.Tests`, the headless UI tests, sharing one app; `AppStem.Tests`, the view models, the XamlQuality and AssemblyQuality rules, and the packaging guard |
 | `scripts/` | File-based apps: `check-trim-warnings.cs` and `repo-conventions.cs` |
 | `docs/` | `releasing.md`, the release runbook |
 | `.github/` | The workflows, `repository.json`, and the pointer for tools that read `.github/` |
@@ -68,7 +68,7 @@ dotnet run --file scripts/repo-conventions.cs -- grants
 ## Checklists
 
 **Adding a view:** give it `x:DataType`, an `AutomationId` and a `Name` on every interactive control,
-and a headless test that drives it by `AutomationId`. Raise the `Inspected` floor in
+and a test in `AppStem.Headless.Tests` that drives it by `AutomationId`. Raise the `Inspected` floor in
 `AutomationNameTests` to the new count.
 
 **Adding a dependency:** pin it in `Directory.Packages.props`, then run CI's `trim` job, or the

@@ -21,24 +21,14 @@ section):
    the family can run the macOS test (the maintainer, 2026-11-19), so CI's `reference-macos` job runs
    `FetchReferenceTests` on `macos-latest` on every change. It is green: 11 of 11, none skipped, on
    #113 and again on `main` at `51f6bf4`. This repository's release now runs the same tests on macOS
-   before it can publish (the section's "The release waits for macOS"). **The release waits for
-   `bbavalonia`'s split (item 2) and carries both, then on the maintainer's word** (2026-11-19).
+   before it can publish (the section's "The release waits for macOS"). `bbavalonia`'s headless
+   split (item 2) is done. **The release carries both, on the maintainer's word** (2026-11-19).
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
-   - **`bbavalonia`'s headless isolation: next, split the headless tests into a project of their
-     own** (the maintainer, 2026-11-19, among the locked decisions). The ClaudeForge session found, read in Avalonia 12.1.6
-     and measured, that the default per-test isolation lets a background thread claim
-     `Dispatcher.UIThread` (1,815 of 2,000 dispatches failed against a background reader). Its fix,
-     per-assembly isolation with a warm-up fixture, failed locally in an assembly that also holds
-     ordinary tests: one shared `Application` broke code that reads `Application.Current is null` as
-     "no UI". `bbavalonia`'s one test assembly holds both kinds. The choice (split the headless
-     tests into a project of their own, per assembly with a warm-up fixture and the guard tests, or
-     stay per test; the guard tests fail under per-test isolation) was the maintainer's: split.
-     ClaudeForge's final CI verdict came on 2026-11-16: per-assembly isolation in an assembly that
-     holds only headless tests passed 4 of 4 on each of Windows, Ubuntu and macOS (runs
-     `43955937306` and `43956133147`, each run twice), merged to its `main` as `78da238d`.
-     XamlQuality holds the gotcha until the choice is made.
+   - **`bbavalonia`'s headless tests are in a project of their own**, isolated per assembly with
+     ClaudeForge's fixture and guards (the maintainer, 2026-11-19; its section below). XamlQuality
+     holds the gotcha and is told the choice once this is on `main`.
    - From the maintainer's decisions of 2026-11-13 (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
@@ -1996,7 +1986,7 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 4a · `check`: `fetch-reference.*` outside `reference/` | done | Below; shown failing in tests only |
 | 5 · `docs/repository-conventions.md` | done | Below |
 | 5a · The pointers in every template's `AGENTS.md` and the README | done | Below |
-| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | macOS done, and the release gated on it; next: the release, with `bbavalonia`'s split, on the maintainer's word | The macOS run is CI's; below |
+| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | macOS done, and the release gated on it; `bbavalonia`'s split done; next: the release, on the maintainer's word | The macOS run is CI's; below |
 
 ### Step 1, as built
 
@@ -2480,6 +2470,46 @@ out on the maintainer's word. AppServices and ScopedEditors also need the attrib
 `tests/*/Parallelization.cs` when they move; nothing in `repo-conventions` checks the xunit version,
 so no repository fails for staying on `3.2.2`.
 
+## `bbavalonia`'s headless tests in a project of their own — outside the plans
+
+The maintainer's decision of 2026-11-19, through `choices`, from ClaudeForge's finding, read in
+Avalonia 12.1.6 and measured: under the default per-test isolation a background thread claims
+`Dispatcher.UIThread`, and 1,815 of 2,000 dispatches failed against a background reader. Its fix,
+per-assembly isolation with a fixture that claims the dispatcher first, failed in an assembly that
+also held ordinary tests, because one shared `Application` broke code that reads
+`Application.Current is null` as "no UI"; in an assembly of headless tests alone it passed 4 of 4 on
+each of Windows, Ubuntu and macOS (runs `43955937306` and `43956133147`, merged as `78da238d`).
+`bbavalonia` had one test assembly holding both kinds, hence a project of their own.
+
+| Change | Where |
+|---|---|
+| **`AppStem.Headless.Tests`**, a new test project holding every test that dispatches on the headless session, and nothing else | `templates/bbavalonia/tests/AppStem.Headless.Tests/` |
+| **Per-assembly isolation, with a fixture that claims the UI dispatcher first**: `HeadlessSessionOwnership`, an assembly fixture, dispatches once and reads `Dispatcher.UIThread`'s owner from a new thread; anyone but the session's thread fails every test in the assembly | `Session/HeadlessSessionOwnership.cs` |
+| **The guards**: the session's thread still owns the dispatcher between dispatches, and 200 dispatches against a background reader all succeed; the one-session test moved with them | `Session/HeadlessSessionOwnershipTests.cs`, `Session/HeadlessSessionTests.cs` |
+| **The window's two tests moved**, each now closing its window in a `finally`, since the `Application` is shared; the view model's three stay as `MainWindowViewModelTests` | `MainWindowTests.cs`; `AppStem.Tests/MainWindowViewModelTests.cs` |
+| **`AppStem.Tests` lost `Avalonia.Headless`** and its serial-run attribute, so a headless test there does not compile; `TestProjectTests` fails any project but the headless one that references the package | `AppStem.Tests.csproj`; `AppStem.Tests/Architecture/TestProjectTests.cs` |
+| The grants, the solution, both `AGENTS.md`, and `verify-release`'s required list: the new project and its fixture | `AssemblyInfo.InternalsVisibleTo.cs`, `AppStem.slnx`, `scripts/verify-release.cs` |
+
+### Drift from ClaudeForge's version
+
+- **Both probe threads catch what they throw and hand it back.** CodeQuality's BNCQ1009, an error
+  under `-warnaserror`, flags a thread whose body nobody catches. The owner probe throws again on
+  the caller's thread; the stress test's reader fails the test when it died early, since a dead
+  reader reads nothing and 200 clean dispatches would then prove nothing.
+- **The plumbing is in `Session/`**, not `Headless/`, since the whole project is headless.
+
+### Verified
+
+- **The template, built and tested in place**: `-warnaserror` clean; 21 of 21, 16 in `AppStem.Tests`
+  and 5 in `AppStem.Headless.Tests`.
+- **`verify-release`**: PASS, all 7 generated repositories. `bbavalonia`, generated as `Notebook`,
+  21 of 21, then published trimmed against its baseline and run. The suite here: 270 of 270 with
+  `CI` and `GITHUB_ACTIONS` set.
+- **Planted, one at a time, each caught**:
+  - `PerAssembly` removed: all 5 headless tests failed with the fixture's message, the probe
+    reading the dispatcher as its own.
+  - A headless test added to `AppStem.Tests`: `CS0234`, `Avalonia.Headless` does not exist there.
+  - `Avalonia.Headless` added back to `AppStem.Tests`: `TestProjectTests` failed, naming both projects.
 ## What `2026.4.1116` carries, prepared 2026-11-16 — outside the plans
 
 The maintainer's decision of 2026-11-13 (the locked decisions): a smoke run that should fail on a

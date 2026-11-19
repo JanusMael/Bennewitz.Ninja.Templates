@@ -1,7 +1,7 @@
 using System.Reflection;
 using Avalonia.Headless;
 
-namespace Bennewitz.Ninja.AppStem.Tests.Headless;
+namespace Bennewitz.Ninja.AppStem.Headless.Tests.Session;
 
 /// <summary>
 /// Guards the premise the serial test run rests on: one headless session, and so one dispatcher,

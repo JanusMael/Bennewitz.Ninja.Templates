@@ -3,6 +3,7 @@
     <Project Path="src/AppStem/AppStem.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/AppStem.Headless.Tests/AppStem.Headless.Tests.csproj" />
     <Project Path="tests/AppStem.Tests/AppStem.Tests.csproj" />
   </Folder>
 </Solution>

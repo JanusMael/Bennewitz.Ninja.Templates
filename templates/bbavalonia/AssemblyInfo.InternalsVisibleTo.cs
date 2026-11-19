@@ -12,4 +12,5 @@
 // Bennewitz.Ninja.Templates.
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AppStem")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AppStem.Headless.Tests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AppStem.Tests")]

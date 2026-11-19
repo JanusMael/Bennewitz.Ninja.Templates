@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Every test that dispatches on Avalonia's headless session, and nothing else. This assembly runs
+    the session with PerAssembly isolation: one Application for the whole process, whose dispatcher
+    the session's thread claims before any test runs (Session/HeadlessSessionOwnership.cs). The
+    shared Application is visible to every test in the process, so a test that expects no app at all
+    (Application.Current null) belongs in AppStem.Tests, which has no Avalonia.Headless and so cannot
+    start a session by mistake.
+
+    Rule: a test that dispatches on the headless session goes here; a test that does not, does not.
+  -->
+  <ItemGroup>
+    <!-- The app itself, so the tests drive its real App and windows. It is an executable;
+         referencing it copies AppStem.dll here. -->
+    <ProjectReference Include="../../src/AppStem/AppStem.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Plain Avalonia.Headless with HeadlessUnitTestSession, as AppServices and ScopedEditors run
+         theirs; not Avalonia.Headless.XUnit, whose xunit line lags the family's. -->
+    <PackageReference Include="Avalonia.Headless" />
+  </ItemGroup>
+</Project>
