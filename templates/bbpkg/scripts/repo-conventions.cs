@@ -2434,7 +2434,8 @@ static class LineEndings
 /// <summary>
 /// A repository that keeps the family's <c>reference/</c> kit, the read-only upstream checkouts
 /// <c>reference/fetch-reference.cs</c> fetches, has git ignore <c>reference/src</c>, where every checkout
-/// is, and commits nothing under it. A repository without the script is asked nothing.
+/// is, and commits nothing under it. Any repository, with the kit or without, fails a file named
+/// <c>fetch-reference.*</c> anywhere else: an earlier script of that name still in use.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -2455,6 +2456,13 @@ static class ReferenceKit
 
     public static void Check(Tree tree, bool remoteTree, string root, List<Finding> findings)
     {
+        // plans/00013 decision 7, for every repository, kit or not: the family reads upstream sources
+        // one way, so a fetch script of the same name anywhere else is an earlier one still in use.
+        foreach (string stray in tree.Files.Where(p => p != Script && p[(p.LastIndexOf('/') + 1)..].StartsWith("fetch-reference.", StringComparison.OrdinalIgnoreCase)))
+        {
+            findings.Add(Finding.Fail("reference", $"{stray} is a fetch script outside the kit. Upstream sources are read one way, through {Script}, copied with reference/ from Bennewitz.Ninja.Templates: move what it fetches into reference/sources.json, and delete it."));
+        }
+
         if (!tree.Files.Contains(Script))
         {
             return;
