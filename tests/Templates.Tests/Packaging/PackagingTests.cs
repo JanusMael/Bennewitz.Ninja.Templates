@@ -187,6 +187,36 @@ public sealed class PackagingTests
     }
 
     /// <summary>
+    /// This repository's release publishes only after the reference kit's tests pass on macOS
+    /// (the maintainer, 2026-11-19). CI's <c>reference-macos</c> is not a required check, so this
+    /// job is the only thing that stops a release shipping a script broken on macOS.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A job-level <c>if:</c> on <c>publish</c> would defeat the gate: <c>if: always()</c> runs it
+    /// after the macOS job failed. One on <c>reference-macos</c> could skip the tests, and a skipped
+    /// job is reported but not run. <c>continue-on-error</c> turns a failure into a pass.
+    /// </remarks>
+    [Fact]
+    public void This_repository_s_release_publishes_only_after_the_reference_kit_passes_on_macOS()
+    {
+        string workflow = Workflow(RootWorkflow);
+        string[] macos = Job(workflow, "reference-macos");
+        string[] publish = Job(workflow, "publish");
+
+        Assert.Contains(macos, line => line.Trim() == "runs-on: macos-latest");
+        Assert.Contains(macos, line =>
+            line.Contains("--filter-class Templates.Tests.Reference.FetchReferenceTests", StringComparison.Ordinal)
+            && line.Contains("--minimum-expected-tests", StringComparison.Ordinal));
+        Assert.Contains(publish, line => line.Trim() == "needs: reference-macos");
+
+        foreach (string[] job in (string[][])[macos, publish])
+        {
+            Assert.DoesNotContain(job, line => line.StartsWith("    if:", StringComparison.Ordinal));
+            Assert.DoesNotContain(job, line => line.Contains("continue-on-error", StringComparison.Ordinal));
+        }
+    }
+
+    /// <summary>
     /// This repository's own workflows must pass <c>--file</c> when running a C# script, and the
     /// shipped one must not need to.
     /// </summary>
@@ -221,6 +251,22 @@ public sealed class PackagingTests
         Assert.True(File.Exists(path), relativePath + " does not exist, so nothing publishes — and nothing gates what would.");
 
         return string.Join('\n', File.ReadLines(path).Where(line => !line.TrimStart().StartsWith('#')));
+    }
+
+    /// <summary>
+    /// The lines of one job, from its id to the next job's id. A job id is a key two spaces in, and
+    /// a workflow with comments dropped has nothing else at that indent after <c>jobs:</c>.
+    /// </summary>
+    private static string[] Job(string workflow, string id)
+    {
+        string[] lines = workflow.Split('\n');
+        int jobs = Array.FindIndex(lines, line => line.TrimEnd() == "jobs:");
+        int start = Array.FindIndex(lines, Math.Max(jobs, 0), line => line.TrimEnd() == $"  {id}:");
+        Assert.True(jobs >= 0 && start >= 0, $"{RootWorkflow} has no job `{id}`.");
+
+        int end = Array.FindIndex(lines, start + 1, line =>
+            line.Length > 2 && line.StartsWith("  ", StringComparison.Ordinal) && line[2] != ' ' && line.TrimEnd().EndsWith(':'));
+        return lines[start..(end < 0 ? lines.Length : end)];
     }
 
     /// <summary>
