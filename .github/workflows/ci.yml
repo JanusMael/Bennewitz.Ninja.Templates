@@ -77,3 +77,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: dotnet run --file scripts/repo-conventions.cs -- check
+
+  # The reference/ kit's script on macOS, plans/00013 decision 5: it was verified on Windows where it
+  # was written, and the family runs on all three. Nobody in the family has a Mac to run it on (the
+  # maintainer, 2026-11-19), so GitHub's runner does, on every change. Only FetchReferenceTests: the
+  # rest of the suite is platform-neutral, and verify runs it on Ubuntu.
+  #
+  # ⚠ --minimum-expected-tests: a filter that matched nothing, or a class that lost tests, would
+  # otherwise pass with nothing run.
+  reference-macos:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Test the reference kit
+        run: dotnet test --project tests/Templates.Tests/Templates.Tests.csproj -c Release --filter-class Templates.Tests.Reference.FetchReferenceTests --minimum-expected-tests 11
