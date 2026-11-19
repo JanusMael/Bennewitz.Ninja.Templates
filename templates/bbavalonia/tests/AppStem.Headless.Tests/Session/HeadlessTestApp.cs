@@ -1,14 +1,15 @@
 using Avalonia;
 using Avalonia.Headless;
-using Bennewitz.Ninja.AppStem.Tests.Headless;
+using Bennewitz.Ninja.AppStem.Headless.Tests.Session;
 
 [assembly: AvaloniaTestApplication(typeof(HeadlessTestApp))]
 
-// Tests in this assembly run one at a time: one headless session drives one dispatcher, which two
-// tests must not drive at once. HeadlessSessionTests guards that premise.
+// Tests in this assembly run one at a time: one headless session drives one dispatcher and, under
+// PerAssembly isolation, one Application for the whole process. Two tests running at once would
+// interleave on both. HeadlessSessionTests guards the one-session premise.
 [assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]
 
-namespace Bennewitz.Ninja.AppStem.Tests.Headless;
+namespace Bennewitz.Ninja.AppStem.Headless.Tests.Session;
 
 /// <summary>
 /// Builds the app's REAL <see cref="App"/> on the headless platform, so every test runs under the
@@ -16,10 +17,8 @@ namespace Bennewitz.Ninja.AppStem.Tests.Headless;
 /// window here: the headless platform has no desktop lifetime.
 /// </summary>
 /// <remarks>
-/// ⛔ With no <c>[AvaloniaTestIsolation]</c> on the assembly, isolation is per test: every
-/// <c>Dispatch</c> builds the application afresh (Avalonia 12.1.3). So nothing a test does leaks into
-/// the next, and a warm-up dispatch would prove nothing. Sharing one application would take
-/// <c>AvaloniaTestIsolationLevel.PerAssembly</c>, which needs its own evidence first.
+/// Built once for the whole process, because the assembly is isolated per assembly: see
+/// <see cref="HeadlessSessionOwnership"/>.
 /// </remarks>
 public static class HeadlessTestApp
 {
