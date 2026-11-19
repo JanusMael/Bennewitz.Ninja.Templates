@@ -6,30 +6,23 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-16 after `plans/00013` was approved.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-19 after `2026.4.1119` was released.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
-1. **[`plans/00013`](plans/00013-reference-sources.md), one way to read upstream sources, is approved**
-   (2026-11-16, its section below). Steps 1 and 2 are done: the kit at this repository's root, and
-   its test. On 2026-11-17 the maintainer moved every checkout into `reference/src/`, ignored by the
-   one line `/reference/src`, and had the script refuse on Windows without long paths; the script
-   holds both (the section's "The layout of 2026-11-17"). Steps 3, 4 and 4a are done: `check` holds
-   that line, `check --repo` from here fails a copy of the script that differs, and `check` fails a
-   `fetch-reference.*` outside `reference/`. Steps 5 and 5a are done: the conventions document, and
-   the pointers in every template's root `AGENTS.md` and this repository's README. Step 6: nobody in
-   the family can run the macOS test (the maintainer, 2026-11-19), so CI's `reference-macos` job runs
-   `FetchReferenceTests` on `macos-latest` on every change. It is green: 11 of 11, none skipped, on
-   #113 and again on `main` at `51f6bf4`. This repository's release now runs the same tests on macOS
-   before it can publish (the section's "The release waits for macOS"). `bbavalonia`'s headless
-   split (item 2) is done. **The release carries both, on the maintainer's word** (2026-11-19).
-2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
-   a task exception nobody observed (its section below); nothing waits for a release. The family
-   repositories pin no AppServices, so no sync follows. Open:
-   - **`bbavalonia`'s headless tests are in a project of their own**, isolated per assembly with
-     ClaudeForge's fixture and guards (the maintainer, 2026-11-19; its section below). XamlQuality
-     holds the gotcha and is told the choice once this is on `main`.
-   - From the maintainer's decisions of 2026-11-13 (the locked decisions):
+1. **`2026.4.1119` is out** (2026-11-19, its section below), and with it
+   **[`plans/00013`](plans/00013-reference-sources.md), one way to read upstream sources, is
+   complete** (its section below). It carries the kit's `reference/src` layout and long-path refusal,
+   `check`'s ignore and stray rules, `check --repo`'s drift on the kit's script, the documents, the
+   release's macOS gate, and `bbavalonia`'s headless tests in a project of their own. Open:
+   - **AppKit, DiffView and Inspections adopt at their next sync**: until then `check --repo` from
+     here fails each on `reference` and `drift`. Each session has been told the release is out; the
+     syncs are theirs.
+   - **XamlQuality** has the headless finding in `docs/avalonia-gotchas.md` (Inspections #148), and
+     this repository's follow-up in its #150. Checks that a headless assembly chooses its isolation
+     and, per assembly, has a warm-up fixture become a CodeQuality rule by its own plan, 00011, not
+     yet drafted.
+2. **From the maintainer's decisions of 2026-11-13** (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
      there. That is left to its own session, which has been told about the first.
@@ -1986,7 +1979,7 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 4a · `check`: `fetch-reference.*` outside `reference/` | done | Below; shown failing in tests only |
 | 5 · `docs/repository-conventions.md` | done | Below |
 | 5a · The pointers in every template's `AGENTS.md` and the README | done | Below |
-| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | macOS done, and the release gated on it; `bbavalonia`'s split done; next: the release, on the maintainer's word | The macOS run is CI's; below |
+| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | **done** 2026-11-19: `2026.4.1119`, verified from nuget.org; the family adopts at its next sync | The macOS run is CI's, and the release's own gate; below, and "Release `2026.4.1119`". **`plans/00013` is complete** |
 
 ### Step 1, as built
 
@@ -2666,6 +2659,30 @@ what was added on 2026-11-12 and 13, released as `2026.4.1113` on 2026-11-13 (it
   `bbweb` 14, `bbweb --blazor` 17, `bbapi` 15, `bbconsole` 14 with SIGINT skipped on Windows, every app
   published for win-x64 and run. Its `resolve` step read nuget.org itself for `Bennewitz.Ninja.Widget`
   and `Bennewitz.Ninja.Linter`, which it has never seen, and resolved both.
+
+## Release `2026.4.1119`
+
+Released on the maintainer's word on 2026-11-19, "Release v2026.4.1119", through `choices`. It
+carries `plans/00013` whole: the `reference/` kit's `reference/src` layout and long-path refusal,
+`check`'s ignore and stray rules, `check --repo`'s drift on the kit's script, the conventions
+document and every template's pointer. With it, the release's macOS gate, and `bbavalonia`'s headless
+tests in a project of their own (each its section above).
+
+`verify-release` passed on #116's tree before the merge, and the merge, `c0c74fe`, has that tree.
+#116's CI passed all three jobs on it. No blank-version preflight was run: the trusted-publishing
+policy is unchanged since `2026.4.1116`, and a preflight proves only the login, which the tag's run
+does before it pushes. The tag's run,
+[44604667342](https://github.com/JanusMael/Bennewitz.Ninja.Templates/actions/runs/44604667342), ran
+`reference-macos` first, 11 of 11, then `publish` through every gate. It pushed
+`Bennewitz.Ninja.Templates 2026.4.1119` at 20:10 UTC and made the GitHub release with it.
+
+Verified against the feed: `verify-release --published 2026.4.1119` installed it from nuget.org on
+its fifteenth attempt, while the index caught up, and passed all seven cases: `bbpkg` 16,
+`bbpkg --analyzer` 23, `bbavalonia` 21, with the headless project, `bbweb` 14, `bbweb --blazor` 17,
+`bbapi` 15, and `bbconsole` 14 with SIGINT skipped on Windows. Every app published for `win-x64`.
+
+AppKit, DiffView and Inspections adopt the kit's layout at their next sync, each in its own session,
+and fail `reference` and `drift` from here until they do.
 
 ## Release `2026.4.1116`
 
