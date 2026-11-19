@@ -97,4 +97,12 @@ one of the two is done.
 
 **Releasing:** `docs/releasing.md`.
 
+**Reading an upstream library's source:** read a checkout, not single files fetched through
+`gh api`. Copy `reference/` from
+[Bennewitz.Ninja.Templates](https://github.com/JanusMael/Bennewitz.Ninja.Templates/tree/main/reference),
+list the sources in its `sources.json`, and add `/reference/src` to `.gitignore`; its `README.md`
+says the rest, and
+[Reading upstream sources](https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/repository-conventions.md#reading-upstream-sources)
+the rules `check` holds it to.
+
 **Every change:** update `PROGRESS.md` in the same commit. Commits are Conventional Commits.

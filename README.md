@@ -50,6 +50,11 @@ inside this one package rather than claiming an id of its own.
 | `AGENTS.md`, `PROGRESS.md`, `.github/repository.json` | the family's documents and settings, checked by `scripts/repo-conventions.cs` |
 | `docs/publishing.md` or `docs/releasing.md` | the runbook: for `bbpkg` the policy fields, the version rule and what to check after; for an app, the per-runtime release |
 
+A repository that reads an upstream library's source adds one thing no template ships: the
+[`reference/` kit](https://github.com/JanusMael/Bennewitz.Ninja.Templates/tree/main/reference), which
+fetches read-only checkouts of the upstreams at the commits their packages were built from. Every
+template's `AGENTS.md` says how to adopt it.
+
 ## The two things that cost a real release
 
 Both were learned the expensive way on `Bennewitz.Ninja.XamlQuality` `2026.3.920`, and both are

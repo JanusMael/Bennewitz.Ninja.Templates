@@ -48,6 +48,30 @@ public sealed class TemplateCopiesTests
     }
 
     /// <summary>
+    /// No template ships the <c>reference/</c> kit, so every template's root <c>AGENTS.md</c>, the
+    /// first file an agent reads in a generated repository, points to it (plans/00013 decision 1a),
+    /// by absolute URL: the generated repository has no <c>reference/</c> for a relative link to reach.
+    /// </summary>
+    [Fact]
+    public void Every_template_points_its_root_AGENTS_md_at_the_reference_kit()
+    {
+        const string Entry = "**Reading an upstream library's source:**";
+        const string Link = "(https://github.com/JanusMael/Bennewitz.Ninja.Templates/tree/main/reference)";
+        string root = RepoRoot();
+
+        string[] templates = [.. Directory.GetDirectories(Path.Combine(root, "templates"))
+            .Where(directory => Directory.Exists(Path.Combine(directory, ".template.config")))];
+        Assert.True(templates.Length >= 2, "Expected bbpkg and at least one other template, found " + templates.Length);
+
+        string[] lacking = [.. templates
+            .Select(template => Path.Combine(template, "AGENTS.md"))
+            .Where(path => !File.Exists(path) || File.ReadAllText(path) is var text && !(text.Contains(Entry, StringComparison.Ordinal) && text.Contains(Link, StringComparison.Ordinal)))
+            .Select(path => Path.GetRelativePath(root, path))];
+
+        Assert.True(lacking.Length == 0, $"Each needs the checklist entry {Entry} with the link {Link}: {string.Join(", ", lacking)}");
+    }
+
+    /// <summary>
     /// Every template folder is shipped content in <c>.github/repository.json</c>. Otherwise this
     /// repository's own conventions check reads the template's placeholder markers as this
     /// repository's unfinished documents, and evaluates the template's projects as its own.
