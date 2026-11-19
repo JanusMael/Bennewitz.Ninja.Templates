@@ -17,9 +17,10 @@ section):
    holds both (the section's "The layout of 2026-11-17"). Steps 3, 4 and 4a are done: `check` holds
    that line, `check --repo` from here fails a copy of the script that differs, and `check` fails a
    `fetch-reference.*` outside `reference/`. Steps 5 and 5a are done: the conventions document, and
-   the pointers in every template's root `AGENTS.md` and this repository's README. Step 6 is next: a
-   run of `FetchReferenceTests` on macOS, by the maintainer or a peer, then a Templates release on
-   the maintainer's word.
+   the pointers in every template's root `AGENTS.md` and this repository's README. Step 6: nobody in
+   the family can run the macOS test (the maintainer, 2026-11-19), so CI's `reference-macos` job runs
+   `FetchReferenceTests` on `macos-latest` on every change. Once it is green, a Templates release
+   waits on the maintainer's word.
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -180,6 +181,9 @@ TrueCourseCalculator's long project names: clone it under a short `%TEMP%` path 
   covers a checkout linked in as a symlink and needs no `!` line for the kit's files. The kit stays in
   `reference/`, where the shields must be for MSBuild's walk up from a checkout. The script refuses
   any other `dir`, and refuses to run unless git ignores `reference/src`.
+- Decided 2026-11-19, by the maintainer, for `plans/00013` step 6: nobody in the family can run the
+  macOS test, so the run decision 5 asks for is CI's, a `reference-macos` job on `macos-latest`
+  running `FetchReferenceTests` on every change. It is not a required check.
 - Decided 2026-11-17, by the maintainer, through `choices`: on Windows, `fetch-reference.cs` refuses
   with exit 2 unless `LongPathsEnabled` is 1, printing the administrator's command; it never changes
   the setting.
@@ -1974,7 +1978,7 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 4a · `check`: `fetch-reference.*` outside `reference/` | done | Below; shown failing in tests only |
 | 5 · `docs/repository-conventions.md` | done | Below |
 | 5a · The pointers in every template's `AGENTS.md` and the README | done | Below |
-| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | next: the macOS run | Waits on the maintainer or a peer with a Mac |
+| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | next: the release, once `reference-macos` is green | The macOS run is CI's; below |
 
 ### Step 1, as built
 
@@ -2217,6 +2221,22 @@ its checkouts by path, so they move with them.
   - Canary, `bbweb`'s entry removed: the test failed, naming `templates\bbweb\AGENTS.md`.
   - `verify-release`, which generates, builds and tests every template, runs in CI's `verify` job on
     this change.
+
+### Step 6's macOS run, as built
+
+- **A `reference-macos` job in `.github/workflows/ci.yml`**, on `macos-latest`, which runs
+  `FetchReferenceTests` with `--minimum-expected-tests 11`. With that floor, a filter that matches
+  nothing fails instead of passing on zero tests. The repository is public, so its macOS minutes cost
+  nothing.
+- **Not a required check**: `requiredChecks` stays `verify` and `conventions`, so a macOS runner
+  outage does not block `main`. Making it required is a change to `repository.json` and an `apply`.
+- **Verified here**: the job's exact command ran 11 of 11, none skipped. Asked for 12, it failed with
+  "tests ran 11, minimum expected 12". The macOS result is the job's first run on this change.
+
+#### Drift from step 6
+
+- **Decision 5's macOS run is CI's, not the maintainer's or a peer's**, and it runs on every change
+  rather than once before the release.
 
 ### A pin record with no commit — outside the steps
 
