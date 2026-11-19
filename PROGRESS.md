@@ -14,8 +14,9 @@ section):
    (2026-11-16, its section below). Steps 1 and 2 are done: the kit at this repository's root, and
    its test. On 2026-11-17 the maintainer moved every checkout into `reference/src/`, ignored by the
    one line `/reference/src`, and had the script refuse on Windows without long paths; the script
-   holds both (the section's "The layout of 2026-11-17"). Step 3 is done: `check` holds that line.
-   Step 4, `check --repo` failing a differing copy of the script as drift, is next.
+   holds both (the section's "The layout of 2026-11-17"). Steps 3 and 4 are done: `check` holds that
+   line, and `check --repo` from here fails a copy of the script that differs. Step 4a, `check`
+   failing a `fetch-reference.*` outside `reference/`, is next.
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -1966,8 +1967,8 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 1 · The kit at this repository's root, from AppKit's `adf2284` | done | Below |
 | 2 · The cross-platform test | done | Below |
 | 3 · `check`: the ignore rule | done | The line is `/reference/src` since 2026-11-17; below |
-| 4 · `check --repo`: the drift failure | next | |
-| 4a · `check`: `fetch-reference.*` outside `reference/` | not started | |
+| 4 · `check --repo`: the drift failure | done | Below |
+| 4a · `check`: `fetch-reference.*` outside `reference/` | next | No family repository keeps one now; shown failing in tests only |
 | 5 · `docs/repository-conventions.md` | not started | |
 | 5a · The pointers in every template's `AGENTS.md` and the README | not started | |
 | 6 · A run on macOS, then a Templates release; the family adopts at its next sync | not started | |
@@ -2127,6 +2128,33 @@ its checkouts by path, so they move with them.
   checkout is under that one folder, and the two must agree.
 - **The plan's verification, AppKit conforming on this rule, no longer holds**: it fails until its
   sync, as above.
+
+### Step 4, as built
+
+- **`Drift` in `repo-conventions.cs`**, all six copies. Run from this repository against another,
+  `check --repo` also compares that repository's `reference/fetch-reference.cs` with this one's,
+  ignoring line endings, and fails `drift` when they differ. "From this repository" is the existing
+  test: `templates/bbpkg/scripts/repo-conventions.cs` exists in the current directory, so a run from
+  another repository that keeps the kit compares nothing. Inside a repository nothing is compared.
+  The shields and the README are not compared, as decision 4 says.
+- **Tests**, 3 more in `RepoConventionsTests`, which now gives its kit fixture the real script:
+  - one byte changed fails under `--repo`;
+  - CRLF alone passes;
+  - a differing copy is not compared in a checkout.
+- **Verified**:
+  - 74 of 74 in the class with `GITHUB_ACTIONS=true` set.
+  - Canary, the comparison switched off: exactly the one-byte test failed.
+  - `check` here conforms.
+  - `check --repo`, 2026-11-19: AppKit, DiffView and Inspections each fail this drift. Their copies
+    are AppKit's `adf2284` script, blob `dfd0d48`, and this repository's has moved on with
+    `reference/src`. Each also fails `drift` on `repo-conventions.cs` and `reference` on its ignore
+    line; one sync clears all three.
+
+#### Drift from step 4
+
+- **The plan's verification, AppKit's copy found identical, cannot hold now**: this repository's
+  script changed on 2026-11-17, before the rule existed. The identical case is shown by the
+  fixture, and against AppKit after its sync.
 
 ### A pin record with no commit — outside the steps
 

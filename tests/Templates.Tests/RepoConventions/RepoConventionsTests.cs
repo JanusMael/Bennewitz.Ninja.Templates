@@ -679,11 +679,51 @@ public sealed class RepoConventionsTests
         }
     }
 
+    /// <remarks>plans/00013 decision 4: one byte changed in a copy of the kit's script is drift.</remarks>
+    [Fact]
+    public void Check_repo_from_this_repository_fails_a_reference_script_that_differs()
+    {
+        Fixture fixture = WithReferenceKit("/reference/src\n");
+        string script = fixture.Files["reference/fetch-reference.cs"];
+        int at = script.IndexOf("fetches", StringComparison.Ordinal);
+        fixture.Files["reference/fetch-reference.cs"] = script[..at] + "fetchez" + script[(at + "fetches".Length)..];
+
+        Result result = fixture.RunRemote("check", "--admin");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("FAIL drift: reference/fetch-reference.cs differs from Bennewitz.Ninja.Templates' reference/fetch-reference.cs.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Check_repo_takes_a_reference_script_that_differs_only_in_line_endings()
+    {
+        Fixture fixture = WithReferenceKit("/reference/src\n");
+        fixture.Files["reference/fetch-reference.cs"] = fixture.Files["reference/fetch-reference.cs"].ReplaceLineEndings("\r\n");
+
+        Result result = fixture.RunRemote("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+    }
+
+    /// <remarks>Inside a repository there is nothing to compare its copy with; only check --repo, run from here, does.</remarks>
+    [Fact]
+    public void Check_in_a_checkout_does_not_compare_the_reference_script()
+    {
+        Fixture fixture = WithReferenceKit("/reference/src\n");
+        fixture.Files["reference/fetch-reference.cs"] += "// A repository's own line.\n";
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("reference/fetch-reference.cs differs", result.Output, StringComparison.Ordinal);
+    }
+
     /// <summary>The conforming repository keeping the reference/ kit, with <paramref name="gitignore"/> as its .gitignore, or none.</summary>
     private static Fixture WithReferenceKit(string? gitignore)
     {
         Fixture fixture = Conforming();
-        fixture.Files["reference/fetch-reference.cs"] = "// The kit's fetch-reference.cs; only the file's presence is read.\n";
+        // The kit's own script: run from this repository, check --repo compares a copy with it.
+        fixture.Files["reference/fetch-reference.cs"] = File.ReadAllText(Path.Combine(RepoRoot(), "reference", "fetch-reference.cs"));
         fixture.Files["reference/AGENTS.md"] = "# reference\n";
         fixture.Files["reference/CLAUDE.md"] = "@AGENTS.md\n";
         if (gitignore is not null)

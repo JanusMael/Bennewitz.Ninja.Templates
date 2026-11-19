@@ -2251,17 +2251,25 @@ static class Drift
 {
     private const string Canonical = "templates/bbpkg/scripts/repo-conventions.cs";
     private const string Copy = "scripts/repo-conventions.cs";
+    private const string Kit = "reference/fetch-reference.cs";
 
     /// <summary>
     /// Every repository carries its own copy of this script, and the template's is the one they
     /// follow. The comparison ignores line endings, which a Windows checkout may have converted.
     /// </summary>
+    /// <remarks>
+    /// The reference/ kit's script is compared too, but only from the template repository against
+    /// another one (plans/00013 decision 4): inside each repository there is nothing to compare it
+    /// with, and a hash of it here would make each change to it a conventions release.
+    /// </remarks>
     public static void Check(Tree tree, bool remoteTree, List<Finding> findings)
     {
+        // Run from the template repository against another one: compare with the local copies.
+        bool fromTemplates = remoteTree && File.Exists(Canonical);
+
         string? canonical = tree.Read(Canonical);
-        if (canonical is null && remoteTree && File.Exists(Canonical))
+        if (canonical is null && fromTemplates)
         {
-            // Run from the template repository against another one: compare with the local template.
             canonical = File.ReadAllText(Canonical);
         }
         if (canonical is null)
@@ -2277,6 +2285,11 @@ static class Drift
         else if (Normalize(copy) != Normalize(canonical))
         {
             findings.Add(Finding.Fail("drift", $"{Copy} differs from the template's {Canonical}. Copy the template's over it."));
+        }
+
+        if (fromTemplates && File.Exists(Kit) && tree.Read(Kit) is { } kit && Normalize(kit) != Normalize(File.ReadAllText(Kit)))
+        {
+            findings.Add(Finding.Fail("drift", $"{Kit} differs from Bennewitz.Ninja.Templates' {Kit}. Copy that one over it, with the shields beside it."));
         }
     }
 
