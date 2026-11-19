@@ -19,8 +19,8 @@ section):
    `fetch-reference.*` outside `reference/`. Steps 5 and 5a are done: the conventions document, and
    the pointers in every template's root `AGENTS.md` and this repository's README. Step 6: nobody in
    the family can run the macOS test (the maintainer, 2026-11-19), so CI's `reference-macos` job runs
-   `FetchReferenceTests` on `macos-latest` on every change. Once it is green, a Templates release
-   waits on the maintainer's word.
+   `FetchReferenceTests` on `macos-latest` on every change. It is green: 11 of 11, none skipped, on
+   #113 and again on `main` at `51f6bf4`. **A Templates release waits on the maintainer's word.**
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -1978,7 +1978,7 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 4a · `check`: `fetch-reference.*` outside `reference/` | done | Below; shown failing in tests only |
 | 5 · `docs/repository-conventions.md` | done | Below |
 | 5a · The pointers in every template's `AGENTS.md` and the README | done | Below |
-| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | next: the release, once `reference-macos` is green | The macOS run is CI's; below |
+| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | macOS done; next: the release, on the maintainer's word | The macOS run is CI's; below |
 
 ### Step 1, as built
 
@@ -2231,12 +2231,17 @@ its checkouts by path, so they move with them.
 - **Not a required check**: `requiredChecks` stays `verify` and `conventions`, so a macOS runner
   outage does not block `main`. Making it required is a change to `repository.json` and an `apply`.
 - **Verified here**: the job's exact command ran 11 of 11, none skipped. Asked for 12, it failed with
-  "tests ran 11, minimum expected 12". The macOS result is the job's first run on this change.
+  "tests ran 11, minimum expected 12".
+- **The macOS result**: 11 of 11, none skipped, on #113's run (`44571813779`) and on `main` after
+  the merge, at `51f6bf4`. The symlinked-checkout test, which skips where a symlink can't be made,
+  ran rather than skipped.
 
 #### Drift from step 6
 
 - **Decision 5's macOS run is CI's, not the maintainer's or a peer's**, and it runs on every change
   rather than once before the release.
+- **Steps 5 and 5a reached `main` through #113, not #112.** #113 was stacked on #112's branch, so
+  its merge carried both commits (`5ae24d5`, `5caca44`); #112 was closed as superseded.
 
 ### A pin record with no commit — outside the steps
 
