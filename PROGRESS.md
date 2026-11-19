@@ -16,8 +16,10 @@ section):
    one line `/reference/src`, and had the script refuse on Windows without long paths; the script
    holds both (the section's "The layout of 2026-11-17"). Steps 3, 4 and 4a are done: `check` holds
    that line, `check --repo` from here fails a copy of the script that differs, and `check` fails a
-   `fetch-reference.*` outside `reference/`. Step 5, `docs/repository-conventions.md`, is done. Step
-   5a, the pointers in every template's root `AGENTS.md` and this repository's README, is next.
+   `fetch-reference.*` outside `reference/`. Steps 5 and 5a are done: the conventions document, and
+   the pointers in every template's root `AGENTS.md` and this repository's README. Step 6 is next: a
+   run of `FetchReferenceTests` on macOS, by the maintainer or a peer, then a Templates release on
+   the maintainer's word.
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -1971,8 +1973,8 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 4 · `check --repo`: the drift failure | done | Below |
 | 4a · `check`: `fetch-reference.*` outside `reference/` | done | Below; shown failing in tests only |
 | 5 · `docs/repository-conventions.md` | done | Below |
-| 5a · The pointers in every template's `AGENTS.md` and the README | next | |
-| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | not started | |
+| 5a · The pointers in every template's `AGENTS.md` and the README | done | Below |
+| 6 · A run on macOS, then a Templates release; the family adopts at its next sync | next: the macOS run | Waits on the maintainer or a peer with a Mac |
 
 ### Step 1, as built
 
@@ -2198,6 +2200,23 @@ its checkouts by path, so they move with them.
   this change closes the gap.
 - **"Bringing an existing repository in" gained the step too**, beyond the plan's "Starting a new
   repository": a sync of an existing repository is where an older script gives way to the kit.
+
+### Step 5a, as built
+
+- **Every template's root `AGENTS.md`**, all five, gains the checklist entry *Reading an upstream
+  library's source*, before *Every change*. It says to read a checkout, not files fetched through
+  `gh api`, and to copy `reference/` from this repository, list the sources and add `/reference/src`
+  to `.gitignore`. It links the kit and the conventions section by absolute URL, since a generated
+  repository has no `reference/` for a relative link to reach.
+- **This repository's `README.md`**, the package's page on nuget.org, gains a paragraph after "What
+  comes with every template": the kit, which no template ships, linked absolutely.
+- **`TemplateCopiesTests.Every_template_points_its_root_AGENTS_md_at_the_reference_kit`** reads each
+  template's root `AGENTS.md` for the entry and its link.
+- **Verified**:
+  - 4 of 4 in the class.
+  - Canary, `bbweb`'s entry removed: the test failed, naming `templates\bbweb\AGENTS.md`.
+  - `verify-release`, which generates, builds and tests every template, runs in CI's `verify` job on
+    this change.
 
 ### A pin record with no commit — outside the steps
 
