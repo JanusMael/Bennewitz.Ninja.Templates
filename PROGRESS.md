@@ -16,7 +16,8 @@ section):
    one line `/reference/src`, and had the script refuse on Windows without long paths; the script
    holds both (the section's "The layout of 2026-11-17"). Steps 3, 4 and 4a are done: `check` holds
    that line, `check --repo` from here fails a copy of the script that differs, and `check` fails a
-   `fetch-reference.*` outside `reference/`. Step 5, `docs/repository-conventions.md`, is next.
+   `fetch-reference.*` outside `reference/`. Step 5, `docs/repository-conventions.md`, is done. Step
+   5a, the pointers in every template's root `AGENTS.md` and this repository's README, is next.
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -1969,8 +1970,8 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 3 · `check`: the ignore rule | done | The line is `/reference/src` since 2026-11-17; below |
 | 4 · `check --repo`: the drift failure | done | Below |
 | 4a · `check`: `fetch-reference.*` outside `reference/` | done | Below; shown failing in tests only |
-| 5 · `docs/repository-conventions.md` | next | |
-| 5a · The pointers in every template's `AGENTS.md` and the README | not started | |
+| 5 · `docs/repository-conventions.md` | done | Below |
+| 5a · The pointers in every template's `AGENTS.md` and the README | next | |
 | 6 · A run on macOS, then a Templates release; the family adopts at its next sync | not started | |
 
 ### Step 1, as built
@@ -2177,6 +2178,26 @@ its checkouts by path, so they move with them.
 - **The plan's verification, DiffView failing on its three scripts and Inspections on its two,
   cannot be run**: both deleted them when they adopted the kit on 2026-11-16. The tests plant the
   same files.
+
+### Step 5, as built
+
+`docs/repository-conventions.md` gains the following:
+- **A section, "Reading upstream sources"**: the kit's files, how to adopt it, what the script
+  itself refuses, and `check`'s four rules.
+- **A row for the kit** in "What every repository carries".
+- **The kit** in the `check`, `check --offline` and `--repo` rows of "Commands".
+- **A step 8** in "Starting a new repository", and in "Bringing an existing repository in".
+- **A sentence** in "When the convention changes".
+
+`check` here conforms, and the root tests pass.
+
+#### Drift from step 5
+
+- **The script's rules landed in steps 3, 4 and 4a, before this document described them.**
+  `docs/AGENTS.md` asks for the two to change in the same commit. The plan's steps split them, and
+  this change closes the gap.
+- **"Bringing an existing repository in" gained the step too**, beyond the plan's "Starting a new
+  repository": a sync of an existing repository is where an older script gives way to the kit.
 
 ### A pin record with no commit — outside the steps
 

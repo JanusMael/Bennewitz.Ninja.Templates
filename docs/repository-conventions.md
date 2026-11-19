@@ -31,6 +31,7 @@ not generated from the template adopts the same files by hand; see
 | `AssemblyInfo.InternalsVisibleTo.cs` | root | The generated [friend grants](#friend-grants): every assembly the repository builds | `check` |
 | `AssemblyInfo.InternalsVisibleTo.External.cs` | root | Grants to other repositories, by hand | `check` |
 | The grants link | `Directory.Build.targets` | Links both files into every project | `check` |
+| The reference kit | `reference/`, in a repository that reads upstream sources | [Read-only upstream checkouts](#reading-upstream-sources) under `reference/src/`, which `.gitignore` ignores with `/reference/src`, fetched by `fetch-reference.cs`, identical to this repository's | `check`; `check --repo`, run from this repository, for the script |
 
 A **top-level directory** is any directory at the root that git tracks. `check` reads the list from
 the tree, so a directory added later needs its documents on the day it is added.
@@ -85,6 +86,49 @@ directory, and fails when either is not `eol=lf`: a missing file, a pattern anch
 alone, a later `eol=crlf`, or `-text`. A later `*.md text` keeps the `eol=lf` an earlier line gave.
 It runs at every depth but `--release`: a publish is not stopped for it. `apply` writes GitHub's
 settings and never commits a file, so the fix is a change to `.gitattributes` in a pull request.
+
+## Reading upstream sources
+
+**A repository that reads an upstream library's source reads it one way: through the kit in this
+repository's [`reference/`](../reference/README.md).** The kit fetches read-only checkouts of the
+upstreams, each at the commit its package was built from. A search then reads the exact version the
+build compiles against, whole and offline, instead of single files fetched through `gh api`. Only a
+repository that reads upstream sources keeps the kit; no template ships it.
+
+| File | What it is |
+|---|---|
+| `reference/fetch-reference.cs` | The script that fetches the checkouts, identical to this repository's |
+| `reference/sources.json` | The repository's own manifest: the sources it reads, each pinned by its packages or by a `ref` |
+| `reference/README.md`, `AGENTS.md`, `CLAUDE.md` | The account of the kit. The README's table of sources, and whether anything automated reads them, are the repository's own |
+| `reference/Directory.Build.props`, `Directory.Build.targets`, `Directory.Packages.props` | The shields: MSBuild walking up from a checkout finds them before the repository's own settings |
+| `/reference/src` in `.gitignore` | The one line that ignores every checkout, all of them under `reference/src/`, including one linked in as a symlink |
+
+To adopt it:
+1. Copy `reference/` from this repository.
+2. List the sources in `sources.json`, and write the README's table of them.
+3. Add `/reference/src` to `.gitignore`.
+4. Run `dotnet run --file reference/fetch-reference.cs`.
+
+**The script refuses some setups itself.** It refuses a source whose folder is outside
+`reference/src/`, and it refuses to run while git does not ignore `reference/src`. On Windows it also
+refuses unless long paths are enabled, which it never changes itself; the kit's README gives the
+administrator's command.
+
+`check` adds four rules, each at every depth but `--release`, since a publish is not stopped for any
+of them:
+
+- **Git ignores `reference/src`**, in a repository that tracks `reference/fetch-reference.cs`.
+  - In a checkout, git is asked `git check-ignore reference/src`, as the script asks it, so any
+    `.gitignore` git honours passes.
+  - Through the API, `check --repo` cannot ask git. It passes only the line `/reference/src`, or
+    `reference/src`, which git reads the same way, and says so when it fails.
+- **Git sees nothing under `reference/src/`.** A checkout is never committed.
+- **A copy of the script matches this repository's.** Run from this repository, `check --repo` fails
+  a `reference/fetch-reference.cs` that differs from this one's, line endings aside, as `drift`. The
+  shields and the README are never compared.
+- **No other fetch script.** Every repository, with the kit or without, fails a file named
+  `fetch-reference.*` anywhere but `reference/fetch-reference.cs`: an earlier fetch script still in
+  use.
 
 ## Package families
 
@@ -435,15 +479,15 @@ dotnet run --file scripts/repo-conventions.cs -- grants
 
 | Command | Run by | What it does |
 |---|---|---|
-| `check` | CI, on every push and pull request | Documentation, markers, package globs, `release-target.cs`, the quality pin, families, description, topics, homepage, feature toggles, rulesets, required checks, markdown line endings |
+| `check` | CI, on every push and pull request | Documentation, markers, package globs, `release-target.cs`, the quality pin, families, description, topics, homepage, feature toggles, rulesets, required checks, markdown line endings, the reference kit |
 | `check --release` | the release workflow | Only what is prescribed: the documents, the markers, the package globs, `release-target.cs`, the quality pin, a non-empty description, the friend grants and, where there are families, the families' rules. A drifted setting does not stop a publish |
 | `check --admin` | the maintainer | Everything, including the merge options and security toggles; fails on anything unreadable |
-| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, `release-target.cs`, the quality pin, the families, the required checks against the workflows, the build properties, the friend grants, the script copy, and the markdown line endings |
+| `check --offline` | `verify-release`, a maintainer without network access to GitHub | Only what the checkout shows: the documents, the package globs, `release-target.cs`, the quality pin, the families, the required checks against the workflows, the build properties, the friend grants, the script copy, the markdown line endings, and the reference kit |
 | `grants` | anyone, after adding, removing or renaming a project | Writes `AssemblyInfo.InternalsVisibleTo.cs` from the projects' assembly names, and an empty External file when there is none. Asks nothing of GitHub |
 | `apply --dry-run` | the maintainer | Prints every request `apply` would send |
 | `apply` | the maintainer | Writes the description, homepage, topics, baseline settings, security toggles and both rulesets |
 | `apply --replace-branch-protection` | the maintainer, once | Also deletes classic branch protection, after the `main` ruleset exists |
-| `--repo OWNER/NAME` | any of the above | Acts on another repository, reading its files through the API. From this repository, it also reports a `scripts/repo-conventions.cs` that differs from the template's |
+| `--repo OWNER/NAME` | any of the above | Acts on another repository, reading its files through the API. From this repository, it also reports a `scripts/repo-conventions.cs` that differs from the template's, and a `reference/fetch-reference.cs` that differs from this repository's |
 
 `dotnet run --file` rather than `dotnet run`: in a directory with a `.csproj`, `dotnet run <file>`
 binds to the project instead.
@@ -468,6 +512,9 @@ What generation does is marked ✅; the rest is yours.
 7. For a package, set up trusted publishing:
    [`docs/publishing.md`](../templates/bbpkg/docs/publishing.md) in the generated repository. An
    app releases to GitHub Releases with no credential to set up; its `docs/releasing.md` says how.
+8. If the repository will read an upstream library's source, adopt the
+   [reference kit](#reading-upstream-sources): copy `reference/` from this repository and list the
+   sources in its `sources.json`. Read a checkout, not single files fetched through `gh api`.
 
 ## Bringing an existing repository in
 
@@ -493,10 +540,14 @@ What generation does is marked ✅; the rest is yours.
 6. Run `apply`, then `check --admin`.
 7. Once the `conventions` job is green, add it to `requiredChecks` and run `apply` again. Required
    while red, it would block every pull request in the meantime.
+8. A repository that reads upstream sources with a script of its own replaces it with the
+   [reference kit](#reading-upstream-sources), and deletes the old script in the same change:
+   `check` fails a `fetch-reference.*` outside `reference/`.
 
 ## When the convention changes
 
 Change `templates/bbpkg/scripts/repo-conventions.cs` and this document together, then copy the
 script over `scripts/repo-conventions.cs` here. Run from this repository,
 `check --repo <owner>/<name>` then reports every repository whose copy is now behind, until each
-has been updated.
+has been updated. The reference kit's script changes in this repository's `reference/`, and
+`check --repo` reports every copy of it that is behind in the same way.
