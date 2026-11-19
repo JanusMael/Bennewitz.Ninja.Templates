@@ -14,9 +14,9 @@ section):
    (2026-11-16, its section below). Steps 1 and 2 are done: the kit at this repository's root, and
    its test. On 2026-11-17 the maintainer moved every checkout into `reference/src/`, ignored by the
    one line `/reference/src`, and had the script refuse on Windows without long paths; the script
-   holds both (the section's "The layout of 2026-11-17"). Steps 3 and 4 are done: `check` holds that
-   line, and `check --repo` from here fails a copy of the script that differs. Step 4a, `check`
-   failing a `fetch-reference.*` outside `reference/`, is next.
+   holds both (the section's "The layout of 2026-11-17"). Steps 3, 4 and 4a are done: `check` holds
+   that line, `check --repo` from here fails a copy of the script that differs, and `check` fails a
+   `fetch-reference.*` outside `reference/`. Step 5, `docs/repository-conventions.md`, is next.
 2. **`2026.4.1116` is out**, with AppServices `2026.4.1116` and `bbavalonia`'s smoke run failing on
    a task exception nobody observed (its section below); nothing waits for a release. The family
    repositories pin no AppServices, so no sync follows. Open:
@@ -1968,8 +1968,8 @@ The second review also found Inspections' `scripts/fetch-reference.cs` and `.jso
 | 2 · The cross-platform test | done | Below |
 | 3 · `check`: the ignore rule | done | The line is `/reference/src` since 2026-11-17; below |
 | 4 · `check --repo`: the drift failure | done | Below |
-| 4a · `check`: `fetch-reference.*` outside `reference/` | next | No family repository keeps one now; shown failing in tests only |
-| 5 · `docs/repository-conventions.md` | not started | |
+| 4a · `check`: `fetch-reference.*` outside `reference/` | done | Below; shown failing in tests only |
+| 5 · `docs/repository-conventions.md` | next | |
 | 5a · The pointers in every template's `AGENTS.md` and the README | not started | |
 | 6 · A run on macOS, then a Templates release; the family adopts at its next sync | not started | |
 
@@ -2155,6 +2155,28 @@ its checkouts by path, so they move with them.
 - **The plan's verification, AppKit's copy found identical, cannot hold now**: this repository's
   script changed on 2026-11-17, before the rule existed. The identical case is shown by the
   fixture, and against AppKit after its sync.
+
+### Step 4a, as built
+
+- **`ReferenceKit` in `repo-conventions.cs`**, all six copies. Every repository, with the kit or
+  without, fails `reference` for each file git sees whose name starts `fetch-reference.`, in any
+  case, anywhere but `reference/fetch-reference.cs`. A name that only contains the words, such as
+  `FetchReferenceTests.cs`, passes.
+- **Tests**, 6 more in `RepoConventionsTests`: `scripts/fetch-reference.cs`, `.sh`, `.ps1` and
+  `.json`, and `tools/Fetch-Reference.ps1`, each failing both with the kit and without it. A file
+  that only mentions the name passes.
+- **Verified**:
+  - 80 of 80 in the class with `GITHUB_ACTIONS=true` set.
+  - Canary, the rule matching another name: all 5 stray cases failed.
+  - `check` here and `check --repo` against AppKit, DiffView, Inspections, AutoVersioning, JsonC and
+    FileServer, 2026-11-19: no stray anywhere. Each family repository exits 1 on `drift` alone
+    until its sync.
+
+#### Drift from step 4a
+
+- **The plan's verification, DiffView failing on its three scripts and Inspections on its two,
+  cannot be run**: both deleted them when they adopted the kit on 2026-11-16. The tests plant the
+  same files.
 
 ### A pin record with no commit — outside the steps
 

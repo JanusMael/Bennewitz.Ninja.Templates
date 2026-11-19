@@ -718,6 +718,50 @@ public sealed class RepoConventionsTests
         Assert.DoesNotContain("reference/fetch-reference.cs differs", result.Output, StringComparison.Ordinal);
     }
 
+    /// <remarks>
+    /// plans/00013 decision 7: DiffView kept scripts/fetch-reference.cs, .sh and .ps1, and Inspections
+    /// scripts/fetch-reference.cs and .json, until each adopted the kit on 2026-11-16.
+    /// </remarks>
+    [Theory]
+    [InlineData("scripts/fetch-reference.cs")]
+    [InlineData("scripts/fetch-reference.sh")]
+    [InlineData("scripts/fetch-reference.ps1")]
+    [InlineData("scripts/fetch-reference.json")]
+    [InlineData("tools/Fetch-Reference.ps1")]
+    public void A_fetch_script_outside_the_kit_fails_with_the_kit_or_without(string path)
+    {
+        foreach (Fixture fixture in (Fixture[])[Conforming(), WithReferenceKit("/reference/src\n")])
+        {
+            fixture.Files[path] = "# An earlier fetch script.\n";
+            if (path.StartsWith("tools/", StringComparison.Ordinal))
+            {
+                fixture.Files["tools/AGENTS.md"] = "# tools\n";
+                fixture.Files["tools/CLAUDE.md"] = "@AGENTS.md\n";
+            }
+
+            Result result = fixture.Run("check", "--admin");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Contains($"FAIL reference: {path} is a fetch script outside the kit.", result.Output, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_file_that_only_mentions_fetch_reference_passes()
+    {
+        Fixture fixture = WithReferenceKit("/reference/src\n");
+        fixture.Files["tests/FetchReferenceTests.cs"] = "// Tests the kit's script.\n";
+        fixture.Files["tests/AGENTS.md"] = "# tests\n";
+        fixture.Files["tests/CLAUDE.md"] = "@AGENTS.md\n";
+        fixture.Files["docs/how-fetch-reference.md"] = "# Reading upstream\n";
+        fixture.Files["docs/AGENTS.md"] = "# docs\n";
+        fixture.Files["docs/CLAUDE.md"] = "@AGENTS.md\n";
+
+        Result result = fixture.Run("check", "--admin");
+
+        Assert.True(result.ExitCode == 0, result.Output);
+    }
+
     /// <summary>The conforming repository keeping the reference/ kit, with <paramref name="gitignore"/> as its .gitignore, or none.</summary>
     private static Fixture WithReferenceKit(string? gitignore)
     {
