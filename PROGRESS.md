@@ -25,14 +25,14 @@ section):
      this repository's follow-up in its #150. Checks that a headless assembly chooses its isolation
      and, per assembly, has a warm-up fixture become a CodeQuality rule by its own plan, 00011, not
      yet drafted.
-2. **`plans/00014`, one form for a log line, is a draft awaiting the maintainer's approval**, on the
-   branch `docs/plan-00014`. The maintainer asked on 2026-11-19 for ClaudeForge's `[Area.Kind]
-   key=value` form everywhere, routed here by DiffView's session. Its decisions were settled through
-   `choices` from 2026-11-20 to 21 and are in the draft: the text in `docs/repository-conventions.md`,
-   a CodeQuality rule (Inspections' plan), the start and exit lines and a redaction helper (AppKit's
-   plan), and every app template on Serilog. Two step-backs have run on it, the second by a fresh
-   reviewer. DiffView's plan 00037, approved 2026-11-21, targets it; DiffView waits for the rule's id
-   and release.
+2. **[`plans/00014`](plans/00014-one-log-line-form.md), one form for a log line, was approved
+   2026-11-23**, through `choices`. The maintainer asked on 2026-11-19 for ClaudeForge's
+   `[Area.Kind] key=value` form everywhere, routed here by DiffView's session. Its decisions were
+   settled from 2026-11-20 to 23, after two step-backs, the second by a fresh reviewer. Next is its
+   step 1, the test of what Serilog's `{Message:lj}` sinks write for each kind of value. The approved
+   text has gone to Inspections, for the CodeQuality rule, and to AppKit, for the start and exit lines
+   and the redaction helper, each to plan its part. DiffView's plan 00037, approved 2026-11-21,
+   targets it and waits for the rule's id and release.
 3. **From the maintainer's decisions of 2026-11-13** (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
