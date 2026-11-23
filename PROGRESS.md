@@ -1999,6 +1999,15 @@ there. Both acknowledged on 2026-11-23.
 
   A rule that reads constant templates reports the first two and cannot see the third. How the rule
   lets such a line through is for Inspections' plan; this was passed to it on 2026-11-23.
+- **The exit line cannot come before a host disposes the log, as decision 5 says**, AppKit found on
+  2026-11-23: the exit code is known only once the work returns, and `bbweb`'s and `bbapi`'s work
+  disposes the host. AppKit's draft plans/00009 writes `[App.Exit]` after the work and before
+  `FlushLog`, through `AppMainOptions.WriteLogLine`, an `Action<string, object?[]>` an app sets to
+  `Log.Information`. So the log has to outlive the host: step 2 wires `bbweb` and `bbapi` with
+  `AddSerilog()`/`UseSerilog()` at `dispose: false`, and `FlushLog = Log.CloseAndFlush`. Settled when
+  AppKit's plan is approved.
+- **AppKit counts 24 templates outside the form, not 17 calls**: `UiThreadExceptions` routes eight
+  constant templates through one guarded `Log.Write`.
 - **ClaudeForge's `SensitiveKeys` writes `[redacted]`, not `***`.** The plan's decision 6 says
   `***`, and AppKit follows the approved text.
 
