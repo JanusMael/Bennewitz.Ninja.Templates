@@ -6,7 +6,7 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-19 after `2026.4.1119` was released.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-19 after `2026.4.1119` was released; updated 2026-11-23.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
@@ -15,21 +15,32 @@ section):
    complete** (its section below). It carries the kit's `reference/src` layout and long-path refusal,
    `check`'s ignore and stray rules, `check --repo`'s drift on the kit's script, the documents, the
    release's macOS gate, and `bbavalonia`'s headless tests in a project of their own. Open:
-   - **AppKit, DiffView and Inspections adopt at their next sync**: until then `check --repo` from
-     here fails each on `reference` and `drift`. Each session has been told the release is out; the
-     syncs are theirs.
+   - **AppKit has adopted it**: JanusMael/Bennewitz.Ninja.AppKit#51, merged 2026-11-23 at `a0f43fe`,
+     its `reference/` and `repo-conventions.cs` the same blobs as `v2026.4.1119`'s. `check --repo
+     JanusMael/Bennewitz.Ninja.AppKit` from here conforms, run 2026-11-23.
+   - **DiffView and Inspections adopt at their next sync**: until then `check --repo` from here fails
+     each on `reference` and `drift`, and DiffView on `release` too (item 3, DiffView). Inspections' sync waits
+     behind its own plan 00011. The syncs are theirs.
    - **XamlQuality** has the headless finding in `docs/avalonia-gotchas.md` (Inspections #148), and
      this repository's follow-up in its #150. Checks that a headless assembly chooses its isolation
      and, per assembly, has a warm-up fixture become a CodeQuality rule by its own plan, 00011, not
      yet drafted.
-2. **From the maintainer's decisions of 2026-11-13** (the locked decisions):
+2. **`plans/00014`, one form for a log line, is a draft awaiting the maintainer's approval**, on the
+   branch `docs/plan-00014`. The maintainer asked on 2026-11-19 for ClaudeForge's `[Area.Kind]
+   key=value` form everywhere, routed here by DiffView's session. Its decisions were settled through
+   `choices` from 2026-11-20 to 21 and are in the draft: the text in `docs/repository-conventions.md`,
+   a CodeQuality rule (Inspections' plan), the start and exit lines and a redaction helper (AppKit's
+   plan), and every app template on Serilog. Two step-backs have run on it, the second by a fresh
+   reviewer. DiffView's plan 00037, approved 2026-11-21, targets it; DiffView waits for the rule's id
+   and release.
+3. **From the maintainer's decisions of 2026-11-13** (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
      there. That is left to its own session, which has been told about the first.
    - **Not ours to sync**: ClaudeForge, on AppServices `2026.4.1001` and ScopedEditors `2026.3.924`,
      is left to its owner. TrueCourseCalculator, Geo.Core and GeoHash have no remote and push
      `artifacts/*.nupkg`, which the no-glob rule fails once they adopt the script.
-3. **[`plans/00009`](plans/00009-package-consolidation.md) is complete** (2026-11-09, its section
+4. **[`plans/00009`](plans/00009-package-consolidation.md) is complete** (2026-11-09, its section
    below).
    - **AppServices and ScopedEditors were released from AppKit** at `2026.4.1110` on 2026-11-10, on
      the maintainer's word, with all eight ids verified from nuget.org.
@@ -38,11 +49,11 @@ section):
    - **nuget.org shows images only from its list of trusted hosts**, and none from a relative path.
      `plans/00012` checks links, not images, and no family README carries an image today. A plan
      follows only when one first does (the maintainer, 2026-10-30).
-4. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
+5. **xunit.v3 4.x** ([docs/xunit-v3-4.md](docs/xunit-v3-4.md)): part 1 released in `2026.4.1031`;
    part 2 done in the syncs, AppKit, FileServer and JsonC on `4.0.3` since 2026-11-09, AutoVersioning
    testing with MSTest. Part 3 is not taken: Inspections and DiffView stay on `3.2.2` until Avalonia
    supports 4.x.
-5. **FileServer keeps `vYYYY.M.D` tags until its first 2027 release**, the maintainer's decision.
+6. **FileServer keeps `vYYYY.M.D` tags until its first 2027 release**, the maintainer's decision.
    - It is recorded in FileServer's PROGRESS.md and AGENTS.md by JanusMael/Bennewitz.Ninja.FileServer#17
      (`50967b2`): every `2026.Q.MMDD` sorts below its published `2026.9.23`.
    - Its exemption from `release-target` lapses on `2027-01-01`.
