@@ -1975,6 +1975,16 @@ Approved 2026-11-23. Inspections plans the CodeQuality rule, and AppKit plans th
 lines, the redaction helper and its own lines, each in a plan of its own that its developer approves
 there. Both acknowledged on 2026-11-23.
 
+- **AppKit's part is its own `plans/00009`,** being drafted, the maintainer's word there on
+  2026-11-23. It can ship in AppServices' next release, beside its plans 00007 and 00008, which wait
+  on AssemblyQuality's IL reader. AppKit reports when it is approved, with its API, and when it is
+  released.
+- **No AppServices setup call for apps without Avalonia, for now** (the maintainer, 2026-11-23, in
+  AppKit's session): `bbconsole` wires `BucketedRollingFileSink` itself, as step 2 has it. To be
+  revisited if a second console app repeats that code.
+- **Inspections' rule needs a plan there,** whose place in its queue is the maintainer's call; in
+  flight there is its plan 00011, with 00012 and 00013 queued.
+
 ### Drift from the approved plan
 
 - **AppKit's own lines outside the form are 17 calls in 9 files, not the three the plan names.**
