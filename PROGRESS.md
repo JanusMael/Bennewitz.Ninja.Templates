@@ -1969,6 +1969,29 @@ true for both. `notes` lists, for xamlquality and for codequality, the merge's o
 `7e82d76`, `1701070` and `7e5236f`, and none of another family's history; for assemblyquality, that
 nothing changed since its release.
 
+## `plans/00014` — one form for a log line
+
+Approved 2026-11-23. Inspections plans the CodeQuality rule, and AppKit plans the start and exit
+lines, the redaction helper and its own lines, each in a plan of its own that its developer approves
+there. Both acknowledged on 2026-11-23.
+
+### Drift from the approved plan
+
+- **AppKit's own lines outside the form are 17 calls in 9 files, not the three the plan names.**
+  AppKit read them at `a0f43fe` on 2026-11-23: `AvaloniaDiagnostics.cs` seven times,
+  `BindingValidationErrorLogger.cs` twice, `SerilogAvaloniaSink.cs` twice, and one each in
+  `DialogMessageContent.cs`, `FatalErrorDialog.cs`, `NonFatalNoticeDialog.cs`, `DialogStrings.cs`,
+  `UiThreadExceptions.cs` and `BucketedRollingFileSink.cs`. ScopedEditors writes none.
+- **Three of them are not lines the family writes; they pass on a line that already exists.**
+  - `BucketedRollingFileSink.cs:196` writes an already rendered line as `{RawLine}`.
+  - `AvaloniaDiagnostics.cs:292` forwards an `EventListener` line as `{EventLine}`.
+  - `UiThreadExceptions.cs:444` passes a template built at run time.
+
+  A rule that reads constant templates reports the first two and cannot see the third. How the rule
+  lets such a line through is for Inspections' plan; this was passed to it on 2026-11-23.
+- **ClaudeForge's `SensitiveKeys` writes `[redacted]`, not `***`.** The plan's decision 6 says
+  `***`, and AppKit follows the approved text.
+
 ## `plans/00013` — one way to read upstream sources
 
 [plans/00013-reference-sources.md](plans/00013-reference-sources.md), approved 2026-11-16 and frozen.
