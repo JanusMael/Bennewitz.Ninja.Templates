@@ -2000,8 +2000,18 @@ there. Both acknowledged on 2026-11-23.
 - **No AppServices setup call for apps without Avalonia, for now** (the maintainer, 2026-11-23, in
   AppKit's session): `bbconsole` wires `BucketedRollingFileSink` itself, as step 2 has it. To be
   revisited if a second console app repeats that code.
-- **Inspections' rule needs a plan there,** whose place in its queue is the maintainer's call; in
-  flight there is its plan 00011, with 00012 and 00013 queued.
+- **Inspections' rule is BNCQ1012, by its `plans/00014-log-line-form.md`, approved 2026-11-23**, not
+  built or released yet; its release follows its step 3 on the maintainer's word, and Inspections
+  reports the version then. A warning, on by default, over the constant template of the `Log*`
+  extensions, `LoggerMessage.Define`, `[LoggerMessage]`, and Serilog's `Log`, `ILogger` and its
+  implementations. It reports the first place a template leaves the form, each `:l` hole, each enum
+  passed to a hole, and a template built at run time, as one whose form cannot be read. A line that
+  passes on one already rendered is suppressed where it is written, with its reason; no template
+  shape is exempt. Before it is built it runs in scratch over ClaudeForge, DiffView, AppKit,
+  AutoVersioning, FileServer and an app of each template. DiffView was told on 2026-11-24.
+  - Open between AppKit and Inspections: AppKit plans to suppress `AvaloniaDiagnostics.cs:292`'s
+    `{EventLine}`, while Inspections' plan writes it as a value of a line in the form. Both were
+    told on 2026-11-24.
 
 ### Drift from the approved plan
 
