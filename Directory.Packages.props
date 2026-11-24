@@ -24,6 +24,16 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
   </ItemGroup>
 
+  <ItemGroup Label="Logging">
+    <!-- tests/Templates.Tests/Logging/, plans/00014 step 1. Serilog and its Trace sink at the
+         versions AppServices pins, so the measurement is of what the family's apps run;
+         Serilog.Extensions.Logging is the bridge from Microsoft.Extensions.Logging that decision 2a
+         puts in every app. -->
+    <PackageVersion Include="Serilog" Version="4.3.1" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Trace" Version="4.0.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Testing">
     <!-- xunit.v3 on Microsoft.Testing.Platform — see global.json. The VSTest bridge packages are
          deliberately absent, and so is TrxReport: nothing asks for a .trx, and it would have to

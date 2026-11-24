@@ -28,8 +28,9 @@ section):
 2. **[`plans/00014`](plans/00014-one-log-line-form.md), one form for a log line, was approved
    2026-11-23**, through `choices`. The maintainer asked on 2026-11-19 for ClaudeForge's
    `[Area.Kind] key=value` form everywhere, routed here by DiffView's session. Its decisions were
-   settled from 2026-11-20 to 23, after two step-backs, the second by a fresh reviewer. Next is its
-   step 1, the test of what Serilog's `{Message:lj}` sinks write for each kind of value. The approved
+   settled from 2026-11-20 to 23, after two step-backs, the second by a fresh reviewer. Its step 1,
+   the test of what Serilog writes for each kind of value, is done (its section below); next is step
+   2, `bbweb`, `bbapi` and `bbconsole` on Serilog, against AppKit's approved API. The approved
    text has gone to Inspections, for the CodeQuality rule, and to AppKit, for the start and exit lines
    and the redaction helper, each to plan its part. DiffView's plan 00037, approved 2026-11-21,
    targets it and waits for the rule's id and release.
@@ -2013,8 +2014,32 @@ there. Both acknowledged on 2026-11-23.
     `{EventLine}`, while Inspections' plan writes it as a value of a line in the form. Both were
     told on 2026-11-24.
 
+### Step 1, done 2026-11-24
+
+`tests/Templates.Tests/Logging/LogLineRenderingTests.cs` renders one template, `[Logging.Probe]
+name="{Name}" mode={Mode} level={Level} flag={Flag} count={Count} ratio={Ratio}`, with a name holding
+a space, an enum's name as a string, the enum itself, a boolean, an int and a double. Serilog 4.3.1,
+Serilog.Extensions.Logging 10.0.0 and Serilog.Sinks.Trace 4.0.0, the versions AppServices pins:
+
+| Rendered by | What it prints |
+|---|---|
+| A `{Message:lj}` sink, from Serilog directly or from `ILogger` bridged by Serilog.Extensions.Logging | `name="a b" mode=Fast level="Fast" flag=true count=7 ratio=0.5` |
+| Serilog's Trace sink given `{Message:lj}` | the same |
+| Serilog's Trace sink at its own default template | `name=""a b"" mode="Fast" level=Fast flag=True count=7 ratio=0.5` |
+| Microsoft.Extensions.Logging's own formatter, no Serilog | `name="a b" mode=Fast level=Fast flag=True count=7 ratio=0.5` |
+
+An enum hole with `:l` writes no line at all through a Serilog sink: the line is lost, not thrown.
+Decision 3 holds under `{Message:lj}`: free text quoted by hand once, an enum's name bare, the enum
+itself quoted, so it is passed by name. A canary, the test sink at `{Message}`, failed the two tests
+that render through it. All 276 tests pass under `CI` and `GITHUB_ACTIONS`.
+
 ### Drift from the approved plan
 
+- **Serilog's Trace sink does not render `{Message:lj}` at its default template; it renders
+  `{Message}`**, measured in step 1, so a hand-quoted value prints its quotes twice. AppServices'
+  `AvaloniaDiagnostics.cs:192` writes `WriteTo.Trace()` at that default, so `bbavalonia`'s debugger
+  output breaks decision 3's "every sink renders `{Message:lj}`". The fix is AppKit's, an
+  `outputTemplate` naming `{Message:lj}`, asked of it on 2026-11-24.
 - **AppKit's own lines outside the form are 17 calls in 9 files, not the three the plan names.**
   AppKit read them at `a0f43fe` on 2026-11-23: `AvaloniaDiagnostics.cs` seven times,
   `BindingValidationErrorLogger.cs` twice, `SerilogAvaloniaSink.cs` twice, and one each in

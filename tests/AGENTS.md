@@ -9,6 +9,7 @@ no `ProjectReference`: the packaging project compiles nothing, so there is no as
 | `RepoConventions/` | `scripts/repo-conventions.cs`, run over a repository built in a temp directory with GitHub's answers as fixtures, and the conventions steps in the shipped workflows |
 | `Release/` | The release scripts `bbpkg` ships, `release-target.cs` and `assert-packages.cs`, run over repositories and packages built in a temp directory, and `release-target.cs`'s version floor read from `FakeFeed`, a NuGet flat container this process serves, never nuget.org |
 | `Reference/` | `reference/fetch-reference.cs`, copied with its shields into a repository built in a temp directory and run with `dotnet run --file`, fetching from a bare repository beside it through a `file://` url: no network, no package |
+| `Logging/` | What a log line in the family's form prints as (plans/00014 step 1): Serilog at the versions AppServices pins, through a `{Message:lj}` sink, directly and bridged from Microsoft.Extensions.Logging, through the Trace sink at `{Message:lj}` and at its own default, and Microsoft.Extensions.Logging's own formatter. Measurements of Serilog, not of this repository's code |
 | `MstestToXunit/` | `scripts/mstest-to-xunit.cs`, run over fixtures whose expected output was read line by line |
 
 ## Rules
