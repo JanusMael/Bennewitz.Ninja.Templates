@@ -1975,10 +1975,28 @@ Approved 2026-11-23. Inspections plans the CodeQuality rule, and AppKit plans th
 lines, the redaction helper and its own lines, each in a plan of its own that its developer approves
 there. Both acknowledged on 2026-11-23.
 
-- **AppKit's part is its own `plans/00009`,** being drafted, the maintainer's word there on
-  2026-11-23. It can ship in AppServices' next release, beside its plans 00007 and 00008, which wait
-  on AssemblyQuality's IL reader. AppKit reports when it is approved, with its API, and when it is
-  released.
+- **AppKit's part is its `plans/00009-log-lines-in-the-family-form.md`, approved 2026-11-24**,
+  committed alone in JanusMael/Bennewitz.Ninja.AppKit#53. Nothing is built or released yet: its step 2
+  measures first, and AppServices releases it with its plans 00007 and 00008 on the maintainer's word.
+  AppKit reports the version on release. The API step 2 here wires against:
+  - `AppMainOptions.WriteLogLine`, of the public delegate `LogLineWriter` in
+    `Bennewitz.Ninja.AppServices.EntryPoint`: `void LogLineWriter(string messageTemplate, params
+    object?[] propertyValues)`, a message template, never a format string. An app sets it to the
+    method group `Log.Information`, which is no call, so neither CA2254 nor the coming rule sees a
+    non-constant template.
+  - The lines: `[App.Start] app={App} version={Version} pid={Pid}`, just before the work runs, none for
+    `--version`. Then, once per run that wrote it, after the exit code is known and before `FlushLog`,
+    one of `[App.Exit] code={Code} elapsedMs={ElapsedMs}`, `signal=SIGTERM`,
+    `reason=unhandledException` or `reason=hostAborted`, each with `elapsedMs`.
+  - `bbconsole`, `bbweb` and `bbapi` set `Log.Logger` up in `Main` before `AppMain`, with
+    `FlushLog = Log.CloseAndFlush`; `bbweb` and `bbapi` wire `AddSerilog()`/`UseSerilog()` at their
+    default `dispose: false`, so the log outlives the host. `bbavalonia` needs nothing new.
+  - `LogRedaction`, a public static class in `Bennewitz.Ninja.AppServices.Abstractions`: `Redacted`,
+    `"***"`; `IsSensitive(string key)`, with ClaudeForge's two lists; `Redact(string key, string?
+    value)`. Not named `SensitiveKeys`, which ClaudeForge already imports beside it (CS0104).
+  - AppKit's own 24 templates take the form, and so does `ShellLauncher`'s diagnostic sentence. Its two
+    pass-through sites, `{EventLine}` and `{RawLine}`, are suppressed once the rule's release reaches
+    AppKit; `DefaultShareService`'s Trace messages stay out.
 - **No AppServices setup call for apps without Avalonia, for now** (the maintainer, 2026-11-23, in
   AppKit's session): `bbconsole` wires `BucketedRollingFileSink` itself, as step 2 has it. To be
   revisited if a second console app repeats that code.
@@ -2001,17 +2019,16 @@ there. Both acknowledged on 2026-11-23.
   lets such a line through is for Inspections' plan; this was passed to it on 2026-11-23.
 - **The exit line cannot come before a host disposes the log, as decision 5 says**, AppKit found on
   2026-11-23: the exit code is known only once the work returns, and `bbweb`'s and `bbapi`'s work
-  disposes the host. AppKit's draft plans/00009 writes `[App.Exit]` after the work and before
-  `FlushLog`, in `AppMain`'s own `finally`, through `AppMainOptions.WriteLogLine`, an
-  `Action<string, object?[]>` an app sets to the method group `Log.Information`; the maintainer
+  disposes the host. AppKit's plans/00009 writes `[App.Exit]` after the work and before
+  `FlushLog`, in `AppMain`'s own `finally`, through `AppMainOptions.WriteLogLine`; the maintainer
   accepted that there on 2026-11-23. So the log has to outlive the host: step 2 wires `bbweb` and
   `bbapi` with `AddSerilog()`/`UseSerilog()` at `dispose: false`, and `FlushLog = Log.CloseAndFlush`.
 - **The start line is offered just before the work runs, so `bbconsole`, `bbweb` and `bbapi` set up
   Serilog's `Log.Logger` in `Main`, before calling `AppMain`** (the maintainer, 2026-11-23, in AppKit's
   session). A failure while setting up their log is then reported by the .NET runtime, not by
   `AppMain`; he accepted that. `bbavalonia` is covered by `AvaloniaDiagnostics.EntryPointOptions()`,
-  which holds the line until `ConfigureLogging` has run. Both points stand once AppKit's plans/00009 is
-  approved, which brings the final API.
+  which holds the line until `ConfigureLogging` has run. AppKit's plans/00009, approved 2026-11-24,
+  holds both points.
 - **AppKit counts 24 templates outside the form, not 17 calls**: `UiThreadExceptions` routes eight
   constant templates through one guarded `Log.Write`.
 - **ClaudeForge's `SensitiveKeys` writes `[redacted]`, not `***`.** The plan's decision 6 says
