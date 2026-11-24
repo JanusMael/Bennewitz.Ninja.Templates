@@ -5,4 +5,12 @@
        assert against — these tests read the repository's FILES: the two package lists, the
        project files, and both release workflows. Referencing it would only drag a
        PackageType=Template project into a test build for no gain. -->
+
+  <!-- Logging/: what a log line in the family's form prints as (plans/00014 step 1), measured
+       through Serilog as the family's apps run it, at the versions AppServices pins. -->
+  <ItemGroup>
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.Trace" />
+  </ItemGroup>
 </Project>
