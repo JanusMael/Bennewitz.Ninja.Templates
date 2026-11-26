@@ -1606,6 +1606,35 @@ generated (the Resume). `check` gains two rules, at every depth including `--rel
   are `docs/publishing.md` and the AssemblyQuality tests themselves, neither checked here; the pin
   rule stands in for the tests, and the maintainer's decision named these two rules only.
 
+## The release runbook's verification step, measured — outside the plans
+
+Found by Bennewitz.Ninja.AutoVersioning's release of `2026.4.1124` on 2026-11-24, which published
+**two ids at once** — one that existed and one brand new — and so exposed two things step 6 of
+`templates/bbpkg/docs/publishing.md` did not say. Both are in it now; every family repository picks
+them up at its next sync.
+
+**1. A flatcontainer `200` is not an installable package, and the lag is per id.** Probed every 60 s
+from the push: flatcontainer had both ids at about **nine minutes**, and at eight it had the id that
+already existed while the **new one was still missing** — so a release of several ids does not land
+at once. The registration index, which the client resolves `PackageReference` through, trailed
+further still, so the new package *downloaded* before it could be *installed*. Step 6 now names that
+index with its URL, and asks for a real install as the finish: a scratch project taking the package
+from nuget.org, which is the only check covering a package's **contents** rather than its presence.
+
+**2. ⛔ NuGet's local HTTP cache misreports the nearest version of a fully indexed package.** The
+first install attempt failed `NU1102 … Found 12 version(s) in nuget.org [ Nearest version:
+2026.4.1116 ]` **for the id that was already indexed**, out of a cached service response rather than
+any feed state; `dotnet restore --no-http-cache` resolved it at once. ⚠ It reads exactly like a feed
+that has not caught up, which is why it earns a row of its own in the failure table: without one,
+the obvious reading is that the publish failed, and the obvious response — re-running or re-tagging
+— is the wrong one.
+
+⭐ **What that release confirmed rather than taught**, and the runbook already said: a preflight
+cannot detect a policy that fails to cover an id, since the exchange happens before any id is
+considered. That repository's single policy carries the wildcard `Bennewitz.Ninja.AutoVersioning*`
+and admitted a brand-new id, so the `403` the table warns about did not happen — but nothing short
+of the push could have established that.
+
 ## `plans/00009` — package families consolidate into Inspections and AppKit
 
 [`plans/00009`](plans/00009-package-consolidation.md), approved 2026-10-22 and frozen, **complete

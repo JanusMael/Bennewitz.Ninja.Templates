@@ -159,9 +159,25 @@ A green workflow says the steps exited zero. Ask nuget.org, lower-casing the id:
 curl -s https://api.nuget.org/v3-flatcontainer/<lowercase-id>/index.json
 ```
 
-Indexing takes a few minutes, so a miss immediately after the run means "not yet", not "failed". The
-registration index the CLI resolves through lags further behind than flatcontainer, so
-`dotnet add package` may need another minute after the version appears in that listing.
+Indexing takes a few minutes, so a miss immediately after the run means "not yet", not "failed".
+Measured on a two-id release, probing every 60 s from the push: flatcontainer had both ids at about
+**nine minutes** — and at eight it had the id that already existed while the **brand-new one was
+still missing**, so a release of several ids does not land all at once.
+
+⛔ **A flatcontainer `200` is not an installable package.** The registration index, which the client
+resolves `PackageReference` through, lags further behind — so there is a window in which the package
+downloads and `dotnet add package` still cannot find it. Ask the index the client reads:
+
+```bash
+curl -s --compressed https://api.nuget.org/v3/registration5-gz-semver2/<lowercase-id>/index.json
+```
+
+⭐ **Then install it for real**, which is the only check that covers the package's *contents* as well
+as its presence: a scratch project outside the repository, the package by `PackageReference` from
+nuget.org, built and run.
+
+⚠ If that install reports `NU1102` naming an older version as the nearest, do not conclude the feed
+is behind — see the local-HTTP-cache row in the table below.
 
 ---
 
@@ -183,6 +199,7 @@ either dispatch the workflow by hand or cut the next day's version.
 | `already_exists` | Re-running a completed release | Expected — `--skip-duplicate` makes it a no-op |
 | GitHub Release **422** | A release already exists for that tag | Delete the conflicting release, then re-run |
 | One package pushed, another **403** | More than one policy, so one exchange reached only one of them | Collapse to a single policy whose patterns cover every id, then `gh run rerun` — `--skip-duplicate` no-ops the one already live |
+| `NU1102 … Nearest version: <an older one>` for an id the feed **does** list | NuGet's **local HTTP cache** is replaying an older service response, for up to 30 minutes | `dotnet restore --no-http-cache`. ⚠ This reads exactly like a feed that has not caught up, and it fired for the id that was *already indexed* — so check the registration index before suspecting the publish |
 
 ⚠ **The `403` row is the one worth expecting**, because it is the only failure that leaves your
 packages at different versions. It is survivable only because the tag can be replayed: fix the
