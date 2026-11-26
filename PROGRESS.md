@@ -6,7 +6,7 @@ holds for [plans/00003](plans/00003-repository-conventions.md), in progress: see
 
 ## Resume
 
-*Replaced, never appended, at each handoff. Rewritten 2026-11-19 after `2026.4.1119` was released; updated 2026-11-23.*
+*Replaced, never appended, at each handoff. Rewritten 2026-11-19 after `2026.4.1119` was released; updated 2026-11-26, after `2026.4.1126`.*
 
 **Next, in order** (the maintainer's decisions, below among the locked decisions and in each
 section):
@@ -29,14 +29,13 @@ section):
    2026-11-23**, through `choices`. The maintainer asked on 2026-11-19 for ClaudeForge's
    `[Area.Kind] key=value` form everywhere, routed here by DiffView's session. Its decisions were
    settled from 2026-11-20 to 23, after two step-backs, the second by a fresh reviewer. Steps 1 to 4
-   are done (its section below). Step 1 tested what Serilog writes for each kind of value. Step 2
-   moved `bbweb`, `bbapi` and `bbconsole` onto Serilog. Step 3 wrote *Log lines* in the conventions,
-   with its pointer in every template's `AGENTS.md`. Step 4 sent the approved text to Inspections and
-   AppKit, and BNCQ1012's id to DiffView.
+   are done, and step 6's first release, `2026.4.1126`, is out (its section below). It carries
+   `bbweb`, `bbapi` and `bbconsole` on Serilog, and *Log lines* in the conventions with its pointer in
+   every template's `AGENTS.md`.
 
-   Next is step 6's first release, carrying steps 2 and 3, on the maintainer's word. Step 5, the
-   pins, waits for CodeQuality's BNCQ1012 and AppServices' plans/00009 to be released. DiffView's plan
-   00037, approved 2026-11-21, waits for the same rule.
+   Next is step 5, the pins, which waits for CodeQuality's BNCQ1012 and AppServices' plans/00009 to
+   be released. Step 6's second release follows it, on the maintainer's word. DiffView's plan 00037,
+   approved 2026-11-21, waits for the same rule.
 3. **From the maintainer's decisions of 2026-11-13** (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
@@ -2120,6 +2119,22 @@ this machine's shells lack. All 276 of this repository's tests pass under `CI` a
   bring.** None of them is released yet; step 5 pins them when they are.
 - **Step 4 was done before step 2.** The approved text went to Inspections and AppKit on 2026-11-23,
   and BNCQ1012's id to DiffView on 2026-11-24, as recorded above.
+### Step 6, first release: `2026.4.1126`, 2026-11-26
+
+The maintainer chose to release once #124 merged, through `choices`. Tag `v2026.4.1126` at `7f75c14`
+carries steps 2 and 3.
+- `verify-release` passed on `main` before the tag.
+- The release run succeeded.
+- `verify-release --published 2026.4.1126` passes, installed from nuget.org: all 7 generated
+  repositories build, pass their tests and publish for `win-x64`.
+
+**A stale SDK 11 build server fails `verify-release`'s analyzer consumer with
+`MSB4223: A node of the required type InProc could not be created`**, measured on `main` before the
+tag. The consumer's folder has no `global.json`, so it builds with the newest SDK, 11.0.100. Every
+build under that SDK failed the same way, a fresh class library included, until its servers were
+shut down. `-nr:false`, or `DOTNET_CLI_USE_MSBUILD_SERVER=0`, avoided it. `dotnet build-server
+shutdown` run here reaches only SDK 10's servers, which `global.json` selects. Run from a folder
+without one, it fixed it.
 ### Drift from the approved plan
 
 - **Serilog's Trace sink does not render `{Message:lj}` at its default template; it renders
