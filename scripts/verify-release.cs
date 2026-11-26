@@ -687,6 +687,15 @@ string? Verify(Case entry)
         return "Unsubstituted template placeholders survived: " + string.Join(", ", leaks);
     }
 
+    // Every generated root AGENTS.md points at the family's form for a log line (plans/00014 step 3),
+    // so a new repository has the convention from the day it is generated.
+    const string LogLines = "docs/repository-conventions.md#log-lines";
+
+    if (!File.ReadAllText(Path.Combine(generated, "AGENTS.md")).Contains(LogLines, StringComparison.Ordinal))
+    {
+        return $"The generated AGENTS.md does not point at Log lines, {LogLines}.";
+    }
+
     string csproj = File.ReadAllText(Path.Combine(generated, "src", stem, $"{stem}.csproj"));
     string push = File.ReadAllText(Path.Combine(generated, "packages.push"));
     string expectedId = $"Bennewitz.Ninja.{stem}";

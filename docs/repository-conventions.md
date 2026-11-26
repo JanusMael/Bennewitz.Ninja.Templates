@@ -438,6 +438,126 @@ scan reads code, not comments or string literals, and finds the attribute anywhe
 of the compiled assembly; a repository that uses AssemblyQuality reads the compiled grants too, with
 BNAQ1005.
 
+## Log lines
+
+**Every line the family's code logs has one shape: a tag, then key=value pairs.** The form is
+ClaudeForge's, and the rule is [plans/00014](../plans/00014-one-log-line-form.md)'s.
+
+```text
+[Backup.Tab] index=2 title="Recent files" elapsedMs=14
+```
+
+One shape is what makes a log both greppable and readable without a parser per message:
+`[Backup.` finds an area, `[Backup.Tab]` one event, and every field after the tag is a pair.
+
+| Rule | Written | Not |
+|---|---|---|
+| **The tag comes first, `[Area.Kind]`**, both parts PascalCase and one dot. `Area` is the surface or subsystem, `Kind` what happened there. `[Area]` alone is not allowed | `[Diff.Open] files=2` | `[Diff] opened 2 files`, `[diff.open] files=2` |
+| **After the tag, key=value pairs only**, separated by single spaces, keys camelCase. No sentence | `[Diff.Open] files=2 elapsedMs=31` | `[Diff.Open] Opened 2 files in 31 ms` |
+| **A Warning or an Error says why in `reason=`**, and the exception goes in the call's exception argument, never in the template | `LogWarning(exception, "[Config.Load] reason=unreadable path=\"{Path}\"", path)` | `"[Config.Load] failed: {Error}"` |
+| **Free text is quoted by the template**: a name, a path, a heading, a message. Numbers, booleans, identifiers and enums are written bare | `name="{Name}" index={Index} flag={Flag}` | `name={Name}` |
+| **An enum is passed as its name**, a `string` | `mode={Mode}`, given `mode.ToString()` | the enum itself, which a Serilog sink quotes: `mode="Fast"` |
+| **No hole carries `:l`** | `path="{Path}"` | `path="{Path:l}"`; on an enum the line is lost |
+
+**A line a framework writes passes through as it is.** ASP.NET Core's and the host's lines are
+not the family's to reshape. Text the family's code forwards from elsewhere is a value of a line in
+the form: `[Avalonia.Log] area={Area} text="{Message}"`.
+
+### Every sink renders `{Message:lj}`
+
+`{Message:lj}` writes a string as it is, so the quotes the template writes are the only ones. Every
+other scalar it writes as JSON: `true`, not `True`. A sink, a formatter or a test helper that renders
+through `LogEvent.RenderMessage()`, or through a rendered-JSON formatter, quotes strings itself, and
+is not used. A quote inside a quoted value is not escaped.
+
+What each stack writes for `name="{Name}" mode={Mode} level={Level} flag={Flag} count={Count}`, given
+`"a b"`, `"Fast"`, the enum `Speed.Fast`, `true` and `7`:
+
+| Rendered by | It prints |
+|---|---|
+| A `{Message:lj}` sink, from Serilog directly or from `ILogger` through Serilog's bridge | `name="a b" mode=Fast level="Fast" flag=true count=7` |
+| Serilog.Sinks.Trace at its default template, which is `{Message}` | `name=""a b"" mode="Fast" level=Fast flag=True count=7` |
+| Microsoft.Extensions.Logging's own formatter, with no Serilog | `name="a b" mode=Fast level=Fast flag=True count=7` |
+
+The measurement is `Templates.Tests`' `LogLineRenderingTests`, at the Serilog versions AppServices
+pins. It is why an enum is passed by name: under `{Message:lj}` the enum itself is quoted.
+
+### One line per thing a user did
+
+**At Information, a log reads as a list of what the user did.** No pointer motion, no scrolling, no
+keystroke as typed and no timer tick is logged at Information; a run's internals log at Debug.
+Something that happens in bursts logs its outcome once, with a count:
+
+```text
+[Search.Run] queryLength=12 count=40 elapsedMs=8
+```
+
+That is one line per search, never one per result. No analyzer can tell an action from a tick, so
+review holds this rule.
+
+**A web app sets `Microsoft.AspNetCore` to Warning**, so a request writes no line of the framework's
+own, and leaves `Microsoft.Hosting.Lifetime` at Information, so the address it listens on is
+logged.
+
+### Every run has a start line and an exit line
+
+```text
+[App.Start] app=Tally version=1.0.0 pid=4120
+[App.Exit] code=0 elapsedMs=212
+```
+
+The shared entry point writes both, through `AppMainOptions.WriteLogLine`, from the
+`Bennewitz.Ninja.AppServices.EntryPoint` release that brings it; an app writes neither itself. A
+log with a start line and no exit line reads as a death. A run ended by SIGTERM, by a crash or by an
+aborted host writes `signal=SIGTERM`, `reason=unhandledException` or `reason=hostAborted` in place of
+`code=`, still with `elapsedMs=`.
+
+### Never in a value
+
+A secret, a token or a password; an environment variable's value; a document's or the clipboard's
+text; a search query, whose length is logged instead, as `queryLength=`. A value under a sensitive
+key goes through `LogRedaction.Redact(key, value)`, in `Bennewitz.Ninja.AppServices.Abstractions`,
+which references nothing and writes `***`:
+
+```text
+[Sync.Connect] host="sync.example.org" apiKey=***
+```
+
+A log is attached to issues and read by agents, so what is in it is, in effect, published. No
+analyzer holds this rule; review does.
+
+### Every app logs through Serilog
+
+One renderer prints every line, an app's own and a library's alike. Each app plugs Serilog into
+Microsoft.Extensions.Logging by Serilog's own bridge, so code written against `ILogger` is rendered
+by the same sinks as the app's own lines:
+
+| Template | Its log |
+|---|---|
+| `bbweb`, `bbapi` | Serilog's console, every level on stderr, through Serilog.Extensions.Hosting. The levels are set in `src/<app>/AppLog.cs`, never in `appsettings.json`, which the bridge's logger factory does not read |
+| `bbconsole` | AppServices.Logging's rolling file only, through Serilog.Extensions.Logging, so stdout and stderr stay the tool's own |
+| `bbavalonia` | AppServices.Avalonia's rolling file, Trace sink and Avalonia bridge |
+| `bbpkg` | None: a library logs through `ILogger` only and leaves the sink to the app |
+
+Every generated app writes one line of its own in the form, and its `LoggingTests` reads that line
+where the app's log goes.
+
+### What holds it
+
+**CodeQuality's BNCQ1012, a warning on by default, holds the form**, from the release that brings
+it. It reads the constant template of every `ILogger` `Log*` call, `LoggerMessage.Define`,
+`[LoggerMessage]` and Serilog call, and reports:
+- a template not in the form;
+- a hole with `:l`;
+- an enum passed to a hole;
+- a template built at run time, whose form cannot be read.
+
+A line that passes on one already rendered is suppressed where it is written, with its reason. With
+warnings as errors, a repository whose lines are not yet in the form converts them, or suppresses the
+rule, at the upgrade that brings it.
+
+BNCQ1012 judges the shape only. One line per action and nothing sensitive in a value are review's.
+
 ## `.github/repository.json`
 
 Only what varies from one repository to the next:
