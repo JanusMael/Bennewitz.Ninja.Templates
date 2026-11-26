@@ -105,4 +105,7 @@ says the rest, and
 [Reading upstream sources](https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/repository-conventions.md#reading-upstream-sources)
 the rules `check` holds it to.
 
-**Every change:** update `PROGRESS.md` in the same commit. Commits are Conventional Commits.
+**Every change:** update `PROGRESS.md` in the same commit. Commits are Conventional Commits. A
+line it logs is in the family's form, `[Area.Kind] key=value`, as
+[Log lines](https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/repository-conventions.md#log-lines)
+prescribes.

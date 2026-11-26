@@ -28,13 +28,15 @@ section):
 2. **[`plans/00014`](plans/00014-one-log-line-form.md), one form for a log line, was approved
    2026-11-23**, through `choices`. The maintainer asked on 2026-11-19 for ClaudeForge's
    `[Area.Kind] key=value` form everywhere, routed here by DiffView's session. Its decisions were
-   settled from 2026-11-20 to 23, after two step-backs, the second by a fresh reviewer. Steps 1 and 2
-   are done (its section below): the test of what Serilog writes for each kind of value, and `bbweb`,
-   `bbapi` and `bbconsole` on Serilog, each writing one line in the form. Next is step 3, the *Log
-   lines* text in the conventions and the pointer in each template's `AGENTS.md`. The approved
-   text has gone to Inspections, for the CodeQuality rule, and to AppKit, for the start and exit lines
-   and the redaction helper, each to plan its part. DiffView's plan 00037, approved 2026-11-21,
-   targets it and waits for the rule's id and release.
+   settled from 2026-11-20 to 23, after two step-backs, the second by a fresh reviewer. Steps 1 to 4
+   are done (its section below). Step 1 tested what Serilog writes for each kind of value. Step 2
+   moved `bbweb`, `bbapi` and `bbconsole` onto Serilog. Step 3 wrote *Log lines* in the conventions,
+   with its pointer in every template's `AGENTS.md`. Step 4 sent the approved text to Inspections and
+   AppKit, and BNCQ1012's id to DiffView.
+
+   Next is step 6's first release, carrying steps 2 and 3, on the maintainer's word. Step 5, the
+   pins, waits for CodeQuality's BNCQ1012 and AppServices' plans/00009 to be released. DiffView's plan
+   00037, approved 2026-11-21, waits for the same rule.
 3. **From the maintainer's decisions of 2026-11-13** (the locked decisions):
    - **AppKit** pins XamlQuality `2026.4.1111` and adopts BNXQ1011, in its own session.
    - **DiffView** must adopt `release-target.cs` and pin both quality packages before `check` passes
@@ -2103,6 +2105,21 @@ with 18, `bbweb --blazor` with 21, `bbapi` with 19 and `bbconsole` with 14 and i
 `bbapi` publishes natively and `bbconsole` trimmed, warnings as errors, and each still exits 1 with
 the fatal report on a start-up that throws. The native link needs `vswhere.exe` on `PATH`, which
 this machine's shells lack. All 276 of this repository's tests pass under `CI` and `GITHUB_ACTIONS`.
+### Steps 3 and 4, done 2026-11-26
+
+- **The text: *Log lines* in `docs/repository-conventions.md`**, after *Friend grants*. It covers
+  decisions 1 to 6, each with an example, and step 1's table of what each stack prints. Decision 2a
+  is a table of each template's log. Decision 7 gives what BNCQ1012 holds and what it leaves to
+  review.
+- **The pointer: every template's root `AGENTS.md` links it under *Every change*.** `verify-release`
+  fails a generated repository whose root `AGENTS.md` does not carry
+  `docs/repository-conventions.md#log-lines`.
+- **Planted.** Run before the pointers were added, `verify-release` failed all 7 cases on that check
+  alone; with them it passes. `check` conforms, and all 276 tests pass.
+- **BNCQ1012, the start and exit lines and `LogRedaction` are prescribed as what their releases
+  bring.** None of them is released yet; step 5 pins them when they are.
+- **Step 4 was done before step 2.** The approved text went to Inspections and AppKit on 2026-11-23,
+  and BNCQ1012's id to DiffView on 2026-11-24, as recorded above.
 ### Drift from the approved plan
 
 - **Serilog's Trace sink does not render `{Message:lj}` at its default template; it renders
