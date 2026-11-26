@@ -21,6 +21,16 @@
     <!-- The entry point: exit codes 0, 1, 2 and 130, the fatal report on stderr, Ctrl+C and
          the version flag. References nothing beyond the framework, and is trim- and AOT-safe. -->
     <PackageVersion Include="Bennewitz.Ninja.AppServices.EntryPoint" Version="2026.4.1116" />
+    <!-- The log's rolling file, the one every family app writes; it brings Serilog.Sinks.File. -->
+    <PackageVersion Include="Bennewitz.Ninja.AppServices.Logging" Version="2026.4.1116" />
+  </ItemGroup>
+
+  <ItemGroup Label="Logging">
+    <!-- Serilog renders every log line, and its bridge renders what is written through ILogger;
+         src/CliStem/AppLog.cs says where it goes. Serilog moves with AppServices.Logging's pin, and
+         the bridge stays on the 10.0 line, Microsoft.Extensions 10: its 11.0 line takes 11. -->
+    <PackageVersion Include="Serilog" Version="4.3.1" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">

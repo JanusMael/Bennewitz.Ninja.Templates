@@ -33,5 +33,9 @@
   <ItemGroup>
     <!-- The entry point every family app shares: exit codes, the fatal report, Ctrl+C, the version flag. -->
     <PackageReference Include="Bennewitz.Ninja.AppServices.EntryPoint" />
+    <!-- The log: Serilog writing AppServices.Logging's rolling file, with its bridge for ILogger (AppLog.cs). -->
+    <PackageReference Include="Bennewitz.Ninja.AppServices.Logging" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
   </ItemGroup>
 </Project>

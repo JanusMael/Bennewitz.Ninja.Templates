@@ -16,6 +16,10 @@
   <ItemGroup>
     <!-- The entry point every family app shares: the fatal report and exit 1, and the version flag. -->
     <PackageReference Include="Bennewitz.Ninja.AppServices.EntryPoint" />
+    <!-- The log: Serilog's console, plugged into Microsoft.Extensions.Logging (AppLog.cs). -->
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.Console" />
   </ItemGroup>
 
   <ItemGroup>

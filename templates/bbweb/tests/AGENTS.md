@@ -8,6 +8,7 @@ executable that is never packed.
 | Path | What it covers |
 |---|---|
 | `SiteStem.Tests/SiteTests.cs` | The site over HTTP, in memory: the home page through the layout, `/healthz`, `/version`, the stylesheet, the 404 page, and the error page in Production |
+| `SiteStem.Tests/LoggingTests.cs` | The log, from the built site run as a child process on a free port: nothing on stdout, its own line on stderr as written, no request line from ASP.NET Core, the host's start-up lines |
 | `SiteStem.Tests/ComponentTests.cs` | When the site has components: one prerenders into its view, the page loads the circuit script, and the circuit hub negotiates |
 | `SiteStem.Tests/Architecture/AssemblyQualityTests.cs` | AssemblyQuality's BNAQ1001, BNAQ1002, BNAQ1004 and BNAQ1005 over the compiled site, each asserting it skipped nothing and, where it can, that it inspected something; BNAQ1005: every compiled grant names an assembly the two grant files at the root allow |
 | `SiteStem.Tests/PackagingTests.cs` | The site is never packed, and any library added later is declared |
@@ -17,7 +18,7 @@ executable that is never packed.
 | Rule | Why | Guarded by |
 |---|---|---|
 | Tests run on Microsoft.Testing.Platform | `dotnet test` takes `--solution` and rejects VSTest-only switches | `global.json`, `test.runner` |
-| The site is started by `WebApplicationFactory<Program>`, never on a port | The tests run the real pipeline without a process, a port or a race to start one | `SiteTests`; `public partial class Program` in `Program.cs` |
+| The site is started by `WebApplicationFactory<Program>`, never on a port, except by `LoggingTests` | The tests run the real pipeline without a process, a port or a race to start one. Which stream a line reaches can only be seen from outside the process, so `LoggingTests` starts the built site on port 0 and reads the bound address from its log | `SiteTests`; `public partial class Program` in `Program.cs` |
 | A test that changes the host does it on its own factory, from `WithWebHostBuilder` | The class's shared factory is used by every other test in it | `SiteTests.An_exception_in_production_renders_the_error_page_without_the_exception` |
 
 ⛔ **Never weaken a test to make it pass.** When one fails, the site is wrong, not the test.

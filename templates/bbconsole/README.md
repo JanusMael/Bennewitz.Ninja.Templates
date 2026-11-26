@@ -27,6 +27,10 @@ dotnet run --project src/CliStem -- notes.txt
 
 `CliStem --version` prints the release version.
 
+What each run did is logged to `CliStem/logs` in your local application data folder
+(`%LOCALAPPDATA%` on Windows, `~/.local/share` on Linux, `~/Library/Application Support` on macOS):
+one file per eight hours, kept for three days.
+
 See [AGENTS.md](AGENTS.md) for the tests, the release and the rest.
 
 ## Licence

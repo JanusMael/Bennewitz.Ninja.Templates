@@ -23,6 +23,16 @@
     <PackageVersion Include="Bennewitz.Ninja.AppServices.EntryPoint" Version="2026.4.1116" />
   </ItemGroup>
 
+  <ItemGroup Label="Logging">
+    <!-- Serilog renders every log line, plugged into Microsoft.Extensions.Logging by its hosting
+         bridge; src/SiteStem/AppLog.cs says how. Serilog moves with AppServices.Logging's pin, and the
+         bridge stays on the 10.0 line, the Microsoft.Extensions version the ASP.NET Core runtime
+         brings: its 11.0 line takes Microsoft.Extensions 11. -->
+    <PackageVersion Include="Serilog" Version="4.3.1" />
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+  </ItemGroup>
+
   <ItemGroup Label="Testing">
     <!-- The in-memory host that runs the real Program for the tests. Keep it on the same 10.0
          servicing line as the ASP.NET Core runtime the SDK in global.json brings. -->
