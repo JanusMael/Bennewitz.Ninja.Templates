@@ -28,9 +28,10 @@ section):
 2. **[`plans/00014`](plans/00014-one-log-line-form.md), one form for a log line, was approved
    2026-11-23**, through `choices`. The maintainer asked on 2026-11-19 for ClaudeForge's
    `[Area.Kind] key=value` form everywhere, routed here by DiffView's session. Its decisions were
-   settled from 2026-11-20 to 23, after two step-backs, the second by a fresh reviewer. Its step 1,
-   the test of what Serilog writes for each kind of value, is done (its section below); next is step
-   2, `bbweb`, `bbapi` and `bbconsole` on Serilog, against AppKit's approved API. The approved
+   settled from 2026-11-20 to 23, after two step-backs, the second by a fresh reviewer. Steps 1 and 2
+   are done (its section below): the test of what Serilog writes for each kind of value, and `bbweb`,
+   `bbapi` and `bbconsole` on Serilog, each writing one line in the form. Next is step 3, the *Log
+   lines* text in the conventions and the pointer in each template's `AGENTS.md`. The approved
    text has gone to Inspections, for the CodeQuality rule, and to AppKit, for the start and exit lines
    and the redaction helper, each to plan its part. DiffView's plan 00037, approved 2026-11-21,
    targets it and waits for the rule's id and release.
@@ -2033,13 +2034,91 @@ Decision 3 holds under `{Message:lj}`: free text quoted by hand once, an enum's 
 itself quoted, so it is passed by name. A canary, the test sink at `{Message}`, failed the two tests
 that render through it. All 276 tests pass under `CI` and `GITHUB_ACTIONS`.
 
+### Step 2, done 2026-11-26
+
+`bbweb`, `bbapi` and `bbconsole` log through Serilog, set up in `Main` before `AppMain` by a new
+`src/<stem>/AppLog.cs`, with `FlushLog = Log.CloseAndFlush`:
+
+| App | Sink | Bridge | Its own line |
+|---|---|---|---|
+| `bbweb` | Serilog.Sinks.Console 6.1.1, every level on stderr | `AddSerilog()`, Serilog.Extensions.Hosting 10.0.0, at `dispose: false` | `[Site.Status] code={Code} path="{Path}"`, once per error page |
+| `bbapi` | the same | the same | `[Greeting.Answer] name="{Name}"`, once per greeting |
+| `bbconsole` | AppServices.Logging's `BucketedRollingFileSink`, in `CliStem/logs` under local application data | `SerilogLoggerFactory`, Serilog.Extensions.Logging 10.0.0 | `[LineCount.File] path="{Path}" lines={Lines}`, once per file |
+
+- **Each line is a `[LoggerMessage]`**, the form BNCQ1012 reads and the one that is AOT-safe without
+  boxing.
+- **The console template is Serilog.Sinks.Console's default, written out:**
+  `[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}`.
+- **The levels are in code**: Information, with `Microsoft.AspNetCore` at Warning. The `Logging`
+  sections are gone from `appsettings*.json`, because `AddSerilog()` replaces the logger factory and
+  nothing reads them. `appsettings.Development.json` stays, empty, as the place for development
+  settings that `src/AGENTS.md` says is never published.
+- **Serilog is 4.3.1**, AppServices.Logging's pin. **Both bridges are 10.0.0**: their 11.0 line takes
+  Microsoft.Extensions 11, past the ASP.NET Core 10 runtime.
+- **Serilog.Extensions.Hosting, not Serilog.AspNetCore.** Decision 2a allows either. The hosting
+  bridge is all the apps use, and AspNetCore's request logging writes a sentence per request, outside
+  the form.
+- **`WriteLogLine` is not wired.** It waits for AppServices to release its plans/00009; that is step 5.
+
+**Tests.** A child process is the only place the streams can be seen, so each web template gains
+`LoggingTests`. It starts the built app on port 0, reads the bound address from its log, makes one
+request and kills it, then asserts four things:
+- nothing reached stdout;
+- the app's own line reached stderr as written;
+- no `Request starting` line;
+- the host's `Now listening on:` line.
+
+The templates' rule that tests never start the app on a port now names that exception.
+`bbconsole`'s `LoggingTests` runs the command in process against a log directory of its own and reads
+the file. That nothing reaches its console is `CommandLineTests`' existing assertion: a successful
+run's stderr is empty.
+
+**`bbconsole`'s log is off for a run whose directory cannot be made, with one warning on stderr.**
+Set up before `AppMain`, a failure there would otherwise end the tool through the .NET runtime, not
+through `AppMain`'s report. The maintainer accepted that risk on 2026-11-23. This turns the one step
+that can fail, making the directory, into a run without a log. The sink itself only validates its
+arguments, and Serilog swallows a failed write.
+
+**Planted, each in a generated repository, then restored:**
+
+| Defect | Fails |
+|---|---|
+| `Microsoft.AspNetCore`'s override removed, `bbapi` and `bbweb` | `A_request_writes_no_line_of_ASP_NET_Cores`, alone |
+| The console at `{Message}`, both | the own-line test and `The_hosts_start_up_lines_are_logged`, whose address `{Message}` quotes |
+| Information sent to stdout, both | all four: the fixture never sees the address on stderr |
+| `bbconsole`'s log with no sink | `A_line_logged_through_ILogger_reaches_the_file_as_written` |
+
+The first `{Message}` plant failed all four tests: the fixture's address pattern took the quote that
+`{Message}` adds. The pattern now allows it, so the plant fails only the assertions about the text.
+
+**Measured.**
+- `bbapi` published natively for `win-x64` with no trim or AOT warning, so decision 2a's stop does
+  not trigger.
+- `bbconsole` published trimmed and self-contained with none.
+- Run, the native API wrote every line to stderr and nothing to stdout, and no line for a request. A
+  name holding a quote prints `name="a"b"`, unescaped, as decision 3 says.
+
+`verify-release` passes on Windows: all 7 generated repositories build and pass their tests, `bbweb`
+with 18, `bbweb --blazor` with 21, `bbapi` with 19 and `bbconsole` with 14 and its Ctrl+C test skipped.
+`bbapi` publishes natively and `bbconsole` trimmed, warnings as errors, and each still exits 1 with
+the fatal report on a start-up that throws. The native link needs `vswhere.exe` on `PATH`, which
+this machine's shells lack. All 276 of this repository's tests pass under `CI` and `GITHUB_ACTIONS`.
 ### Drift from the approved plan
 
 - **Serilog's Trace sink does not render `{Message:lj}` at its default template; it renders
   `{Message}`**, measured in step 1, so a hand-quoted value prints its quotes twice. AppServices'
   `AvaloniaDiagnostics.cs:192` writes `WriteTo.Trace()` at that default, so `bbavalonia`'s debugger
-  output breaks decision 3's "every sink renders `{Message:lj}`". The fix is AppKit's, an
-  `outputTemplate` naming `{Message:lj}`, asked of it on 2026-11-24.
+  output breaks decision 3's "every sink renders `{Message:lj}`". AppKit's plans/00009 already fixes
+  it, in its decision 7: the sink is given a `{Message:lj}` template. Its step 4 tests it, as recorded
+  in JanusMael/Bennewitz.Ninja.AppKit#54.
+- **AppKit's `[Avalonia.Log]` line leaves out the typed value that Avalonia logs when a binding's
+  converter throws**, a change the maintainer approved on 2026-11-24 in AppKit's session. Its API is
+  otherwise as recorded above.
+- **Serilog.Extensions.Hosting 10.0.0 keeps the static logger alive after the host is disposed**, so
+  the exit line lands. AppKit measured this with `AddSerilog()` and with `UseSerilog()`, each at its
+  default `dispose: false`. Both `Log.Information` and `ILogger.LogInformation` bind to
+  `LogLineWriter` as method groups. Under `bbweb`'s analyzers CA2254 is a suggestion, so it fails
+  nothing; enforcing constant templates is BNCQ1012's job.
 - **AppKit's own lines outside the form are 17 calls in 9 files, not the three the plan names.**
   AppKit read them at `a0f43fe` on 2026-11-23: `AvaloniaDiagnostics.cs` seven times,
   `BindingValidationErrorLogger.cs` twice, `SerilogAvaloniaSink.cs` twice, and one each in

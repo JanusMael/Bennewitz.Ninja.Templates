@@ -1,21 +1,28 @@
 using System.Reflection;
 using Bennewitz.Ninja.AppServices.EntryPoint;
+using Bennewitz.Ninja.SiteStem;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Extensions.Logging.Console;
+using Serilog;
+
+// The log is set up before the entry point runs, so that everything from the first line of the run to
+// the last has somewhere to go; AppLog says where and at which levels. The entry point flushes it once,
+// however the run ends.
+Log.Logger = AppLog.Create();
 
 // The entry point every family app shares, from Bennewitz.Ninja.AppServices.EntryPoint: an unhandled
 // exception is reported on stderr and exits 1, and --version, alone, prints the release version before
 // the host is built. Everything else on the command line is configuration (--urls, --environment), so
 // nothing is rejected. The host owns Ctrl+C and SIGTERM, and shuts down gracefully on either.
-return await AppMain.RunHostAsync(typeof(Program).Assembly, args, RunAsync);
+return await AppMain.RunHostAsync(typeof(Program).Assembly, args, RunAsync, new AppMainOptions { FlushLog = Log.CloseAndFlush });
 
 static async Task RunAsync(string[] args)
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // Every log line is a diagnostic, so all of them go to stderr: stdout stays free for whatever
-    // runs the site to read.
-    builder.Services.Configure<ConsoleLoggerOptions>(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
+    // Every ILogger line, the framework's among them, is written by Serilog to AppLog's sinks.
+    // ⚠ Left undisposed by the host (dispose: false, the default): the log outlives the host, so a line
+    // written after the host is disposed still lands, and the entry point's flush is the one that ends it.
+    builder.Services.AddSerilog();
 
     builder.Services.AddControllersWithViews();
 #if (Blazor)
@@ -34,7 +41,6 @@ static async Task RunAsync(string[] args)
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
 
-    // Disposed when the site stops, which flushes the log.
     await using var app = builder.Build();
 
     app.UseForwardedHeaders();

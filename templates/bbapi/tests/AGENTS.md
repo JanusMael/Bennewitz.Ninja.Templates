@@ -8,6 +8,7 @@ executable that is never packed.
 | Path | What it covers |
 |---|---|
 | `ApiStem.Tests/ApiTests.cs` | The API over HTTP, in memory: `/healthz`, `/version`, the greeting and its validation problem, the OpenAPI document, the 404 problem, and an exception in Production |
+| `ApiStem.Tests/LoggingTests.cs` | The log, from the built API run as a child process on a free port: nothing on stdout, its own line on stderr as written, no request line from ASP.NET Core, the host's start-up lines |
 | `ApiStem.Tests/Architecture/AssemblyQualityTests.cs` | AssemblyQuality's BNAQ1001, BNAQ1002, BNAQ1004 and BNAQ1005 over the compiled API, each asserting it skipped nothing and, where it can, that it inspected something; BNAQ1005: every compiled grant names an assembly the two grant files at the root allow |
 | `ApiStem.Tests/PackagingTests.cs` | The API is never packed, and any library added later is declared |
 
@@ -16,7 +17,7 @@ executable that is never packed.
 | Rule | Why | Guarded by |
 |---|---|---|
 | Tests run on Microsoft.Testing.Platform | `dotnet test` takes `--solution` and rejects VSTest-only switches | `global.json`, `test.runner` |
-| The API is started by `WebApplicationFactory<Program>`, never on a port | The tests run the real pipeline without a process, a port or a race to start one | `ApiTests`; `public partial class Program` in `Program.cs` |
+| The API is started by `WebApplicationFactory<Program>`, never on a port, except by `LoggingTests` | The tests run the real pipeline without a process, a port or a race to start one. Which stream a line reaches can only be seen from outside the process, so `LoggingTests` starts the built API on port 0 and reads the bound address from its log | `ApiTests`; `public partial class Program` in `Program.cs` |
 | A test that changes the host does it on its own factory, from `WithWebHostBuilder` | The class's shared factory is used by every other test in it | `ApiTests.An_exception_in_production_is_a_problem_without_the_exception` |
 
 ⚠ **The tests run under the JIT, not the native binary.** Their project turns JSON serialisation by

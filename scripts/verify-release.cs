@@ -97,6 +97,14 @@ string[] app =
 
 string[] container = ["Dockerfile", ".dockerignore"];
 
+// What an app on Serilog's bridge carries (plans/00014, decision 2a): its log's setup, and the test
+// that reads the log where it goes. bbavalonia's log is AppServices.Avalonia's.
+string[] serilogApp =
+[
+    Path.Combine("src", "{0}", "AppLog.cs"),
+    Path.Combine("tests", "{0}.Tests", "LoggingTests.cs"),
+];
+
 // bbpkg in its two forms (plans/00010): a library, or with --analyzer a Roslyn analyzer package. Each
 // carries what the other must not.
 string[] packageCommon =
@@ -245,19 +253,20 @@ Case[] cases =
         ],
         Forbidden: [], Publish: PublishKind.Trimmed, Crash: DesktopCrash),
     new("bbweb", "bbweb", "Gallery", [], Packs: false,
-        Required: [.. common, .. app, .. container],
+        Required: [.. common, .. app, .. serilogApp, .. container],
         Forbidden: blazorOnly, Publish: PublishKind.SingleFile, Crash: HostCrash),
     new("bbweb --blazor", "bbweb", "Gallery", ["--blazor"], Packs: false,
-        Required: [.. common, .. app, .. container, .. blazorOnly],
+        Required: [.. common, .. app, .. serilogApp, .. container, .. blazorOnly],
         Forbidden: [], Publish: PublishKind.SingleFile, Crash: HostCrash),
     new("bbapi", "bbapi", "Catalog", [], Packs: false,
-        Required: [.. common, .. app, .. container],
+        Required: [.. common, .. app, .. serilogApp, .. container],
         Forbidden: [], Publish: PublishKind.Native, Crash: HostCrash),
     new("bbconsole", "bbconsole", "Tally", [], Packs: false,
         Required:
         [
             .. common,
             .. app,
+            .. serilogApp,
             // The exit codes and streams, tested by running the executable.
             Path.Combine("tests", "{0}.Tests", "CommandLineTests.cs"),
         ],
