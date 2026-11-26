@@ -2041,9 +2041,13 @@ there. Both acknowledged on 2026-11-23.
   passes on one already rendered is suppressed where it is written, with its reason; no template
   shape is exempt. Before it is built it runs in scratch over ClaudeForge, DiffView, AppKit,
   AutoVersioning, FileServer and an app of each template. DiffView was told on 2026-11-24.
-  - Open between AppKit and Inspections: AppKit plans to suppress `AvaloniaDiagnostics.cs:292`'s
-    `{EventLine}`, while Inspections' plan writes it as a value of a line in the form. Both were
-    told on 2026-11-24.
+  - **Decided 2026-11-24 by the maintainer, in Inspections' session: `AvaloniaDiagnostics.cs:292`'s
+    `EventListener` text is written in the form, not suppressed**, as Inspections' plans/00014
+    decision 8 and this plan's decision 1 have it: `[Avalonia.Event] text="{EventLine}"`, for
+    example. That supersedes AppKit's plan for that site, above. A suppression, with its reason,
+    is kept for a line already rendered, which among AppKit's sites is
+    `BucketedRollingFileSink.cs:196`'s `{RawLine}` alone, so each suppression marks a true
+    pass-through. Inspections reported it here on 2026-11-26.
 
 ### Step 1, done 2026-11-24
 
